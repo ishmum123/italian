@@ -1,18 +1,19 @@
 #!/bin/sh
 # Runs every check that must pass before shipping the Italian pack/site:
-#   1. tools/check_pack.py       - pack-level schema/coverage checks
+#   1. packbuilder check         - pack-level schema/coverage/article checks
+#      (engine/tools/packbuilder/qa/check.py with the Italian spec)
 #   2. engine/tools/validate_pack.py - engine's schema, referential-integrity,
 #      and generated-.js-in-sync checks
 #   3. stale-build guard - rebuilds index.html to a scratch file and
 #      byte-compares it against the committed one, so a forgotten
 #      `./build.sh` after editing the pack or engine is caught here
 #      rather than shipping a stale page.
-# Usage: ./check.sh
+# Usage: ./check.sh   (PACKBUILDER_PATH=<vocab-engine>/tools overrides engine/tools)
 set -e
 cd "$(dirname "$0")"
 
-echo "== tools/check_pack.py =="
-python3 tools/check_pack.py
+echo "== packbuilder check =="
+PYTHONPATH="${PACKBUILDER_PATH:-engine/tools}" python3 -m packbuilder check --lang it --repo .
 
 echo
 echo "== engine/tools/validate_pack.py =="

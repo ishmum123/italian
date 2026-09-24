@@ -31,3 +31,14 @@ already in place and their counts.
   The pack ships no model files, and the project must stay non-commercial
   while this model is used. A commercial use would need a differently
   licensed tagger.
+
+## Builder flags added for Spanish (off for Italian; each a v4 follow-up)
+- `prefer_headword_sentence`: pick example sentences that show the headword
+  (or an alt) first, then a 3sg present verb form. In Spanish it cut words
+  whose examples never show the headword from 656 to 17 of 1998. Turning it
+  on here changes sentence choice, so it needs a QA round.
+- `derived_form_tags`: Wiktionary diminutive/augmentative form-of senses stop
+  being inflections (es: señorita is not a form of señora). Italian has the
+  same pattern (casetta, ragazzino); check links before enabling.
+- `phrase_token_spans`, `homograph_by_translation`, `initial_noun_verb_homograph`,
+  `sensitive_re`, `translation_mismatch`: see engine/tools/packbuilder/README.md.

@@ -204,3 +204,5 @@ words and an A2 passage at most 3 B1 words. Per-passage numbers and the QA
 notes are in `tools/REPORT_passages.md`.
 
 The passages were checked by an automated QA pass, not by a native speaker.
+Tapping any word in a passage shows its gloss, including inflected forms, via
+per-sentence token spans linked to word ids.

@@ -59,5 +59,5 @@ already in place and their counts.
 - The cosa noun/pronoun second-entry swap comes from the sentence builder, so
   passage links inherit it: cosa in "che cosa" can link the noun entry.
 - A native-speaker pass over the 60 texts has not been done yet.
-- 11 passage tokens are still chips: tokens linked to two ids (come, scusa,
-  per/il favore in "per favore"); see vocab-engine TODO.
+- Republished on engine 1dbca4d (one word id per token, phrase-part links):
+  the 11 passage fallback chips are gone (0 tokens without a span).

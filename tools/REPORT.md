@@ -44,17 +44,17 @@ Levels: {'A1': 600, 'A2': 700, 'B1': 700}. POS: {'noun': 978, 'verb': 489, 'adj'
 
 ## Sentences
 
-- Final sentences: **3,150**, 470 with audio (`https://tatoeba.org/audio/download/<audio_id>`).
+- Final sentences: **3,152**, 469 with audio (`https://tatoeba.org/audio/download/<audio_id>`).
 - Word coverage: 0 = 2, 1 = 5, 2 = 1993.
 - Words with no sentence: anzi, ovvero.
-- Candidate sentences (terminal punctuation, 3-14 tokens, content lemmas in pack/top-3000, >=1 link): 475,992. Rejected for a content lemma outside pack/top-3000: 142,865.
-- Passato remoto: 40,690 candidates contain one; 40,656 were blocked for A1/A2 words; 111 in the final set (all lv B1).
-- Primary word level of each sentence: {'A1': 807, 'A2': 1113, 'B1': 1230}.
+- Candidate sentences (terminal punctuation, 3-14 tokens, content lemmas in pack/top-3000, >=1 link): 475,981. Rejected for a content lemma outside pack/top-3000: 142,865.
+- Passato remoto: 46,746 candidates contain one; 46,705 were blocked for A1/A2 words; 169 in the final set (all lv B1).
+- Primary word level of each sentence: {'A1': 807, 'A2': 1115, 'B1': 1230}.
 - Token-length distribution of the final set:
 
 | tokens | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 13 |
 |---|---|---|---|---|---|---|---|---|---|
-| sentences | 231 | 686 | 96 | 1013 | 1069 | 42 | 8 | 4 | 1 |
+| sentences | 229 | 686 | 97 | 1014 | 1071 | 42 | 8 | 4 | 1 |
 
 ## Kelly CEFR cross-check (sanity only, not shipped)
 

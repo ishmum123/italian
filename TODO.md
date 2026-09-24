@@ -41,4 +41,21 @@ already in place and their counts.
   being inflections (es: señorita is not a form of señora). Italian has the
   same pattern (casetta, ragazzino); check links before enabling.
 - `phrase_token_spans`, `homograph_by_translation`, `initial_noun_verb_homograph`,
-  `sensitive_re`, `translation_mismatch`: see engine/tools/packbuilder/README.md.
+  `translation_mismatch`: see engine/tools/packbuilder/README.md.
+
+## Content policy (done 2026-09-24)
+- `sensitive_re`, `drop_all_levels` and `sensitive_gloss_re` are on in it.py
+  (engine b8cbdb6). A1/A2: 15 sentences replaced (1 of them removed at
+  every level), 23 moved to B1; 0 glosses changed; word ids and passages.json unchanged.
+  `lower_level_gloss_re` stays off (uccidere/morire/morto keep their level).
+
+## Reading passages
+- Regenerate `pack/*.js` and `index.html` after `pack/passages.json` changes.
+  jsonify_pack.py appends PASSAGES to sentences.js, and until then
+  validate_pack.py reports sentences.js as stale.
+- "fine settimana" links only settimana, through the passages compound-head
+  rule. The main sentence builder still has no compound table: see "fine
+  settimana" under Sentence links above.
+- The cosa noun/pronoun second-entry swap comes from the sentence builder, so
+  passage links inherit it: cosa in "che cosa" can link the noun entry.
+- A native-speaker pass over the 60 texts has not been done yet.

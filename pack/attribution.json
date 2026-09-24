@@ -23,6 +23,7 @@
     "licence": "CC-BY 2.0 FR",
     "url": "https://downloads.tatoeba.org/exports/per_language/ita/ita_sentences_detailed.tsv.bz2",
     "contributor_usernames": [
+      "ACB",
       "Adelpa",
       "Amastan",
       "BEASY8",
@@ -61,7 +62,6 @@
       "Valdast",
       "ValentinaM",
       "Vallysing",
-      "Vortarulo",
       "Vy",
       "WM3DAS",
       "al_ex_an_der",
@@ -142,7 +142,7 @@
       "CC BY 4.0": [
         {
           "recorder": "NM1",
-          "clips": 470
+          "clips": 469
         }
       ]
     }

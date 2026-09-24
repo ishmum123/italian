@@ -2,7 +2,9 @@
 
 Static data pack for a language-agnostic vocab trainer (`key: "it"`). 2000
 words spanning A1-B1, each with a short English gloss, plus example
-sentences with translations and (where licence permits) native audio.
+sentences with translations and (where licence permits) native audio. The
+Read tab adds 60 short reading passages with comprehension questions (see
+"Reading passages" below).
 
 **Live:** https://ishmum123.github.io/italian/
 
@@ -25,6 +27,19 @@ primary senses. A 60-sentence sample (seed 404) has 3 wrong word links out
 of 363, and 58/60 sentences are fully correct. The round-2 pack scored
 59/60 and 57/60 on seed 7. Known residuals are listed in `TODO.md`, and the
 per-round rules and counts are in `tools/REPORT.md`.
+
+**Content policy:** sentences on sexual content, vulgarity, suicide, threats,
+violence, dying or death wishes, weapons, blood, poison, corpses, drugs or
+abuse (a shared English list plus Italian terms) are kept out of A1/A2. A word
+that is itself on the list, such as morire or l'arma, takes B1-level examples.
+The policy rebuild held 38 more A1/A2 sentences: 23 moved to B1 and 15 were
+replaced by clean A1/A2 sentences. No word, gloss or word id changed. Sentences
+about rape or sexual assault/abuse are removed at every level (1 candidate),
+and the check fails on a match. A shared vulgar/sexual English word list also
+scans glosses: a matching sense never leads an A1/A2 gloss, and the check
+fails on any match (no Italian gloss matched). uccidere, morire and morto stay
+at their frequency level as neutral core vocabulary; their violent sentences
+reach learners only at B1. The 60 reading passages have no match either.
 
 ## Layout
 
@@ -169,3 +184,23 @@ See `tools/REPORT.md` for the full list with counts. Headline items:
 - The spaCy Italian model is CC BY-NC-SA 3.0, not MIT. The pack ships no
   model files; the model is used only at build time. This project is
   non-commercial.
+
+## Reading passages (Read tab)
+
+`pack/passages.json` holds 60 short reading texts, 20 each at A1, A2 and B1,
+with 4-5 comprehension questions each. The format is in the engine's
+`docs/PACK_SCHEMA.md`. The texts were written for this pack (`"src": "gen"`)
+and their source is `tools/passages_src.json`. Rebuild from that source with:
+
+```
+PYTHONPATH=engine/tools python3 -m packbuilder passages .    # --check: report only
+python3 engine/tools/jsonify_pack.py pack                    # passages go into sentences.js
+```
+
+The builder links word ids the same way it does for the Tatoeba sentences.
+It enforces in-pack coverage of at least 95% at A1 and A2, and at least 93%
+at B1. It also enforces a level budget: an A1 passage may use at most 3 A2
+words and an A2 passage at most 3 B1 words. Per-passage numbers and the QA
+notes are in `tools/REPORT_passages.md`.
+
+The passages were checked by an automated QA pass, not by a native speaker.

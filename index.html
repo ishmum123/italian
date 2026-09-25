@@ -20,7 +20,12 @@
     /* pack.fontFamily, when set, is prepended at boot: --wfont = <pack font>, var(--wbase). */
     --wfont: var(--wbase);
     --safe-b: env(safe-area-inset-bottom, 0px);
-    --t1:#3B6E99;--t2:#3E8B5C;--t3:#9C6B2E;--t4:#B33F3F;--t5:#8A8378;
+    /* The fixed tab bar's real height: 56px buttons (fixed, see .tabs) + 1px top border,
+       plus the safe area. Content clears it by --tabbar-gap: body padding sets the scroll
+       end, html scroll-padding keeps scrollIntoView (showNext) targets above the bar. */
+    --tabbar-h: calc(57px + var(--safe-b));
+    --tabbar-gap: 8px;
+    --t1:#3B6E99;--t2:#35784F;--t3:#8E622A;--t4:#B33F3F;--t5:#706A61;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
@@ -36,8 +41,9 @@
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 var(--font)}
-  body{padding-bottom:calc(64px + var(--safe-b))}
-  .wrap{max-width:480px;margin:0 auto;padding:16px 16px 24px;min-height:calc(100dvh - 64px - var(--safe-b));display:flex;flex-direction:column}
+  html{scroll-padding-bottom:calc(var(--tabbar-h) + var(--tabbar-gap))}
+  body{padding-bottom:calc(var(--tabbar-h) + var(--tabbar-gap))}
+  .wrap{max-width:480px;margin:0 auto;padding:16px 16px 24px;min-height:calc(100dvh - var(--tabbar-h) - var(--tabbar-gap));display:flex;flex-direction:column}
   header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex:0 0 auto}
   h1{font-size:18px;font-weight:600;margin:0}
   .score{color:var(--mute);font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -111,8 +117,12 @@
   table.steps td:first-child{white-space:nowrap;padding-right:12px;vertical-align:top}
   .bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;flex:1}
   .bar i{display:block;height:100%;background:var(--ink)}
-  .path{display:flex;gap:6px;align-items:center;margin-bottom:14px}
-  .path .seg{flex:1;text-align:center;font-size:11px;color:var(--mute)}
+  /* Stage path: one line per label, bars on one top line. A segment is as wide as its label
+     plus an equal share of the rest (flex 1 1 auto), so a long script-stage label stays whole
+     beside A1; labels only ellipsize when the whole strip cannot fit. flex-start: a taller
+     label line (a target-script font) never moves its bar. */
+  .path{display:flex;gap:6px;align-items:flex-start;margin-bottom:14px}
+  .path .seg{flex:1 1 auto;min-width:0;text-align:center;font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .stmt{font-size:15px;line-height:1.5;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:14px}
   .warn{background:var(--bad-bg);border:1px solid var(--bad);color:var(--bad);border-radius:12px;padding:10px 14px;font-size:14px;margin-bottom:14px}
   .done h2{font-size:22px;margin:0 0 10px;font-weight:600}
@@ -138,6 +148,39 @@
   .charteach .pr{font-size:16px}
   .charteach .en{color:var(--mute);font-size:14px;text-align:left;margin:0}
   .charteach .sent{border-bottom:none;padding:4px 0 0;font-size:14px}
+  /* script primer (pack.script): glyph stimuli 64px, glyph options 2x2, teach card rows,
+     joined-forms strip (right to left), the Script tab chart. */
+  .big.xg{font-size:64px;line-height:1.2}
+  .opts-g{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .opts-g button{text-align:center;font-size:28px;line-height:1.3}
+  .xteach{padding:10px 0;border-bottom:1px solid var(--line)}
+  .xhead{display:flex;align-items:center;gap:14px}
+  .xhead .cform{font-size:64px;line-height:1.15;flex:0 1 auto;min-width:64px;max-width:50%;text-align:center;overflow-wrap:anywhere}
+  .xhead .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .xhead .en{color:var(--mute);font-size:14px;text-align:left;margin:0;overflow-wrap:anywhere}
+  .xnm{font-size:15px}
+  .xrm{font-weight:700;font-size:17px;overflow-wrap:anywhere}
+  .xrow2 .xrm{font-size:15px;color:var(--mute);font-weight:400}
+  .xrow2{font-size:24px;line-height:1.5;margin:8px 0 2px;overflow-wrap:anywhere}
+  .xit{font-style:italic;font-size:30px;margin-inline-start:8px}
+  .xforms{display:flex;gap:6px;margin:8px 0 2px}
+  .xfc{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;border:1px solid var(--line);border-radius:8px;padding:4px 2px}
+  .xff{font-size:32px;line-height:1.5}
+  .xfl{font-size:11px;color:var(--mute)}
+  /* Spread shadow widens the tint past a thin joined letter (fa medial ا, ی) without
+     padding: padding/border on an inline breaks Arabic-script shaping across it. */
+  .xhl{background:var(--ok-bg);border-radius:3px;box-shadow:0 0 0 2px var(--ok-bg)}
+  .xrword{margin-top:8px}
+  .xset{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px}
+  .xsn{color:var(--mute);font-size:12px;min-width:14px;padding-top:12px;text-align:right}
+  .xcells{flex:1;min-width:0}
+  .xcells button{display:flex;flex-direction:column;align-items:center;min-width:48px;min-height:48px;padding:4px 8px}
+  .xcg{font-size:20px;line-height:1.2}
+  .xcr{font-size:11px;color:var(--mute)}
+  .xcells button.xt,.xkey.xt{border-color:var(--ink)}
+  .xcells button.xm,.xkey.xm{border-color:var(--ok);background:var(--ok-bg)}
+  .xkey{display:inline-block;padding:0 6px;border:1px solid var(--line);border-radius:6px;font-size:13px}
+  #xcard .xteach{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;background:var(--card);scroll-margin-top:12px}
   .hasruby{line-height:2.3}
   /* pack.pronFirst: the "show written form" tap beside a word shown by its reading. */
   .showw{display:inline-block;width:auto;min-height:0;margin:0 0 0 6px;padding:2px 6px;border:0;background:none;color:var(--mute);font:400 12px/1.2 var(--font);text-decoration:underline;vertical-align:middle;cursor:pointer}
@@ -195,20 +238,32 @@
   .wk .gw{font-size:18px}
   textarea{width:100%;min-height:90px;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--card);color:var(--ink);font-family:var(--font)}
   .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:var(--safe-b);z-index:5}
-  .tabs button{flex:1;background:transparent;border:none;padding:10px 4px 8px;font-size:12px;color:var(--mute);min-height:56px;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--font)}
-  .tabs button .ic{font-size:20px;line-height:1}
+  /* Fixed-height slots: the bar is 56px whatever script the icon or label is in (the
+     Script tab's icon and label are target-language text; fa's pack line height 1.9 made
+     the bar 82px). Icon and label each get a fixed line box; :root beats the
+     :root[data-tlh] [data-tl] pack line height. */
+  .tabs button{flex:1;min-width:0;background:transparent;border:none;padding:8px 4px 0;font-size:12px;color:var(--mute);height:56px;overflow:hidden;white-space:nowrap;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;font-family:var(--font);line-height:16px}
+  .tabs button .ic{display:block;flex:0 0 auto;height:24px;font-size:20px;overflow:hidden}
+  :root .tabs button [data-tl]{line-height:16px}
+  :root .tabs button .ic{line-height:24px}
   .tabs button.on{color:var(--ink);font-weight:600}
   .tabs button[hidden]{display:none}
   button{cursor:pointer}
   button:focus-visible, .opts button:focus-visible, [tabindex]:focus-visible{outline:3px solid #7AA7D9;outline-offset:2px}
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-  .swtoast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));z-index:20;background:var(--ink);color:var(--card);border:0;border-radius:999px;padding:10px 18px;font:inherit;font-size:14px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+  .swtoast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tabbar-h) + var(--tabbar-gap) + 19px);z-index:20;background:var(--ink);color:var(--card);border:0;border-radius:999px;padding:10px 18px;font:inherit;font-size:14px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.2)}
   .reveal{transition:opacity 0.15s ease}
   @media (prefers-reduced-motion: reduce){ .reveal{transition:none} }
   @media (min-width: 900px){
     .wrap{max-width:640px;min-height:0}
+    /* Desktop: the bar is a rounded card under the content column, in flow (short screens
+       show it right below the card), and sticky at bottom:12px, so on a screen taller than
+       the viewport it stays on screen instead of sitting below the fold. While stuck it
+       overlays the content, so scroll-padding keeps scrollIntoView targets above it
+       (58px bar incl. borders + 12px offset + 8px gap). body padding is the gap below it at the page end. */
+    html{scroll-padding-bottom:78px}
     body{padding-bottom:24px}
-    .tabs{position:static;left:auto;right:auto;bottom:auto;transform:none;width:640px;max-width:100vw;margin:12px auto 0;padding-bottom:0;border:1px solid var(--line);border-radius:16px}
+    .tabs{position:sticky;left:auto;right:auto;bottom:12px;transform:none;width:640px;max-width:100vw;margin:12px auto 0;padding-bottom:0;border:1px solid var(--line);border-radius:16px}
   }
 </style>
 </head>
@@ -921,6 +976,7 @@ function defaultProg(pack){
   const sets = {}; levelIds(pack).forEach(id=>{ sets[id] = 0; });
   const p = { v:PROG_VERSION, w:{}, s:{}, sets, lessons:{}, sessions:0, theme:null, showPron: pack.showPron !== false, placedOnce:false };
   if(charsConfig(pack)) p.chars = defaultCharsProg(); // absent without pack.characters: flag-off shape unchanged
+  if(scriptConfig(pack)) p.script = defaultScriptProg(); // absent without pack.script: likewise
   return p;
 }
 const isObj = x => !!x && typeof x === "object" && !Array.isArray(x);
@@ -962,6 +1018,7 @@ function validateProgShape(data, levelIdList){
   if(data.theme !== undefined && data.theme !== null && data.theme !== "light" && data.theme !== "dark") return {ok:false, reason:"theme must be null, \"light\" or \"dark\""};
   if(data.read !== undefined){ const e = validateReadShape(data.read); if(e) return {ok:false, reason:e}; }
   if(data.chars !== undefined){ const e = validateCharsShape(data.chars); if(e) return {ok:false, reason:e}; }
+  if(data.script !== undefined){ const e = validateScriptShape(data.script); if(e) return {ok:false, reason:e}; }
   return {ok:true, data};
 }
 // Fills every missing field of validated (or stored) progress from the pack's
@@ -972,6 +1029,7 @@ function normalizeProg(data, pack){
   merged.sets = Object.assign({}, base.sets, (data && data.sets) || {});
   for(const k of ["w","s","lessons"]) if(!isObj(merged[k])) merged[k] = {};
   if(charsConfig(pack)) merged.chars = normalizeCharsProg(data && data.chars);
+  if(scriptConfig(pack)) merged.script = normalizeScriptProg(data && data.script, data);
   return merged;
 }
 // Parses a stored/imported progress string. Only a JSON object is progress;
@@ -1094,10 +1152,16 @@ function kindMix(n, share, typing, rng){
 // opts.units (optional): the pack's character units. When the pack has a characters
 // block and some unit has a record, Review is unified (see unifiedReviewPlan); with no
 // such unit the code below runs unchanged, so the output is identical to a word-only plan.
+// opts.scriptCtx (optional): {byId | words, tts} for scriptKindFits, so a script unit
+// never gets a kind with fewer than 4 options (the units are opts.script).
+// opts.script (optional): the pack's script units (pack.script). Recorded ones join the
+// same unified ranking as kind "x" (scriptReviewScore); none recorded, or the primer
+// skipped, leaves the plan as above.
 function buildReviewPlan(learned, prog, pack, opts){
   const o = opts || {}; const n = o.size || REVIEW_SIZE;
   const ru = recordedUnits(o.units, prog, pack);
-  if(ru.length) return unifiedReviewPlan(learned, ru, prog, pack, n, o.rng);
+  const rs = recordedScriptUnits(o.script, prog, pack);
+  if(ru.length || rs.length) return unifiedReviewPlan(learned, ru, prog, pack, n, o.rng, rs, Object.assign({ units: o.script }, o.scriptCtx || {}));
   const pv = provPick(learned, Math.min(REVIEW_PROV, n), prog.w);
   const pvSet = new Set(pv.map(w=>w.id));
   const rest = weakFirst(learned.filter(x=>!pvSet.has(x.id)), n - pv.length, prog.w, null, o.rng);
@@ -1145,8 +1209,10 @@ function lessonSayMode(item, speechOK){
 
 // Which Today steps run, given the learned-word count, whether a new set remains,
 // and the available-sentence count. Shared by the Today plan table and the runner.
-function todayGates(learnedCount, hasNextSet, availSentCount){
-  return { review: learnedCount >= 5, learn: !!hasNextSet, listen: learnedCount >= 4, recall: learnedCount >= 4, sentences: availSentCount >= 8 };
+// scriptCount (optional, pack.script): recorded script units; any opens Review, since a
+// learner in the primer has no learned words yet.
+function todayGates(learnedCount, hasNextSet, availSentCount, scriptCount){
+  return { review: learnedCount >= 5 || (scriptCount || 0) > 0, learn: !!hasNextSet, listen: learnedCount >= 4, recall: learnedCount >= 4, sentences: availSentCount >= 8 };
 }
 // Test tab: free word tests need TEST_MIN_WORDS learned words; the sentence test needs
 // 8 available sentences. The "learn first" notice depends on learned words only
@@ -1404,16 +1470,18 @@ function charsConfig(pack){
     learnKinds: kinds(c.learnKinds, ["charPick","charRead"]),
     reviewKinds: kinds(c.reviewKinds, ["charRead","charSound"]),
     testKinds: testKinds(c.testKinds),
+    compose: c.compose === true,
   };
 }
 // pack.characters.testKinds: {kind: weight} for the Test tab's Characters N (the predecessor app's mix,
 // charRead 40 / charSound 30 / charPick 30, by default). Unknown kinds and non-positive
 // or non-finite weights are dropped; nothing left means the default.
 const CHAR_TEST_KINDS = { charRead:40, charSound:30, charPick:30 };
-function testKinds(tk){
+// kinds/def (optional): the known kinds and default map (pack.script passes its own).
+function testKinds(tk, kinds, def){
   const out = {};
-  if(isObj(tk)) for(const k of CHAR_KINDS) if(typeof tk[k] === "number" && isFinite(tk[k]) && tk[k] > 0) out[k] = tk[k];
-  return Object.keys(out).length ? out : Object.assign({}, CHAR_TEST_KINDS);
+  if(isObj(tk)) for(const k of (kinds || CHAR_KINDS)) if(typeof tk[k] === "number" && isFinite(tk[k]) && tk[k] > 0) out[k] = tk[k];
+  return Object.keys(out).length ? out : Object.assign({}, def || CHAR_TEST_KINDS);
 }
 // One kind drawn from a {kind: weight} map (rng in [0, 1)).
 function pickWeighted(weights, rng){
@@ -1523,7 +1591,9 @@ function charStages(pack, prog){
 // done} (set = the level's sets counter, as nextNewSet reports it). Character stage:
 // {kind:"chars", key, levels, label, recorded, nunits, nsets, frac, done}.
 // Without pack.characters this is exactly the level strip: one word stage per level.
-function stagePath(pack, words, units, prog){
+// sunits (optional, pack.script): the script units. With pack.script and the primer not
+// skipped, one script stage per pack.script.stages entry comes first (scriptStages).
+function stagePath(pack, words, units, prog, sunits){
   const p = prog || {}; const sets = p.sets || {};
   const size = setSizeOf(pack), byLv = wordsByLevel(words, pack), recs = charRecs(p);
   const cfg = charsConfig(pack); const cs = charStages(pack, p);
@@ -1538,9 +1608,10 @@ function stagePath(pack, words, units, prog){
         nunits: list.length, nsets: Math.ceil(list.length / cfg.setSize), frac: list.length ? rec/list.length : 1, done: rec >= list.length });
     });
   });
-  return out;
+  const sc = scriptStages(pack, sunits, p);
+  return sc.length ? [...sc, ...out] : out;
 }
-function nextStage(pack, words, units, prog){ return stagePath(pack, words, units, prog).find(s => !s.done) || null; }
+function nextStage(pack, words, units, prog, sunits){ return stagePath(pack, words, units, prog, sunits).find(s => !s.done) || null; }
 // Every level up to the first character stage's `after` is taught: the point the
 // learning-order switch becomes available.
 function charsUnlocked(pack, words, prog){
@@ -1551,21 +1622,21 @@ function charsUnlocked(pack, words, prog){
 }
 // Characters have started: any character record exists, or the current stage is a
 // character stage. Gates every character surface outside the path strip.
-function charsStarted(pack, words, units, prog){
+function charsStarted(pack, words, units, prog, sunits){
   if(!charsConfig(pack)) return false;
   if(Object.keys(charRecs(prog)).length) return true;
-  const st = nextStage(pack, words, units, prog);
+  const st = nextStage(pack, words, units, prog, sunits);
   return !!(st && st.kind === "chars");
 }
 // The one-time choice card shows iff it is unanswered, the order is not deferred, every
 // level before the first character stage is taught, that stage is incomplete (records
 // elsewhere don't matter), and a later word level that deferring would put first (up to
 // the latest stage's `after`) is still incomplete. Otherwise the choice changes nothing.
-function showCharChoice(pack, words, units, prog){
+function showCharChoice(pack, words, units, prog, sunits){
   const cfg = charsConfig(pack); if(!cfg || !cfg.stages.length) return false;
   const ch = (prog && isObj(prog.chars)) ? prog.chars : {};
   if(ch.choiceSeen === true || ch.defer === true) return false;
-  const path = stagePath(pack, words, units, prog);
+  const path = stagePath(pack, words, units, prog, sunits);
   const first = path.findIndex(s => s.kind === "chars");
   if(first < 0 || path[first].done || !path.slice(0, first).every(s => s.done)) return false;
   const idx = levelIndexMap(pack), ids = levelIds(pack);
@@ -1711,6 +1782,35 @@ function sentencePieces(sentence, toks, blank, cuts){
   for(let i = out.length - 1; i >= 0; i--){ const p = out[i]; if(p.kind === "text"){ p.text = p.text.replace(/\s+$/, ""); if(p.text) break; } else break; }
   return out;
 }
+// Whether ruby tokens ([{start, end}], UTF-16 offsets) cover every Han character of text t:
+// the characters that need a reading to be shown with ruby. Kana, Latin letters, digits and
+// punctuation are readable as written. sentenceDisplay shows a sentence with ruby only when
+// this holds; unitExampleSentences prefers such sentences.
+function rubyCovers(t, toks){
+  const cov = new Array(t.length).fill(false);
+  (toks || []).forEach(k => { for(let i = Math.max(0, k.start); i < Math.min(t.length, k.end); i++) cov[i] = true; });
+  for(let i = 0; i < t.length; i++){ if(!cov[i]){ const cp = t.codePointAt(i); if(HAN_RE.test(String.fromCodePoint(cp))) return false; if(cp > 0xFFFF) i++; } }
+  return true;
+}
+// A characters-stage teach card's examples for unit (its word `word`): exampleSentences'
+// order within three tiers. First, sentences with a ruby token of the unit's own word
+// (unit.words) whose ruby covers every Han character (rubyCovers): they can show the
+// unit written with its reading, under pack.pronFirst too. Then sentences with the
+// unit's token but uncovered characters, then the rest. Without pack.characters it is
+// exampleSentences.
+function unitExampleSentences(unit, word, sentences, pack, n){
+  if(!word) return [];
+  const all = exampleSentences(word, sentences, pack, Infinity);
+  if(!charsConfig(pack)) return all.slice(0, n);
+  const own = new Set((unit && unit.words) || []);
+  const tiers = [[], [], []];
+  all.forEach(s => {
+    const r = Array.isArray(s.ruby) ? s.ruby.filter(Array.isArray) : [];
+    const tk = r.map(k => ({ start: k[0], end: k[1] }));
+    tiers[!r.some(k => own.has(k[3])) ? 2 : rubyCovers(String(s.t || ""), tk) ? 0 : 1].push(s);
+  });
+  return [...tiers[0], ...tiers[1], ...tiers[2]].slice(0, n);
+}
 // A sentence under pack.pronFirst: how to show it. null when pron display is off (the
 // caller renders as without it). Else {mode, pieces?, text?}:
 //  "pieces": ruby tokens by tier (sentencePieces), when every Han character of the text
@@ -1727,13 +1827,7 @@ function sentenceDisplay(sentence, units, prog, pack, started, blank, written){
   const ws = new Set(written || []);
   const rt = rubyTiers(sentence, units, prog, pack, started);
   const toks = rt && rt.map(k => k.tier === "pron" && ws.has(k.wordId) ? Object.assign({}, k, { tier:"ruby" }) : k);
-  if(toks){
-    const cov = new Array(t.length).fill(false);
-    toks.forEach(k => { for(let i = Math.max(0, k.start); i < Math.min(t.length, k.end); i++) cov[i] = true; });
-    let leak = false;
-    for(let i = 0; i < t.length && !leak; i++){ if(!cov[i]){ const cp = t.codePointAt(i); if(HAN_RE.test(String.fromCodePoint(cp))) leak = true; if(cp > 0xFFFF) i++; } }
-    if(!leak) return { mode:"pieces", pieces: sentencePieces(sentence, toks, blank) };
-  }
+  if(toks && rubyCovers(t, toks)) return { mode:"pieces", pieces: sentencePieces(sentence, toks, blank) };
   if(!HAN_RE.test(t)) return { mode:"text" };
   if(blank) return null;
   return sentence.pron ? { mode:"pron", text: String(sentence.pron) } : { mode:"text" };
@@ -1840,27 +1934,32 @@ function charReviewScore(rec, pack){
   const cfg = charsConfig(pack); const p = rec || {}; const sc = weakScore(p);
   return (p.s || 0) < (cfg ? cfg.mastered : CHAR_MASTERED) ? Math.max(sc, 0) : sc;
 }
-// One ranking over words and units: the n weakest as [{kind:"w"|"c", entry, score}],
-// with weakFirst's jitter (below 1, so it only reorders equal scores).
-function rankUnified(words, wrecs, units, crecs, n, pack, rng){
+// One ranking over words and units: the n weakest as [{kind:"w"|"c"|"x", entry, score}],
+// with weakFirst's jitter (below 1, so it only reorders equal scores). sunits/srecs
+// (optional): script units and their records, kind "x" (scriptReviewScore).
+function rankUnified(words, wrecs, units, crecs, n, pack, rng, sunits, srecs){
   const r = rng || Math.random;
   const pool = [...(words || []).map(e => ({ kind:"w", entry:e, score: weakScore((wrecs || {})[e.id]) })),
-    ...(units || []).map(u => ({ kind:"c", entry:u, score: charReviewScore((crecs || {})[u.id], pack) }))];
+    ...(units || []).map(u => ({ kind:"c", entry:u, score: charReviewScore((crecs || {})[u.id], pack) })),
+    ...(sunits || []).map(u => ({ kind:"x", entry:u, score: scriptReviewScore((srecs || {})[u.id], pack) }))];
   return pool.map(x => ({ x, k: x.score + (r() - 0.5) })).sort((a, b) => b.k - a.k).slice(0, n).map(o => o.x);
 }
 // Unified Review: provisional words as before, then the weakest words and recorded units
 // under one ranking, n total. Word items keep the >= 40% production mix; each unit gets
-// a random pack reviewKind. Items: {kind, word} or {kind, unit}.
-function unifiedReviewPlan(learned, ru, prog, pack, n, rng){
-  const cfg = charsConfig(pack); const r = rng || Math.random;
+// a random pack reviewKind. Items: {kind, word} or {kind, unit}. rs (optional): recorded
+// script units; each gets a random pack.script reviewKind that fits it (pickScriptKind).
+function unifiedReviewPlan(learned, ru, prog, pack, n, rng, rs, sctx){
+  const cfg = charsConfig(pack), scfg = scriptConfig(pack); const r = rng || Math.random;
   const pv = provPick(learned, Math.min(REVIEW_PROV, n), prog.w);
   const pvSet = new Set(pv.map(w => w.id));
-  const ranked = rankUnified(learned.filter(x => !pvSet.has(x.id)), prog.w, ru, charRecs(prog), n - pv.length, pack, rng);
+  const ranked = rankUnified(learned.filter(x => !pvSet.has(x.id)), prog.w, ru, charRecs(prog), n - pv.length, pack, rng, rs, scriptRecs(prog));
   const pool = shuffle([...ranked, ...pv.map(w => ({ kind:"w", entry:w }))], rng);
   const kinds = kindMix(pool.filter(x => x.kind === "w").length, REVIEW_PRODUCTION_SHARE, typingEnabled(pack), rng);
   let wi = 0;
-  return pool.map(x => x.kind === "w" ? { kind: kinds[wi++], word: x.entry }
-    : { kind: cfg.reviewKinds[Math.floor(r() * cfg.reviewKinds.length)], unit: x.entry });
+  const out = pool.map(x => x.kind === "w" ? { kind: kinds[wi++], word: x.entry }
+    : x.kind === "c" ? { kind: cfg.reviewKinds[Math.floor(r() * cfg.reviewKinds.length)], unit: x.entry }
+    : { kind: pickScriptKind(scfg.reviewKinds, x.entry, scfg, r, sctx), unit: x.entry });
+  return out.filter(it => it.kind);
 }
 // Unified Recall: the n weakest words and recorded units, weakest first; words as
 // recall/type, units as charRecall.
@@ -1874,11 +1973,23 @@ function unifiedRecallPlan(learned, ru, prog, pack, n, rng){
 // changes neither what Learn teaches nor Review/Recall's mode: {stage, cset, charsStarted,
 // reviewSize, choice}. choice true means the choice card replaces Start today.
 // Without pack.characters: the next word stage, cset null, charsStarted false, REVIEW_SIZE.
-function todaySnapshot(pack, words, units, prog){
-  const stage = nextStage(pack, words, units, prog);
+// sunits (optional, pack.script): the script units. With pack.script the snapshot also has
+// ssets: the script sets Learn teaches (nextScriptSets, up to setsPerSession) while a
+// script stage is next, else []; reviewSize is REVIEW_SIZE_SCRIPT then; and choice is
+// "script" while the script choice card shows (it comes before the characters card).
+function todaySnapshot(pack, words, units, prog, sunits){
+  const stage = nextStage(pack, words, units, prog, sunits);
   const cset = stage && stage.kind === "chars" ? nextCharSet(stage.levels, units, pack, prog) : null;
-  const started = charsStarted(pack, words, units, prog);
-  return { stage, cset, charsStarted: started, reviewSize: started ? REVIEW_SIZE_CHARS : REVIEW_SIZE, choice: showCharChoice(pack, words, units, prog) };
+  const started = charsStarted(pack, words, units, prog, sunits);
+  const snap = { stage, cset, charsStarted: started, reviewSize: started ? REVIEW_SIZE_CHARS : REVIEW_SIZE, choice: showCharChoice(pack, words, units, prog, sunits) };
+  const scfg = scriptActive(pack, sunits) ? scriptConfig(pack) : null; // no units: the flag-off snapshot
+  if(scfg){
+    const onScript = !!(stage && stage.kind === "script");
+    snap.ssets = onScript ? nextScriptSets(stage.key, sunits, pack, prog, scfg.setsPerSession) : [];
+    if(onScript) snap.reviewSize = REVIEW_SIZE_SCRIPT;
+    if(showScriptChoice(pack, sunits, prog)) snap.choice = "script";
+  }
+  return snap;
 }
 // Learned words' units without a record, level order then file order, at most n.
 function newCharUnits(units, learned, prog, pack, n){
@@ -1894,6 +2005,454 @@ function charTestPlan(units, learned, prog, pack, n, rng){
   const rec = weakFirst(recordedUnits(units, prog, pack), n, charRecs(prog), undefined, rng);
   const pool = rec.length >= n ? rec : rec.concat(newCharUnits(units, learned, prog, pack, n - rec.length));
   return pool.map(unit => ({ kind: pickWeighted(cfg.testKinds, rng), unit }));
+}
+
+// ------------------------------------------------------------------ script primer
+// Pack-gated (pack.script + pack/script.json, docs/SCRIPT_PRIMER.md, docs/PACK_SCHEMA.md
+// "Script primer"): one stage per pack.script.stages entry, before the first word level,
+// teaches a writing system symbol by symbol. A unit is one symbol (or a symbol in one
+// role); `st` names its stage and `set` its teaching set. Progress lives in prog.script =
+// {v, u:{[unitId]:{r,w,s}}, skipped, skip:{[stageKey]:bool}, choiceSeen, notice}; skipped
+// switches the whole primer off, skip one stage. Scoring writes prog.script.u only. Taught, done and mastered are derived from records, never stored. Without
+// pack.script every function here returns its empty value and nothing else changes.
+// Item keys are "x:" + unitId (the character stage uses "c:"). All pure and DOM-free.
+const SCRIPT_PROG_VERSION = 1;
+const SCRIPT_MASTERED = 3, SCRIPT_SETS_PER_SESSION = 2, REVIEW_SIZE_SCRIPT = 12;
+const SCRIPT_KINDS = ["symSound","soundSym","symType","compose","formFind","formMatch","wordRead","wordHear"];
+const SCRIPT_SOUND_KINDS = ["symSound","soundSym","symType"]; // never asked of a sound:false unit
+const SCRIPT_TEST_KINDS = { symSound:35, soundSym:25, wordRead:25, symType:15 };
+const ZWJ = "‍";
+// pack.script with defaults filled (known kinds only), or null when the pack has none.
+// stages: [{key, label}] with unique non-empty keys, in path order.
+function scriptConfig(pack){
+  const c = pack && pack.script;
+  if(!isObj(c)) return null;
+  const kinds = (k, d) => { const f = Array.isArray(k) ? k.filter(x => SCRIPT_KINDS.includes(x)) : []; return f.length ? [...new Set(f)] : d; };
+  const seen = new Set(); const stages = [];
+  (Array.isArray(c.stages) ? c.stages : []).forEach(st => {
+    if(!isObj(st) || typeof st.key !== "string" || !st.key || seen.has(st.key)) return;
+    seen.add(st.key); stages.push({ key: st.key, label: st.label != null && st.label !== "" ? String(st.label) : st.key });
+  });
+  return {
+    stages,
+    setsPerSession: Number.isInteger(c.setsPerSession) && c.setsPerSession > 0 ? c.setsPerSession : SCRIPT_SETS_PER_SESSION,
+    mastered: typeof c.mastered === "number" && c.mastered > 0 ? c.mastered : SCRIPT_MASTERED,
+    tts: c.tts !== false,
+    learnKinds: kinds(c.learnKinds, ["symSound","soundSym"]),
+    reviewKinds: kinds(c.reviewKinds, ["symSound","soundSym","wordRead"]),
+    testKinds: testKinds(c.testKinds, SCRIPT_KINDS, SCRIPT_TEST_KINDS),
+  };
+}
+
+// ---- progress (prog.script)
+function defaultScriptProg(){ return { v:SCRIPT_PROG_VERSION, u:{}, skipped:false, skip:{}, choiceSeen:false, notice:false }; }
+// Error string or null. Validated whenever present, pack or no pack; script.v is its own
+// version (any positive integer is kept, like chars.v).
+function validateScriptShape(sc){
+  if(!isObj(sc)) return "script must be an object";
+  if(sc.v !== undefined && !(Number.isInteger(sc.v) && sc.v >= 1)) return "script.v must be a positive integer";
+  if(sc.u !== undefined){ const e = validateRecMap(sc.u, "script.u", false); if(e) return e; }
+  for(const f of ["skipped","choiceSeen","notice"]) if(sc[f] !== undefined && typeof sc[f] !== "boolean") return `script.${f} must be a boolean`;
+  if(sc.skip !== undefined){
+    if(!isObj(sc.skip)) return "script.skip must be an object";
+    for(const k of Object.keys(sc.skip)) if(typeof sc.skip[k] !== "boolean") return `script.skip.${k} must be a boolean`;
+  }
+  return null;
+}
+const hasWordRecords = data => isObj(data) && isObj(data.w) && Object.keys(data.w).length > 0;
+// Missing fields filled from defaults; fields present are kept. Stored progress with a
+// word record and no script field predates the primer: that learner is already reading,
+// so the primer starts skipped (choice answered) with a one-time notice pending, instead
+// of sending them back before their next word set. Fresh progress starts unskipped.
+function normalizeScriptProg(sc, data){
+  if(isObj(sc)){ const out = Object.assign(defaultScriptProg(), sc); if(!isObj(out.u)) out.u = {}; if(!isObj(out.skip)) out.skip = {}; return out; }
+  const out = defaultScriptProg();
+  if(hasWordRecords(data)) Object.assign(out, { skipped:true, choiceSeen:true, notice:true });
+  return out;
+}
+function ensureScript(prog){
+  if(!isObj(prog.script)) prog.script = defaultScriptProg();
+  if(!isObj(prog.script.u)) prog.script.u = {};
+  if(!isObj(prog.script.skip)) prog.script.skip = {};
+  return prog.script;
+}
+function scriptRecs(prog){ return (prog && isObj(prog.script) && isObj(prog.script.u)) ? prog.script.u : {}; }
+// The whole primer is off (no key), or that stage is off (the primer, or the stage alone).
+function scriptSkipped(prog, key){
+  const sc = prog && isObj(prog.script) ? prog.script : null;
+  if(!sc) return false;
+  if(sc.skipped === true) return true;
+  return key != null && isObj(sc.skip) && sc.skip[key] === true;
+}
+// The reversible on/off switch (Progress): flips one flag only, the primer's or (with key)
+// one stage's. The path is re-derived from it; no record or set counter is touched.
+// Turning a stage on while the whole primer is off leaves the primer off. Turning the
+// primer or a stage on also clears the pending notice (the learner has found the switch),
+// so turning it off again does not bring the notice back.
+function setScriptSkipped(prog, skipped, key){
+  const sc = ensureScript(prog);
+  if(key == null) sc.skipped = !!skipped; else sc.skip[String(key)] = !!skipped;
+  if(!skipped) sc.notice = false;
+  return prog;
+}
+// The choice card's answer: learn (primer on) or skip (primer off).
+function answerScriptChoice(prog, learn){ const sc = ensureScript(prog); sc.choiceSeen = true; sc.skipped = !learn; return prog; }
+// The one-time "a primer is available" line for learners who predate it.
+function scriptNotice(pack, prog){ return !!scriptConfig(pack) && !!(prog && isObj(prog.script) && prog.script.notice === true); }
+function dismissScriptNotice(prog){ ensureScript(prog).notice = false; return prog; }
+// Scores one script item (writes prog.script.u only).
+function markScript(prog, unitId, ok){ return markRec(ensureScript(prog).u, unitId, ok, false); }
+function scriptMastered(rec, pack){ const cfg = scriptConfig(pack); return ((rec && rec.s) || 0) >= (cfg ? cfg.mastered : SCRIPT_MASTERED); }
+
+// ---- units, sets, stages
+// A stage's units: `set` order, then file order.
+function scriptStageUnits(key, units){
+  return (Array.isArray(units) ? units : []).map((u, i) => ({u, i})).filter(x => isObj(x.u) && x.u.st === key)
+    .sort((a, b) => ((+a.u.set || 0) - (+b.u.set || 0)) || (a.i - b.i)).map(x => x.u);
+}
+// [[unit]] grouped by `set`, ascending.
+function scriptSets(key, units){
+  const out = []; let cur = null, last;
+  scriptStageUnits(key, units).forEach(u => { if(!cur || u.set !== last){ cur = []; out.push(cur); last = u.set; } cur.push(u); });
+  return out;
+}
+// A set is taught once every unit in it has a record (the characters rule).
+function scriptSetTaught(set, prog){ const r = scriptRecs(prog); return (set || []).every(u => hasCharRec(r, u.id)); }
+// Up to n (default setsPerSession) first untaught sets of the stage: [{index, units, total}].
+function nextScriptSets(key, units, pack, prog, n){
+  const cfg = scriptConfig(pack); if(!cfg) return [];
+  const k = n == null ? cfg.setsPerSession : n;
+  const sets = scriptSets(key, units); const out = [];
+  for(let i=0; i<sets.length && out.length<k; i++) if(!scriptSetTaught(sets[i], prog)) out.push({ index:i, units:sets[i], total:sets.length });
+  return out;
+}
+// Script stages for this learner, in path order ([] when skipped or without pack.script):
+// {kind:"script", key, label, recorded, nunits, nsets, frac, done}. done = every unit
+// recorded, so a missed review never pulls the stage back into the path.
+// The primer runs only with a config AND its units: pack.script without script.js data
+// (absent or empty units) is the primer off everywhere, exactly the flag-off output.
+function scriptActive(pack, units){ return !!scriptConfig(pack) && Array.isArray(units) && units.length > 0; }
+function scriptStages(pack, units, prog){
+  const cfg = scriptConfig(pack); if(!cfg || !scriptActive(pack, units) || scriptSkipped(prog)) return [];
+  const recs = scriptRecs(prog);
+  return cfg.stages.filter(st => !scriptSkipped(prog, st.key)).map(st => {
+    const list = scriptStageUnits(st.key, units);
+    const rec = list.filter(u => hasCharRec(recs, u.id)).length;
+    return { kind:"script", key: st.key, label: st.label, recorded: rec, nunits: list.length,
+      nsets: scriptSets(st.key, units).length, frac: list.length ? rec/list.length : 1, done: rec >= list.length };
+  });
+}
+// Units with a script record, of a configured stage that is on: the pool Review and Test
+// draw from. Empty while the primer is skipped.
+function recordedScriptUnits(units, prog, pack){
+  const cfg = scriptConfig(pack);
+  if(!cfg || scriptSkipped(prog) || !Array.isArray(units) || !units.length) return [];
+  const recs = scriptRecs(prog); const keys = new Set(cfg.stages.filter(s => !scriptSkipped(prog, s.key)).map(s => s.key));
+  return units.filter(u => isObj(u) && keys.has(u.st) && hasCharRec(recs, u.id));
+}
+// Recorded units plus the set being taught: the distractor pool of a Learn item.
+function scriptPool(units, prog, set){
+  const recs = scriptRecs(prog); const cur = new Set((set || []).map(u => u.id));
+  return (Array.isArray(units) ? units : []).filter(u => isObj(u) && (cur.has(u.id) || hasCharRec(recs, u.id)));
+}
+// The choice card shows while it is unanswered, the primer is not switched off, and no
+// script record exists. Placement does not answer it (it tests words, not the script).
+function showScriptChoice(pack, units, prog){
+  const cfg = scriptConfig(pack); if(!cfg || !cfg.stages.length || !scriptActive(pack, units)) return false;
+  const sc = (prog && isObj(prog.script)) ? prog.script : {};
+  if(sc.choiceSeen === true || sc.skipped === true) return false;
+  const recs = scriptRecs(prog);
+  return !Object.keys(recs).some(id => hasCharRec(recs, id));
+}
+
+// ---- item kinds
+const hasEx = u => Array.isArray(u.ex) && u.ex.some(e => Array.isArray(e) && e[0] != null);
+// Whether a unit has the fields a kind needs (structure only; scriptItem's own check).
+function scriptKindShape(kind, unit){
+  if(!isObj(unit)) return false;
+  if(SCRIPT_SOUND_KINDS.includes(kind)) return unit.sound !== false && !!unit.roman;
+  if(kind === "compose") return Array.isArray(unit.syll) && unit.syll.some(s => isObj(s) && s.t && Array.isArray(s.parts) && s.parts.length);
+  if(kind === "formMatch") return unit.joins === "dual" || unit.joins === "right";
+  if(kind === "formFind" || kind === "wordRead" || kind === "wordHear") return hasEx(unit);
+  return false;
+}
+const SCRIPT_MIN_OPTIONS = 4;
+// Whether a unit can carry an item of this kind. ctx (optional) = {units (every script
+// unit), byId | words, tts}: with it, an option kind (all but symType) also needs at least
+// SCRIPT_MIN_OPTIONS distinct options when distractors may come from every unit, else it
+// does not fit and the pickers move on to another kind. Word kinds are counted only when
+// ctx has the words (byId/words); without them only the structure is checked, as it is
+// without ctx.
+function scriptKindFits(kind, unit, ctx){
+  if(!scriptKindShape(kind, unit)) return false;
+  if(!isObj(ctx) || !Array.isArray(ctx.units) || kind === "symType") return true;
+  const hasWords = !!(ctx.byId || ctx.words);
+  if(!hasWords && (kind === "formFind" || kind === "wordRead" || kind === "wordHear")) return true;
+  const it = scriptItem(kind, unit, { units: ctx.units, pool: ctx.units, byId: ctx.byId, words: ctx.words, tts: ctx.tts, rng: () => 0 });
+  return Array.isArray(it.options) && it.options.length >= SCRIPT_MIN_OPTIONS;
+}
+// The kind actually asked: wordHear is wordRead when the pack has no voice (tts false, or
+// ctx.tts false); null when the unit cannot carry it (scriptKindFits, with ctx).
+function scriptKindFor(kind, unit, cfg, ctx){
+  const k = kind === "wordHear" && ((cfg && !cfg.tts) || (isObj(ctx) && ctx.tts === false)) ? "wordRead" : kind;
+  return scriptKindFits(k, unit, ctx) ? k : null;
+}
+// One fitting kind from `kinds` at random; else the first fitting of wordRead, symSound,
+// formMatch; else null (the unit is left out).
+function pickScriptKind(kinds, unit, cfg, rng, ctx){
+  const fit = [...new Set((kinds || []).map(k => scriptKindFor(k, unit, cfg, ctx)).filter(Boolean))];
+  if(fit.length) return fit[Math.floor((rng || Math.random)() * fit.length)];
+  return ["wordRead","symSound","formMatch"].find(k => scriptKindFits(k, unit, ctx)) || null;
+}
+// A text's writing system: the Unicode script of its first letter that has one of these
+// (Hiragana and Katakana are two), or "" when none does. Compose distractors never cross it.
+const SCRIPT_FAMILIES = ["Hangul","Hiragana","Katakana","Han","Cyrillic","Greek","Arabic","Hebrew","Devanagari","Bengali","Gurmukhi","Gujarati","Tamil","Telugu","Kannada","Malayalam","Thai","Lao","Georgian","Armenian","Ethiopic","Latin"]
+  .map(n => [n, new RegExp(`\\p{Script=${n}}`, "u")]);
+function scriptFamily(text){
+  for(const ch of String(text || "")){ const f = SCRIPT_FAMILIES.find(([, re]) => re.test(ch)); if(f) return f[0]; }
+  return "";
+}
+
+// ---- options
+// The glyph an item shows: the last space-separated form of `t` (a teach card may show
+// "upper lower"; items use the lower form).
+function scriptGlyph(unit){ const p = String((unit && unit.t) || "").trim().split(/\s+/); return p[p.length - 1]; }
+// "Does this symbol occur in that text", the same rule as tools/validate_pack.py glyph_in
+// (which checks every ex word): lower case, compatibility decomposition (presentation forms
+// and composed syllables split into letters, آ = ا + madda, dakuten split off), and a
+// positional Hangul letter (initial U+1100.., medial U+1161.., final U+11A8..) keyed as
+// its compatibility letter, so the batchim ㄱ of 책 is the letter ㄱ. A match is a
+// contiguous run of keys.
+const HANGUL_POS_KEY = (() => {
+  const m = {}, put = (base, letters) => [...letters].forEach((c, i) => { m[String.fromCharCode(base + i)] = c; });
+  put(0x1100, "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ");
+  put(0x1161, "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ");
+  put(0x11A8, "ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ");
+  m["\u111A"] = "ㅀ"; m["\u1121"] = "ㅄ"; // ㅀ and ㅄ decompose to these (archaic) initials
+  return m;
+})();
+function scriptGlyphKeys(s){ return [...String(s == null ? "" : s).toLowerCase().normalize("NFKD")].map(ch => HANGUL_POS_KEY[ch] || ch); }
+function scriptGlyphIn(glyph, text){
+  const g = scriptGlyphKeys(glyph), t = scriptGlyphKeys(text);
+  if(!g.length) return false;
+  for(let i = 0; i + g.length <= t.length; i++) if(g.every((k, j) => t[i + j] === k)) return true;
+  return false;
+}
+// True when a word (its w or pron) contains any of the unit's glyphs (upper and lower).
+function scriptWordHas(unit, word){
+  const gs = String((unit && unit.t) || "").trim().split(/\s+/).filter(Boolean);
+  const texts = [word && word.w, word && word.pron].filter(t => typeof t === "string" && t);
+  return gs.some(g => texts.some(t => scriptGlyphIn(g, t)));
+}
+const scriptRomans = u => [u.roman, ...(Array.isArray(u.alt) ? u.alt : [])].map(normKey).filter(Boolean);
+// True when `cand` would be a second right answer to `unit`'s option item: the same glyph,
+// the same `say`, the same roman, or homophones by `alt` (each accepts the other's roman:
+// fa غ gh/q and ق q/gh). A one-way alt is a contrast to drill, not a second answer: ko ㄱ
+// accepts "k" (its final sound) yet ㄱ/ㅋ are offered against each other, likewise ru Е
+// (alt "e") and Э. Typed answers (symType) still accept roman + alt.
+function scriptSecondRight(unit, cand, kind){
+  if(cand.id === unit.id) return true;
+  if(normKey(scriptGlyph(cand)) === normKey(scriptGlyph(unit))) return true;
+  if(unit.say && cand.say && normKey(unit.say) === normKey(cand.say)) return true;
+  const ur = normKey(unit.roman), cr = normKey(cand.roman);
+  if(ur && ur === cr) return true;
+  return !!(ur && cr) && scriptRomans(unit).includes(cr) && scriptRomans(cand).includes(ur);
+}
+// Up to 3 distractor units for a symbol item. Candidates share the unit's stage (units of
+// two stages never mix), are never a second right answer (scriptSecondRight), and are
+// pairwise distinct in glyph and roman; sound kinds skip sound:false units. Preference
+// within `pool` (recorded units plus the current set): the unit's `confuse` list, same
+// group, same set, any. Then padding from all units of the stage: `confuse` first even
+// when untaught, then same group, then any, so a set-1 item still gets 4 options.
+function scriptOpts(unit, pool, all, kind, rng){
+  const every = Array.isArray(all) ? all : (Array.isArray(pool) ? pool : []);
+  const inPool = Array.isArray(pool) ? pool : every;
+  const sound = SCRIPT_SOUND_KINDS.includes(kind);
+  const ok = v => isObj(v) && v.st === unit.st && !!v.roman && !(sound && v.sound === false) && !scriptSecondRight(unit, v, kind);
+  const confuse = new Set(Array.isArray(unit.confuse) ? unit.confuse : []);
+  const sameGroup = v => unit.group != null && v.group === unit.group;
+  const cands = inPool.filter(ok), rest = every.filter(ok);
+  const tiers = [cands.filter(v => confuse.has(v.id)), cands.filter(sameGroup), cands.filter(v => v.set === unit.set), cands,
+    rest.filter(v => confuse.has(v.id)), rest.filter(sameGroup), rest];
+  const out = [], ids = new Set([unit.id]), usedG = new Set([normKey(scriptGlyph(unit))]), usedR = new Set([normKey(unit.roman)]);
+  for(const tier of tiers){
+    for(const v of shuffle(tier.slice(), rng)){
+      if(out.length >= 3) return out;
+      const g = normKey(scriptGlyph(v)), r = normKey(v.roman);
+      if(ids.has(v.id) || usedG.has(g) || usedR.has(r)) continue;
+      out.push(v); ids.add(v.id); usedG.add(g); usedR.add(r);
+    }
+  }
+  return out;
+}
+// symSound options: the distractors' romans.
+function scriptRomanOpts(unit, pool, all, rng){ return scriptOpts(unit, pool, all, "symSound", rng).map(v => String(v.roman)); }
+// A unit's example words that exist in the pack: [{id, w, roman, unitId}].
+function scriptExamples(unit, byId){
+  return (Array.isArray(unit && unit.ex) ? unit.ex : []).filter(e => Array.isArray(e) && byId[e[0]] && byId[e[0]].w)
+    .map(e => ({ id: e[0], w: String(byId[e[0]].w), roman: String(e[1] == null ? "" : e[1]), unitId: unit.id }));
+}
+function editDistance(a, b){
+  const x = [...String(a)], y = [...String(b)];
+  let prev = y.map((_, j) => j + 1); prev.unshift(0);
+  for(let i=1; i<=x.length; i++){
+    const cur = [i];
+    for(let j=1; j<=y.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (x[i-1] === y[j-1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[y.length];
+}
+// Up to 3 distractor words for a word item (ans = {id, w, roman}): example words of the
+// same stage's units in `pool` (taught), padded from `all`; never the answer's word or a
+// word with its roman, pairwise distinct in word and roman. Nearest first: edit distance
+// to the answer (a word differing in one symbol comes first), then same length.
+function scriptWordOpts(unit, ans, pool, all, byId, rng){
+  const every = Array.isArray(all) ? all : (Array.isArray(pool) ? pool : []);
+  const inPool = Array.isArray(pool) ? pool : every;
+  const b = byId || {}; const len = cpLen(ans.w);
+  const gather = list => list.filter(u => isObj(u) && u.st === unit.st).flatMap(u => scriptExamples(u, b))
+    .filter(e => e.id !== ans.id && normKey(e.w) !== normKey(ans.w) && e.roman && normKey(e.roman) !== normKey(ans.roman));
+  const rank = list => shuffle(list, rng).map((e, i) => ({ e, d: editDistance(e.w, ans.w), l: cpLen(e.w) === len ? 0 : 1, i }))
+    .sort((p, q) => (p.d - q.d) || (p.l - q.l) || (p.i - q.i)).map(o => o.e);
+  const out = [], usedW = new Set([normKey(ans.w)]), usedR = new Set([normKey(ans.roman)]);
+  for(const tier of [rank(gather(inPool)), rank(gather(every))]){
+    for(const e of tier){
+      if(out.length >= 3) return out;
+      if(usedW.has(normKey(e.w)) || usedR.has(normKey(e.roman))) continue;
+      out.push(e); usedW.add(normKey(e.w)); usedR.add(normKey(e.roman));
+    }
+  }
+  return out;
+}
+// Joined forms for formMatch: dual joiners have initial, medial and final; right joiners
+// only final. Unicode shaping draws them from the letter plus a zero-width joiner.
+function scriptJoinedForms(unit){
+  const L = scriptGlyph(unit);
+  if(unit && unit.joins === "dual") return [{ form:"init", t: L + ZWJ }, { form:"medi", t: ZWJ + L + ZWJ }, { form:"fina", t: ZWJ + L }];
+  if(unit && unit.joins === "right") return [{ form:"fina", t: ZWJ + L }];
+  return [];
+}
+// One drill item for a unit, DOM-free: {kind, key, unitId, show, hint, form, audio, say,
+// audioUrl, wordId, options, answer, accept, reveal}.
+//  - show: the stimulus text, or null for a sound-only stimulus.
+//  - audio: "before" (the stimulus), "after" (played on answering) or null. say is the
+//    TTS text, audioUrl a recorded clip that beats it; both null when audio is null.
+//  - options: shuffled strings including answer (null for symType, which checks typed
+//    input against accept).
+//  - reveal: {t, glyph, name, roman, note, word} for the answer screen (gloss lives on
+//    the word, never in the stimulus).
+// ctx: {units (all script units), pool (distractor pool; default units), words | byId,
+// tts (false: no usable voice, so soundSym shows the roman and wordHear becomes wordRead),
+// rng}. Throws on an unknown kind or a unit that cannot carry it.
+function scriptItem(kind, unit, ctx){
+  const c = ctx || {}; const r = c.rng || Math.random;
+  const all = Array.isArray(c.units) ? c.units : []; const pool = Array.isArray(c.pool) ? c.pool : all;
+  const byId = c.byId || Object.fromEntries((c.words || []).map(w => [w.id, w]));
+  const voice = c.tts !== false;
+  if(!SCRIPT_KINDS.includes(kind)) throw new Error(`unknown script item kind ${kind}`);
+  const k = kind === "wordHear" && !voice ? "wordRead" : kind;
+  if(!scriptKindShape(k, unit)) throw new Error(`script unit ${unit && unit.id} cannot carry a ${k} item`);
+  const glyph = scriptGlyph(unit), roman = String(unit.roman || "");
+  const unitSay = voice && unit.say ? String(unit.say) : null, unitUrl = unit.audio ? String(unit.audio) : null;
+  const unitAudio = !!(unitSay || unitUrl);
+  const exs = scriptExamples(unit, byId);
+  const pickEx = () => exs[Math.floor(r() * exs.length)];
+  const wordOf = e => { const w = byId[e.id] || {}; return { id: e.id, w: e.w, roman: e.roman, en: gloss(w) }; };
+  const reveal = { t: String(unit.t), glyph, name: unit.name != null ? String(unit.name) : "", roman, note: unit.note != null ? String(unit.note) : "", word: null };
+  const it = { kind: k, key: "x:" + unit.id, unitId: unit.id, show: null, hint: null, form: null, audio: null, say: null, audioUrl: null,
+    wordId: null, options: null, answer: null, accept: null, reveal };
+  const unitSound = when => { if(unitAudio){ it.audio = when; it.say = unitSay; it.audioUrl = unitUrl; } };
+  const wordSound = (when, e) => { if(voice){ it.audio = when; it.say = e.w; } };
+  let others = [];
+  if(k === "symSound"){ it.show = glyph; it.answer = roman; others = scriptRomanOpts(unit, pool, all, r); unitSound("after"); }
+  else if(k === "soundSym"){
+    it.answer = glyph; others = scriptOpts(unit, pool, all, k, r).map(scriptGlyph);
+    if(unitAudio) unitSound("before"); else it.show = roman;
+  }
+  else if(k === "symType"){ it.show = glyph; it.answer = roman; it.accept = [roman, ...(Array.isArray(unit.alt) ? unit.alt.map(String) : [])]; unitSound("after"); }
+  else if(k === "compose"){
+    const sy = unit.syll.filter(s => isObj(s) && s.t && Array.isArray(s.parts) && s.parts.length);
+    const s = sy[Math.floor(r() * sy.length)];
+    it.show = s.parts.map(String).join(" + "); it.answer = String(s.t);
+    reveal.roman = String(s.roman || ""); reveal.syll = { t: String(s.t), parts: s.parts.map(String), roman: String(s.roman || "") };
+    // Distractor syllables, widening scope: the same set, the same stage, then any stage
+    // written in the same script (hiragana and katakana never mix). Within a scope: taught
+    // (pool) sharing a part, taught, any sharing a part, any.
+    const parts = new Set(s.parts.map(String)), fam = scriptFamily(it.answer);
+    const scopes = [u => u.st === unit.st && u.set === unit.set, u => u.st === unit.st, () => true];
+    const cand = (list, sc) => list.filter(u => isObj(u) && Array.isArray(u.syll) && sc(u)).flatMap(u => u.syll)
+      .filter(x => isObj(x) && x.t && String(x.t) !== it.answer && scriptFamily(x.t) === fam && !(s.roman && x.roman && normKey(x.roman) === normKey(s.roman)));
+    const shares = x => Array.isArray(x.parts) && x.parts.some(p => parts.has(String(p)));
+    const used = new Set([it.answer]), usedR = new Set([normKey(s.roman || "")]);
+    for(const list of scopes.flatMap(sc => [cand(pool, sc).filter(shares), cand(pool, sc), cand(all, sc).filter(shares), cand(all, sc)])){
+      for(const x of shuffle(list.slice(), r)){ if(others.length >= 3) break; const xr = normKey(x.roman || ""); if(!used.has(String(x.t)) && !(xr && usedR.has(xr))){ used.add(String(x.t)); if(xr) usedR.add(xr); others.push(String(x.t)); } }
+    }
+    if(voice){ it.audio = "after"; it.say = it.answer; }
+  }
+  else if(k === "formFind"){
+    const e = pickEx(); it.show = glyph; it.hint = reveal.name || null; it.answer = e.w; it.wordId = e.id; reveal.word = wordOf(e);
+    const used = new Set([normKey(e.w)]);
+    const gather = list => list.filter(u => isObj(u) && u.st === unit.st).flatMap(u => scriptExamples(u, byId)).filter(x => !scriptWordHas(unit, byId[x.id]));
+    for(const list of [gather(pool), gather(all)]){
+      for(const x of shuffle(list, r)){ if(others.length >= 3) break; if(!used.has(normKey(x.w))){ used.add(normKey(x.w)); others.push(x.w); } }
+    }
+    wordSound("after", e);
+  }
+  else if(k === "formMatch"){
+    const fs = scriptJoinedForms(unit); const f = fs[Math.floor(r() * fs.length)];
+    it.show = f.t; it.form = f.form; it.answer = glyph; others = scriptOpts(unit, pool, all, k, r).map(scriptGlyph);
+  }
+  else if(k === "wordRead"){
+    const e = pickEx(); it.show = e.w; it.answer = e.roman; it.wordId = e.id; reveal.word = wordOf(e);
+    others = scriptWordOpts(unit, e, pool, all, byId, r).map(x => x.roman); wordSound("after", e);
+  }
+  else if(k === "wordHear"){
+    const e = pickEx(); it.answer = e.w; it.wordId = e.id; reveal.word = wordOf(e);
+    others = scriptWordOpts(unit, e, pool, all, byId, r).map(x => x.w); wordSound("before", e);
+  }
+  if(k !== "symType") it.options = shuffle([it.answer, ...others], r);
+  return it;
+}
+
+// ---- plans
+// Learn step for a script set: per unit one item per pack learnKind that fits it. A
+// sound:false unit gets wordRead in place of the sound kinds; compose needs `syll`. A unit
+// no learnKind fits gets its first fitting kind, so every unit of the set is asked.
+// ctx (optional): as scriptKindFits; with it, a kind that cannot get 4 options is skipped.
+function learnScriptPlan(set, pack, ctx){
+  const cfg = scriptConfig(pack); if(!cfg) return [];
+  const out = [];
+  (set || []).forEach(unit => {
+    const seen = new Set();
+    cfg.learnKinds.forEach(k0 => {
+      let k = scriptKindFor(k0, unit, cfg, ctx);
+      if(!k && SCRIPT_SOUND_KINDS.includes(k0) && isObj(unit) && unit.sound === false) k = scriptKindFits("wordRead", unit, ctx) ? "wordRead" : null;
+      if(k && !seen.has(k)){ seen.add(k); out.push({ kind: k, unit }); }
+    });
+    if(!seen.size){ const k = pickScriptKind(SCRIPT_KINDS, unit, cfg, () => 0, ctx); if(k) out.push({ kind: k, unit }); }
+  });
+  return out;
+}
+// Review weakness score, the characters rule with pack.script.mastered: an unmastered
+// unit scores at least 0; mastered units keep w*3 - s and sink.
+function scriptReviewScore(rec, pack){
+  const cfg = scriptConfig(pack); const p = rec || {}; const sc = weakScore(p);
+  return (p.s || 0) < (cfg ? cfg.mastered : SCRIPT_MASTERED) ? Math.max(sc, 0) : sc;
+}
+// Test tab's script practice: the n weakest recorded units, each with a kind drawn from
+// pack.script.testKinds among the kinds that fit it. [{kind, unit}]. ctx (optional): as
+// scriptKindFits; its units default to `units`, so option kinds are always counted.
+function scriptTestPlan(units, prog, pack, n, rng, ctx){
+  const cfg = scriptConfig(pack); if(!cfg) return [];
+  const kctx = Object.assign({ units }, ctx || {});
+  const rec = weakFirst(recordedScriptUnits(units, prog, pack), n, scriptRecs(prog), undefined, rng);
+  const out = [];
+  rec.forEach(unit => {
+    const w = {}; Object.keys(cfg.testKinds).forEach(k => { const f = scriptKindFor(k, unit, cfg, kctx); if(f) w[f] = (w[f] || 0) + cfg.testKinds[k]; });
+    const kind = Object.keys(w).length ? pickWeighted(w, rng) : pickScriptKind(cfg.reviewKinds, unit, cfg, rng, kctx);
+    if(kind) out.push({ kind, unit });
+  });
+  return out;
 }
 
 // ------------------------------------------------------------------ pronunciation aids
@@ -2077,12 +2636,15 @@ function joinReadings(a, b, pack){
 }
 // The reading of a tap span whose text may be longer than its word (越来越 for 越, 一下 for
 // 下). Returns pieces [{start, end, reading}] covering text in order, offsets relative to
-// text: each occurrence of the word's written form gets word.pron, every other character
-// readingOf(char) (e.g. its single-character unit's reading), and a character with no
-// reading gets reading "" (shown written). Adjacent read pieces are merged with
-// joinReadings, as are adjacent written ones. No character is ever dropped.
+// text: each occurrence of the word's written form gets word.pron. Every other character
+// gets readingOf(char) (e.g. its single-character unit's reading) only when the pack opts
+// in with pack.characters.compose (a character reads the same in every word, as each
+// character unit has one reading); otherwise, and for a character with no reading, it gets
+// reading "" (shown written): a reading is never guessed. Adjacent read pieces are merged
+// with joinReadings, as are adjacent written ones. No character is ever dropped.
 function composeSpanReading(text, word, readingOf, pack){
   const t = String(text == null ? "" : text); const w = String((word && word.w) || ""); const wp = String((word && word.pron) || "");
+  const cfg = charsConfig(pack); if(!(cfg && cfg.compose)) readingOf = null;
   const raw = []; let i = 0;
   while(i < t.length){
     if(w && wp && t.startsWith(w, i)){ raw.push({ start: i, end: i + w.length, reading: wp }); i += w.length; continue; }
@@ -2228,7 +2790,7 @@ function migrateLegacy(pack, legacyMap, oldRecord){
 // ------------------------------------------------------------------ export
 const API = { shuffle, escapeHtml, gloss, firstTwoWords, normKey,
   levelIds, levelIndexMap, levelLabel, setSizeOf, wordsByLevel, nSets,
-  meaningOpts, wordOpts, gapOpts, sentenceOpts, bareForm, packArticles, articleCut, trailingCut, citationArticles, articleAgreement, visibleArticle, gapChoices, exampleSentences, highlightParts, searchWords, pronShown, audioSlot, TEST_MIN_WORDS,
+  meaningOpts, wordOpts, gapOpts, sentenceOpts, bareForm, packArticles, articleCut, trailingCut, citationArticles, articleAgreement, visibleArticle, gapChoices, exampleSentences, unitExampleSentences, rubyCovers, highlightParts, searchWords, pronShown, audioSlot, TEST_MIN_WORDS,
   targetLang, fontFamilyOf, lineHeightOf, fontsHref, scriptDisplay,
   foldAccents, normalizeTyped, typingEnabled, typingLenientFor, acceptTyped,
   surfaces, sharesSurface, samePron,
@@ -2246,6 +2808,11 @@ const API = { shuffle, escapeHtml, gloss, firstTwoWords, normKey,
   charStageUnits, charSets, charSetTaught, nextCharSet, charStages, stagePath, nextStage, charsUnlocked, charsStarted, showCharChoice,
   charTier, sentenceTokenTier, rubyTiers, pronFirstOn, displayForm, pronClash, sentencePieces, sentenceDisplay, charOpts, recallCharOpts, charSoundOpts, charReadOpts, charItem,
   learnCharPlan, charReviewScore, rankUnified, unifiedReviewPlan, unifiedRecallPlan, todaySnapshot, newCharUnits, charTestPlan, pickWeighted,
+  SCRIPT_PROG_VERSION, SCRIPT_MASTERED, SCRIPT_SETS_PER_SESSION, REVIEW_SIZE_SCRIPT, SCRIPT_KINDS, scriptConfig,
+  defaultScriptProg, validateScriptShape, normalizeScriptProg, ensureScript, scriptRecs, scriptSkipped, setScriptSkipped, answerScriptChoice,
+  scriptNotice, dismissScriptNotice, markScript, scriptMastered, scriptStageUnits, scriptSets, scriptSetTaught, nextScriptSets, scriptStages,
+  recordedScriptUnits, scriptActive, scriptPool, showScriptChoice, scriptKindShape, scriptKindFits, scriptKindFor, pickScriptKind, scriptFamily, SCRIPT_MIN_OPTIONS, scriptGlyph, scriptGlyphKeys, scriptGlyphIn, scriptWordHas, scriptSecondRight,
+  scriptOpts, scriptRomanOpts, scriptExamples, scriptWordOpts, scriptJoinedForms, scriptItem, learnScriptPlan, scriptReviewScore, scriptTestPlan,
   tonesOn, stripMarks, syllableTone, markSyllable, splitSyllable, splitReading, toneHTML, pronTypingOn, pronKey, numberedForms, checkPronTyped, joinReadings, composeSpanReading, spanReadingText,
   LEGACY_DROPPED, legacyBackupKey, isLegacyRecord, migrateLegacy };
 if(typeof module!=="undefined" && module.exports) module.exports = API;
@@ -2278,6 +2845,37 @@ const SIZE = VC.setSizeOf(PACK);
 const BY_LV = VC.wordsByLevel(WORDS, PACK);
 const WORDS_BY_ID = {}; WORDS.forEach(w=>{ WORDS_BY_ID[w.id] = w; });
 const CHAR_CTX = { units: CHAR_LIST, words: WORDS, byId: WORDS_BY_ID }; // VC.charItem context
+// SCRIPT is optional too (script.js, packs with pack.script): the script primer's
+// {units, notes} (docs/SCRIPT_PRIMER.md). Every primer surface (path stages, choice card,
+// script Learn, script items in Review, Script tab, Progress chips, the existing-learner
+// notice) is gated on HAS_SCRIPT; without it each code path is the pre-primer one, and SU
+// (the optional trailing `sunits` of the core path functions) stays undefined.
+const SCRIPT_DATA = (typeof SCRIPT !== "undefined" && SCRIPT && typeof SCRIPT === "object" && Array.isArray(SCRIPT.units)) ? SCRIPT : null;
+const HAS_SCRIPT = VC.scriptConfig(PACK) !== null && !!SCRIPT_DATA && SCRIPT_DATA.units.length > 0;
+const SCFG = HAS_SCRIPT ? VC.scriptConfig(PACK) : null;
+// pack.script without its data (no script.js, or no units): the primer is off everywhere
+// (SU undefined, so core returns the flag-off path/snapshot), with one console warning.
+if(VC.scriptConfig(PACK) !== null && !HAS_SCRIPT) console.warn("pack.script is set but script.js has no units: the script primer is off");
+const SUNITS = HAS_SCRIPT ? SCRIPT_DATA.units : [];
+const SNOTES = HAS_SCRIPT && Array.isArray(SCRIPT_DATA.notes) ? SCRIPT_DATA.notes : [];
+const SU = HAS_SCRIPT ? SUNITS : undefined;
+const SUNIT_BY_ID = {}; SUNITS.forEach(u => { if(u && u.id) SUNIT_BY_ID[u.id] = u; });
+// The words as the primer shows them. A word whose written form uses letters outside the
+// primer's inventory (a logographic word) while its `pron` is written in the script is
+// shown by its `pron`: the primer teaches reading the script, so an example word never
+// asks for a symbol it does not teach. A Latin `pron` (fa) never replaces the word.
+const SCRIPT_BYID = (() => {
+  if(!HAS_SCRIPT) return WORDS_BY_ID;
+  const fold = s => String(s || "").normalize("NFKD").toLowerCase();
+  const inv = new Set();
+  SUNITS.forEach(u => { [String(u.t || ""), ...(Array.isArray(u.syll) ? u.syll.map(s => String((s && s.t) || "")) : [])].forEach(t => [...fold(t)].forEach(ch => { if(/\p{L}/u.test(ch)) inv.add(ch); })); });
+  const letters = s => [...fold(s)].filter(ch => /\p{L}/u.test(ch));
+  const inScript = s => { const l = letters(s); return l.length > 0 && l.every(ch => inv.has(ch)); };
+  const out = Object.assign({}, WORDS_BY_ID);
+  const ids = new Set(); SUNITS.forEach(u => (Array.isArray(u.ex) ? u.ex : []).forEach(e => { if(Array.isArray(e)) ids.add(e[0]); }));
+  ids.forEach(id => { const w = WORDS_BY_ID[id]; if(w && typeof w.pron === "string" && w.pron && !inScript(w.w) && inScript(w.pron)) out[id] = Object.assign({}, w, { w: w.pron }); });
+  return out;
+})();
 // LEGACY is optional too (legacy.js, packs with pack.legacy): the predecessor app's key maps
 // VC.migrateLegacy reads. Without both, no boot migration and no legacy import ever runs.
 const LEGACY_MAP = (typeof LEGACY !== "undefined" && LEGACY && typeof LEGACY === "object") ? LEGACY : null;
@@ -2289,13 +2887,13 @@ document.title = PACK.name;
 // Target-language markup (pack.rtl / langTag / fontFamily / fonts / lineHeight). TA goes on
 // every element holding target text; tw() wraps inline target text in an isolating <bdi>
 // so it never reorders the English/number text around it.
-const SCRIPT = VC.scriptDisplay(PACK);
-const TA = ` data-tl lang="${escapeHtml(SCRIPT.lang)}"${SCRIPT.rtl ? ' dir="rtl"' : ""}`;
+const DISP = VC.scriptDisplay(PACK);
+const TA = ` data-tl lang="${escapeHtml(DISP.lang)}"${DISP.rtl ? ' dir="rtl"' : ""}`;
 const tw = s => `<bdi${TA}>${escapeHtml(s)}</bdi>`;
 (function(){
   const r = document.documentElement;
-  if(SCRIPT.fontFamily) r.style.setProperty("--wfont", `${SCRIPT.fontFamily}, var(--wbase)`);
-  if(SCRIPT.lineHeight){ r.style.setProperty("--tlh", String(SCRIPT.lineHeight)); r.setAttribute("data-tlh", ""); }
+  if(DISP.fontFamily) r.style.setProperty("--wfont", `${DISP.fontFamily}, var(--wbase)`);
+  if(DISP.lineHeight){ r.style.setProperty("--tlh", String(DISP.lineHeight)); r.setAttribute("data-tlh", ""); }
   // Google Fonts is the only external resource allowed; VC.fontsHref only ever builds a
   // fonts.googleapis.com URL from validated family names.
   const fh = VC.fontsHref(PACK);
@@ -2492,7 +3090,8 @@ const twReading = s => TONES ? `<bdi${TA}>${VC.toneHTML(s)}</bdi>` : tw(s); // t
 // pack.typing "pron": the production slot types the word's reading (pronTypeItem).
 const PRON_TYPING = VC.pronTypingOn(PACK);
 // Reading of one written character (a single-character unit's reading), for tap spans
-// longer than their word (VC.composeSpanReading). First unit in file order wins.
+// longer than their word (VC.composeSpanReading, used only with pack.characters.compose).
+// First unit in file order wins.
 const CHAR_READING = new Map();
 CHAR_LIST.forEach(u => { const t = String((u && u.t) || ""); if([...t].length === 1 && !CHAR_READING.has(t)){ const r = VC.unitReading(u, WORDS_BY_ID); if(r) CHAR_READING.set(t, r); } });
 const charReading = c => CHAR_READING.get(c) || "";
@@ -2514,7 +3113,9 @@ function wordOptHtml(byKey, written){
 // item: {kind:'mc'|'type', label, html, opts?, a?, optHtml?, reveal, onAnswer?, mount?, check?, onReveal?}
 // type items may add: placeholder (input hint), inputTA (input attributes instead of TA),
 // feedback(value) (extra reveal HTML after the answer, e.g. a partial-credit note).
-function drill(items, onDone, summary){ D = { q: shuffle(items.slice()), right:0, seen:0, miss:[], onDone, summary }; dnext(); }
+// onShown (optional): called once the end screen is up, to wire extra buttons in it (the
+// script Learn step's "One more set").
+function drill(items, onDone, summary, onShown){ D = { q: shuffle(items.slice()), right:0, seen:0, miss:[], onDone, summary, onShown }; dnext(); }
 function setScore(answered, total){
   const left = total ? Math.max(0, total - answered) : 0;
   $("score").textContent = (total && left > 0) ? `${left} left` : "";
@@ -2530,6 +3131,36 @@ function announce(html){
   tmp.querySelectorAll("[data-showw]").forEach(x => x.remove()); // the show-written button's label is not content
   el.textContent = tmp.textContent || "";
 }
+// Show the Next button after an answer and scroll it into view when a long reveal pushed
+// it under the fixed tab bar (html scroll-padding-bottom = bar height + gap; "nearest"
+// leaves the page still when it is already clear). Every drill/Read reveal goes through here.
+function showNext(){
+  const nx = $("nx"); nx.style.display = "block";
+  if(typeof nx.scrollIntoView === "function") nx.scrollIntoView({ block: "nearest" });
+}
+// Content that opens away from where the learner tapped (a teach card above the chart, a
+// box below the last button) can open off-screen. bringIntoView scrolls it into the part of
+// the viewport the tab bar does not cover, only when it is not fully visible there (smooth,
+// instant under prefers-reduced-motion); a taller-than-view element is aligned to its top.
+// focus: move keyboard focus onto it (tabindex -1: focusable, not a tab stop).
+const reducedMotion = () => !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+function bringIntoView(el, focus){
+  const tb = $("tabs");
+  if(!el || typeof el.getBoundingClientRect !== "function" || !tb || typeof tb.getBoundingClientRect !== "function") return;
+  const r = el.getBoundingClientRect(), bar = tb.getBoundingClientRect();
+  const limit = Math.min(innerHeight, bar.height ? bar.top : innerHeight);
+  if((r.top < 0 || r.bottom > limit) && typeof el.scrollIntoView === "function")
+    el.scrollIntoView({ block: r.height > limit ? "start" : "nearest", behavior: reducedMotion() ? "auto" : "smooth" });
+  if(focus){ if(!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true }); }
+}
+// A new screen replacing #panel's content opens at its top: when the old screen was scrolled
+// down (a long list, a long reveal), the page stays where it was otherwise and the new screen
+// starts above the viewport. Called by every screen entry (tab switch, drill item, lesson,
+// set, passage); not by in-place re-renders (settings toggles on Progress keep their place).
+function screenTop(){
+  const p = $("panel");
+  if(p && typeof p.getBoundingClientRect === "function" && typeof scrollTo === "function" && p.getBoundingClientRect().top < 0) scrollTo(0, 0);
+}
 function showReveal(html){
   const rv = $("rv"); if(!rv) return;
   rv.innerHTML = html;
@@ -2541,14 +3172,17 @@ function dnext(){
   if(!D) return;
   const P = $("panel");
   if(!D.q.length){
-    const { right, seen, miss, onDone, summary } = D;
+    const { right, seen, miss, onDone, summary, onShown } = D;
     setScore(0, 0);
+    screenTop();
     P.innerHTML = `<div class="done"><h2>${right} / ${seen}</h2>${summary ? summary(miss) : ""}<button class="next" id="ok">Continue</button></div>`;
     D = null; drillKeyHandler = null;
     $("ok").onclick = onDone;
+    if(onShown) onShown();
     return;
   }
   setScore(D.seen, D.seen + D.q.length);
+  screenTop();
   const it = D.q.shift();
   if(it.kind === "type") renderTypeItem(it); else renderMcItem(it);
 }
@@ -2562,7 +3196,7 @@ function renderMcItem(it){
   opts.forEach((o,i)=>{
     const b = document.createElement("button");
     b.innerHTML = `<b class="num">${i+1}</b>${it.optHtml ? it.optHtml(o) : escapeHtml(o)}`;
-    if(it.optsT && SCRIPT.rtl) b.dir = "rtl"; // options are target-language words
+    if(it.optsT && DISP.rtl) b.dir = "rtl"; // options are target-language words
     b.onclick = () => {
       if(answered) return; answered = true;
       [...container.children].forEach(x=>{ x.disabled = true; if(x.dataset.v === it.a) x.classList.add("ok"); });
@@ -2572,7 +3206,7 @@ function renderMcItem(it){
       if(it.onAnswer) it.onAnswer(ok);
       showReveal(it.reveal || "");
       if(it.onReveal) it.onReveal();
-      $("nx").style.display = "block"; setScore(D.seen, D.seen + D.q.length);
+      showNext(); setScore(D.seen, D.seen + D.q.length);
     };
     b.dataset.v = o;
     container.appendChild(b);
@@ -2589,7 +3223,7 @@ function renderMcItem(it){
 function renderTypeItem(it){
   const P = $("panel");
   P.innerHTML = `<div class="drill-body"><p class="q">${escapeHtml(it.label)}</p>${noticeFor(it)}${it.html||""}
-    <input type="text" id="tin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"${it.inputTA !== undefined ? it.inputTA : TA} placeholder="${escapeHtml(it.placeholder || (SCRIPT.rtl ? "type the word" : "type the word…"))}">
+    <input type="text" id="tin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"${it.inputTA !== undefined ? it.inputTA : TA} placeholder="${escapeHtml(it.placeholder || (DISP.rtl ? "type the word" : "type the word…"))}">
     <div class="reveal" id="rv"></div></div><div class="actions"><button class="next" id="submit">Check</button><button class="next" id="nx" style="display:none">Next</button></div>`;
   if(it.mount) it.mount();
   const input = $("tin"); input.focus();
@@ -2602,7 +3236,7 @@ function renderTypeItem(it){
     if(it.onAnswer) it.onAnswer(ok);
     showReveal((ok ? "" : `<div class="diff">you typed: ${escapeHtml(input.value)}</div>`) + (it.feedback ? it.feedback(input.value) : "") + (it.reveal||""));
     if(it.onReveal) it.onReveal();
-    $("nx").style.display = "block"; setScore(D.seen, D.seen + D.q.length);
+    showNext(); setScore(D.seen, D.seen + D.q.length);
   }
   $("submit").onclick = submit;
   $("nx").onclick = dnext;
@@ -2618,9 +3252,12 @@ function renderTypeItem(it){
 // A key on a show-written button (pack.pronFirst) is the button's own (Enter/Space reveal
 // the written form); it never reaches the drill's shortcuts (Enter = Next, 1-4 = answer).
 const onShowWritten = e => !!(e && e.target && e.target.closest && e.target.closest("[data-showw]"));
-// Enter/Space on a focused word tap are the tap's own; Escape still reaches the drill (after
-// the panel listener below has dismissed the popover).
-document.addEventListener("keydown", e => { if(drillKeyHandler && !onShowWritten(e) && !(onTok(e) && e.key !== "Escape")) drillKeyHandler(e); });
+// Enter/Space on a focused word tap are the tap's own. Escape is the tap's own only when it
+// closed an open popover or cleared a highlight (the panel listener below marks that event,
+// tokEscEaten); otherwise it reaches the drill as usual (quit).
+let tokEscEaten = null;
+const tokOwns = e => onTok(e) && (e.key !== "Escape" || e === tokEscEaten);
+document.addEventListener("keydown", e => { if(drillKeyHandler && !onShowWritten(e) && !tokOwns(e)) drillKeyHandler(e); });
 function quitDrill(){ D = null; drillKeyHandler = null; render(); }
 
 // ---- word taps inside sentences (any pack whose sentences carry ruby, or pronFirst
@@ -2653,30 +3290,40 @@ function tokTap(t){
     box.querySelectorAll(".tk.on").forEach(x => x.classList.remove("on"));
     t.classList.add("on");
     let g = box.querySelector(".tokgloss");
-    if(!g){ g = document.createElement("div"); g.className = "gloss tokgloss"; if(SCRIPT.rtl) g.setAttribute("dir", "rtl"); box.appendChild(g); }
+    if(!g){ g = document.createElement("div"); g.className = "gloss tokgloss"; if(DISP.rtl) g.setAttribute("dir", "rtl"); box.appendChild(g); }
     g.innerHTML = html; g.hidden = false;
+    bringIntoView(g); // appended below the sentence: a tap on its last line can open it under the tab bar
   }
   announce(html);
   say(head ? head.surface : w.w);
 }
-// Hides the popover of the tap's data-tokbox and clears its highlight.
+// Hides the popover of the tap's data-tokbox and clears its highlight; true when there was
+// something to close (an open popover or a highlighted token).
 function tokDismiss(t){
-  const box = t.closest("[data-tokbox]"); if(!box) return;
-  box.querySelectorAll(".tk.on").forEach(x => x.classList.remove("on"));
-  const g = box.querySelector(".tokgloss"); if(g) g.hidden = true;
+  const box = t.closest("[data-tokbox]"); if(!box) return false;
+  const on = box.querySelectorAll(".tk.on"); const g = box.querySelector(".tokgloss");
+  const open = on.length > 0 || !!(g && !g.hidden);
+  on.forEach(x => x.classList.remove("on"));
+  if(g) g.hidden = true;
+  return open;
 }
 const onTok = e => !!(e && e.target && e.target.closest && e.target.closest("[data-tok]"));
 
 // Tap-to-hear for markup anywhere in #panel: data-sent (a SENTENCES index) speaks that
-// sentence, data-wid (a word id) speaks that word, data-tok (tokTap) shows a word's popover. INVARIANT: this is the only listener
+// sentence, data-wid (a word id) speaks that word, data-tok (tokTap) shows a word's popover,
+// data-xs/data-xw (pack.script) a script unit's sound / a primer example word. INVARIANT: this is the only listener
 // for these attributes and it is attached exactly once, here, at load. #panel is
 // persistent (screens replace its innerHTML), so attaching per render/reveal/drill-end
 // would accumulate one more listener each time (N taps -> N sounds). Render code just
 // emits the attributes and never wires them.
 $("panel").addEventListener("click", e => {
-  const t = e.target.closest("[data-tok],[data-sent],[data-wid]");
+  const t = e.target.closest(HAS_SCRIPT ? "[data-tok],[data-sent],[data-wid],[data-xs],[data-xw]" : "[data-tok],[data-sent],[data-wid]");
   if(!t) return;
   if(t.dataset.tok !== undefined){ tokTap(t); return; }
+  // pack.script: data-xs a unit's own sound (data-xopen, a Script-tab chart cell, also
+  // shows that unit's teach card), data-xw an example word as the primer shows it.
+  if(t.dataset.xs !== undefined){ const u = SUNIT_BY_ID[t.dataset.xs]; if(!u) return; if(t.dataset.xopen !== undefined) scriptOpenCard(u, e); sayUnitSound(u, t); return; }
+  if(t.dataset.xw !== undefined){ const w = SCRIPT_BYID[t.dataset.xw]; if(w && scriptVoice()) speak(w.w); return; }
   if(t.dataset.wid !== undefined){ const w = WORDS_BY_ID[t.dataset.wid]; if(w) say(w.w); return; }
   const s = SENTENCES[+t.dataset.sent]; if(s) saySentence(s);
 });
@@ -2684,7 +3331,7 @@ $("panel").addEventListener("click", e => {
 $("panel").addEventListener("keydown", e => {
   const t = e.target && e.target.closest ? e.target.closest("[data-tok]") : null;
   if(t && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); tokTap(t); }
-  else if(t && e.key === "Escape") tokDismiss(t); // then the drill's own Escape runs as before
+  else if(t && e.key === "Escape" && tokDismiss(t)){ tokEscEaten = e; e.preventDefault(); } // consumed: the drill never sees it
 });
 
 // pack.pronFirst "show written form" tap: capture phase, so it runs before (and stops) the
@@ -2693,7 +3340,7 @@ $("panel").addEventListener("keydown", e => {
 // the focus too (tabindex -1: focusable, not a tab stop), so focus never drops to body.
 function revealWritten(b){
   const sp = document.createElement("span");
-  sp.className = "wwr"; sp.setAttribute("data-tl", ""); sp.setAttribute("lang", SCRIPT.lang); if(SCRIPT.rtl) sp.setAttribute("dir", "rtl");
+  sp.className = "wwr"; sp.setAttribute("data-tl", ""); sp.setAttribute("lang", DISP.lang); if(DISP.rtl) sp.setAttribute("dir", "rtl");
   sp.setAttribute("tabindex", "-1"); sp.textContent = b.dataset.showw || "";
   const had = document.activeElement === b;
   b.replaceWith("\u2009", sp); // a thin space: reading and written form never run together, in text too
@@ -2717,7 +3364,7 @@ function highlightHTML(s, entry){
 // ruby). Non-null replaces the sentence's pron line.
 function sentenceRuby(s){
   if(!HAS_CHARACTERS || !s || !Array.isArray(s.ruby) || (!showPron() && !PRON_FIRST)) return null;
-  return VC.rubyTiers(s, CHAR_LIST, prog, PACK, VC.charsStarted(PACK, WORDS, CHAR_LIST, prog));
+  return VC.rubyTiers(s, CHAR_LIST, prog, PACK, VC.charsStarted(PACK, WORDS, CHAR_LIST, prog, SU));
 }
 // One ruby token (base: escaped written form). Below the bare tier <ruby>t<rt>reading</rt></ruby>;
 // at or above it the same markup with class "bare", whose <rt> is visibility:hidden (CSS
@@ -2765,7 +3412,7 @@ function rubyTextHTML(s, toks, entry, taps){
 // result's `taps` says whether any was made.
 function pfSentence(s, entry, blank, written, taps){
   if(!PRON_FIRST) return null;
-  const d = VC.sentenceDisplay(s, CHAR_LIST, prog, PACK, VC.charsStarted(PACK, WORDS, CHAR_LIST, prog), blank, written);
+  const d = VC.sentenceDisplay(s, CHAR_LIST, prog, PACK, VC.charsStarted(PACK, WORDS, CHAR_LIST, prog, SU), blank, written);
   if(d === null) return blank ? false : null;
   if(d.mode === "text") return null;
   if(d.mode === "pron") return { html: readingHTML(d.text), ruby: false, written: String(s.t || ""), taps: false };
@@ -2968,8 +3615,97 @@ function charDrillItem(kind, unit){
   }
   return Object.assign(base, formOpts, { label:"How is it written?", html: `<div class="med" style="text-align:center">${escapeHtml(it.gloss)}</div>` });
 }
-// Plan entries are {kind, word} or, from the unified plans, {kind, unit}.
-const planItem = p => p.unit ? charDrillItem(p.kind, p.unit) : itemFromPlan(p);
+// ===================== script primer items =====================
+// One renderer per VC.scriptItem kind (pack.script only, docs/SCRIPT_PRIMER.md §2). The
+// stimulus is the item's `show` (or a speaker for audio "before"); options are glyphs in
+// a 2x2 grid, or romans/words in a list. audio "after" plays on answering. Scoring writes
+// prog.script.u only (markScript). No voice (pack.script.tts false, or no browser voice):
+// ctx.tts false, so soundSym shows the roman and wordHear becomes wordRead (core.js).
+const scriptVoice = () => !!SCFG && SCFG.tts !== false && hasSpeech;
+const scriptCtx = set => ({ units: SUNITS, pool: VC.scriptPool(SUNITS, prog, set), byId: SCRIPT_BYID, tts: scriptVoice() });
+// Kind-picking context for the core plans (VC.scriptKindFits): a kind that cannot get 4
+// options from every unit is never picked. undefined without pack.script.
+const scriptKindCtx = () => HAS_SCRIPT ? { units: SUNITS, byId: SCRIPT_BYID, tts: scriptVoice() } : undefined;
+function markScriptRec(unitId, ok){ VC.markScript(prog, unitId, ok); store.save(); } // prog.script.u only
+const sayScript = (it, btn) => speak(it.say || "", btn, it.audioUrl || undefined);
+// A unit's own sound: its recorded clip, else its `say` when the pack has a voice.
+const unitHasSound = u => !!(u && (u.audio || (scriptVoice() && u.say)));
+const sayUnitSound = (u, btn) => { if(u.audio) speak("", btn, String(u.audio)); else if(scriptVoice() && u.say) speak(String(u.say), btn); };
+const FORM_LABEL = { isol:"isolated", init:"initial", medi:"medial", fina:"final" };
+function scriptRevealBlock(it){
+  const r = it.reveal;
+  // A composed syllable is mixed text (parts, "+", "="): each target piece is isolated by tw().
+  const head = r.syll ? `<div class="rw xrs">${r.syll.parts.map(p => tw(p)).join(" + ")} = ${tw(r.syll.t)}</div>` : `<div class="rw"${TA}>${escapeHtml(r.t)}</div>`;
+  const w = r.word;
+  const wordTap = w && scriptVoice();
+  return `<div>${head}<div>${r.name ? `${tw(r.name)} · ` : ""}<b>${escapeHtml(r.roman)}</b></div>${r.note ? `<div style="color:var(--mute)">${escapeHtml(r.note)}</div>` : ""}${w ? `<div class="xrword"${wordTap ? ` data-xw="${escapeHtml(w.id)}" style="cursor:pointer"` : ""}><div class="rw"${TA}>${escapeHtml(w.w)}${wordTap ? ` <span style="color:var(--mute);vertical-align:middle">${TEACH_PLAY_SVG}</span>` : ""}</div><div class="rp">${escapeHtml(w.roman)}</div><div style="color:var(--mute)">${escapeHtml(w.en || "")}</div></div>` : ""}</div>`;
+}
+function scriptDrillItem(kind, unit, ctx){
+  const it = VC.scriptItem(kind, unit, ctx || scriptCtx());
+  const base = { kind:"mc", key: it.key, opts: it.options, a: it.answer, reveal: scriptRevealBlock(it),
+    onAnswer: ok => markScriptRec(it.unitId, ok), onReveal: it.audio === "after" ? () => sayScript(it) : null };
+  const glyphOpts = { optsClass:"opts-hero opts-w opts-g", optHtml: o => tw(o), optsT: true };
+  const wordOpts = { optsClass:"opts-hero opts-w", optHtml: o => tw(o), optsT: true };
+  const romanOpts = { optsClass:"opts-hero", optHtml: o => `<bdi>${escapeHtml(o)}</bdi>` };
+  const big = s => `<div class="big wd xg"${TA}>${escapeHtml(s)}</div>`;
+  const sub = s => s ? `<div class="pron">${escapeHtml(s)}</div>` : "";
+  const hear = () => ({ html: `<div class="hear-stage"><button class="speaker" id="sp" aria-label="Replay">${SPEAKER_SVG}</button></div>`,
+    mount: () => { const b = $("sp"); sayScript(it, b); b.onclick = () => sayScript(it, b); } });
+  const k = it.kind;
+  if(k === "symSound") return Object.assign(base, romanOpts, { label:"How does it sound?", html: big(it.show) });
+  if(k === "soundSym") return Object.assign(base, glyphOpts, it.audio === "before" ? hear() : { html: `<div class="med" style="text-align:center">${escapeHtml(it.show)}</div>` }, { label:"Which one makes this sound?" });
+  if(k === "symType"){
+    const accept = (it.accept || [it.answer]).map(VC.normKey);
+    return { kind:"type", key: it.key, label:"Type how it sounds", html: big(it.show), inputTA: "", placeholder: "type the sound",
+      check: v => accept.includes(VC.normKey(v)), reveal: base.reveal, onAnswer: base.onAnswer, onReveal: base.onReveal };
+  }
+  if(k === "compose") return Object.assign(base, glyphOpts, { label:"Put them together", html: big(it.show) });
+  if(k === "formFind") return Object.assign(base, wordOpts, { label:"Which word has this letter?", html: big(it.show) + sub(it.hint) });
+  if(k === "formMatch") return Object.assign(base, glyphOpts, { label:"Which letter is this?", html: big(it.show) + sub(`${FORM_LABEL[it.form] || it.form} form`) });
+  if(k === "wordRead") return Object.assign(base, romanOpts, { label:"How is it read?", html: big(it.show) });
+  if(k === "wordHear") return Object.assign(base, wordOpts, hear(), { label:"Which word do you hear?" });
+  throw new Error(`no renderer for script item kind ${k}`);
+}
+const isScriptPlan = p => !!(p && p.unit && VC.SCRIPT_KINDS.includes(p.kind));
+// Glyph occurrences in an example word, tinted by a wrapping span (background only, so a
+// joined word keeps its shaping). A letter inside a composed block (a jamo in its
+// syllable, a batchim included) tints the block; comparison is core's scriptGlyphIn, the
+// validator's fold (compatibility decomposition, lower case, positional jamo as letters).
+function scriptHL(word, glyph){
+  const w = String(word), g = String(glyph || "");
+  if(!g) return escapeHtml(w);
+  if(w.includes(g)) return w.split(g).map(escapeHtml).join(`<span class="xhl">${escapeHtml(g)}</span>`);
+  return [...w].map(ch => VC.scriptGlyphIn(g, ch) ? `<span class="xhl">${escapeHtml(ch)}</span>` : escapeHtml(ch)).join("");
+}
+// One unit's teach card (Learn and the Script tab): glyph 64px on the start side, beside
+// it name, roman (bold) and note, a play button only when the unit has a sound. Row 2 by
+// script: the joined-forms strip (right-to-left joiners), the compose strip (syll[0]), the
+// base -> variant row; ru-like `italic` adds its italic form. Row 3: example words.
+function scriptTeachHTML(u){
+  const g = VC.scriptGlyph(u);
+  const play = unitHasSound(u) ? `<button type="button" class="replay xplay" data-xs="${escapeHtml(u.id)}" aria-label="Hear it">${TEACH_PLAY_SVG}</button>` : "";
+  let row2 = "";
+  if(u.joins === "dual" || u.joins === "right"){
+    const cells = [{ form:"isol", t: g }, ...VC.scriptJoinedForms(u)];
+    row2 = `<div class="xforms" dir="rtl">${cells.map(c => `<span class="xfc"><span class="xff"${TA}>${escapeHtml(c.t)}</span><span class="xfl" dir="ltr">${FORM_LABEL[c.form]}</span></span>`).join("")}</div>`;
+  } else if(Array.isArray(u.syll) && u.syll[0] && Array.isArray(u.syll[0].parts) && u.syll[0].t){
+    const s = u.syll[0];
+    row2 = `<div class="xrow2">${s.parts.map(p => tw(String(p))).join(" + ")} = ${tw(String(s.t))}${s.roman ? ` <span class="xrm">${escapeHtml(s.roman)}</span>` : ""}</div>`;
+  } else if(u.base && SUNIT_BY_ID[u.base]){
+    row2 = `<div class="xrow2">${tw(VC.scriptGlyph(SUNIT_BY_ID[u.base]))} → ${tw(g)}</div>`;
+  }
+  const ital = u.italic ? `<div class="xrow2">italic <span class="xit"${TA}>${escapeHtml(u.italic)}</span></div>` : "";
+  const exs = VC.scriptExamples(u, SCRIPT_BYID).map(e => {
+    const tap = scriptVoice();
+    return `<div class="rowset"${tap ? ` data-xw="${escapeHtml(e.id)}" style="cursor:pointer"` : ""}><span class="wd"${TA}>${scriptHL(e.w, g)}</span><span class="info"><span class="pr">${escapeHtml(e.roman)}</span><span class="en">${escapeHtml(VC.gloss(SCRIPT_BYID[e.id]))}</span></span>${tap ? `<span style="color:var(--mute);flex:0 0 auto">${TEACH_PLAY_SVG}</span>` : ""}</div>`;
+  }).join("");
+  return `<div class="xteach"><div class="xhead"${DISP.rtl ? ' dir="rtl"' : ""}><span class="cform xg"${TA}>${escapeHtml(u.t)}</span><span class="info" dir="ltr">${u.name ? `<span class="xnm">${tw(u.name)}</span>` : ""}<b class="xrm">${escapeHtml(u.roman)}</b>${u.note ? `<span class="en">${escapeHtml(u.note)}</span>` : ""}</span>${play}</div>${row2}${ital}${exs}</div>`;
+}
+const scriptNotesHTML = (st, set) => SNOTES.filter(n => n && n.st === st && n.set === set)
+  .map(n => `<div class="card-teach xnote"><h3>${escapeHtml(n.h)}</h3><p>${escapeHtml(n.body)}</p></div>`).join("");
+// Plan entries are {kind, word} or, from the unified plans, {kind, unit} (a character
+// unit, or a script unit with a script kind).
+const planItem = p => isScriptPlan(p) ? scriptDrillItem(p.kind, p.unit) : p.unit ? charDrillItem(p.kind, p.unit) : itemFromPlan(p);
 
 // ===================== lesson item wrapper =====================
 // mode from VC.lessonSayMode: "audio" plays `say`; "inq" runs without audio (the
@@ -2985,7 +3721,14 @@ function lessonItem(it, key, mode){
 }
 
 // ===================== tabs =====================
-if(!HAS_LESSONS) document.querySelector('#tabs button[data-t="sounds"]').hidden = true;
+// pack.script without lessons: the Sounds slot becomes the Script tab, labelled from the
+// first primer stage, its icon that stage's first symbol (the tab bar keeps 6 slots).
+const SCRIPT_TAB = HAS_SCRIPT && !HAS_LESSONS;
+if(!HAS_LESSONS && !HAS_SCRIPT) document.querySelector('#tabs button[data-t="sounds"]').hidden = true;
+if(SCRIPT_TAB){
+  const first = VC.scriptStageUnits(SCFG.stages[0].key, SUNITS)[0];
+  document.querySelector('#tabs button[data-t="sounds"]').innerHTML = `<span class="ic"${TA}>${escapeHtml(first ? VC.scriptGlyph(first) : "")}</span>${tw(SCFG.stages[0].label)}`;
+}
 if(!HAS_PASSAGES) document.querySelector('#tabs button[data-t="read"]').hidden = true;
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("on"));
@@ -2994,8 +3737,8 @@ document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{
   render();
 });
 function render(){
-  D = null; drillKeyHandler = null;
-  $("htitle").textContent = { today:"Today", sounds:"Sounds", words:"Words", read:"Read", test:"Test", progress:"Progress" }[tab];
+  D = null; drillKeyHandler = null; screenTop();
+  $("htitle").textContent = { today:"Today", sounds: SCRIPT_TAB ? SCFG.stages[0].label : "Sounds", words:"Words", read:"Read", test:"Test", progress:"Progress" }[tab];
   setScore(0,0);
   ({ today: todayRender, sounds: soundsRender, words: wordsRender, read: readRender, test: testRender, progress: progressRender })[tab]();
 }
@@ -3008,48 +3751,79 @@ function switchToTab(t, title){
 // ===================== Today =====================
 // With pack.characters the strip is VC.stagePath: word levels plus the character
 // stages in this learner's order (label from pack.characters, target-language text).
+// With pack.script the primer's stages come first (label from pack.script.stages).
+// HAS_STAGES: either is on, so Today runs on a VC.todaySnapshot.
+const HAS_STAGES = HAS_CHARACTERS || HAS_SCRIPT;
 function pathStrip(){
-  const stages = HAS_CHARACTERS
-    ? VC.stagePath(PACK, WORDS, CHAR_LIST, prog).map(s => ({ label: s.label, frac: s.frac, tl: s.kind === "chars" }))
+  const stages = HAS_STAGES
+    ? VC.stagePath(PACK, WORDS, CHAR_LIST, prog, SU).map(s => ({ label: s.label, frac: s.frac, tl: s.kind === "chars" || s.kind === "script" }))
     : LEVELS.map(lv=>({ label: levelLabel(lv), frac: nSets(lv) ? (prog.sets[lv]||0)/nSets(lv) : 1 }));
   return `<div class="path">${stages.map(s=>`<div class="seg"><div class="bar"><i style="width:${Math.round(s.frac*100)}%"></i></div>${s.tl ? tw(s.label) : escapeHtml(s.label)}</div>`).join("")}</div>`;
 }
 // The snapshot (VC.todaySnapshot) Today runs on: taken at Start today and kept for the
 // session, so finishing a stage mid-session changes neither what Learn teaches nor
 // whether Review/Recall include units. null without pack.characters.
-const takeSnapshot = () => HAS_CHARACTERS ? VC.todaySnapshot(PACK, WORDS, CHAR_LIST, prog) : null;
-// Learn has something to teach: the snapshot's stage (word set, or a unit set).
-const snapLearns = snap => !!(snap.stage && (snap.stage.kind === "words" || snap.cset));
+const takeSnapshot = () => HAS_STAGES ? VC.todaySnapshot(PACK, WORDS, CHAR_LIST, prog, SU) : null;
+// Learn has something to teach: the snapshot's stage (word set, a unit set, or script sets).
+const snapLearns = snap => !!(snap.stage && (snap.stage.kind === "words" || snap.cset || (snap.stage.kind === "script" && snap.ssets && snap.ssets.length)));
 function snapLearnLine(snap){
   const st = snap.stage;
   if(!st || !snapLearns(snap)) return "everything covered";
+  if(st.kind === "script"){
+    const a = snap.ssets[0].index + 1, b = snap.ssets[snap.ssets.length - 1].index + 1;
+    return `${st.label}, ${a === b ? `set ${a}` : `sets ${a}–${b}`} of ${snap.ssets[0].total}`;
+  }
   return st.kind === "words" ? `${levelLabel(st.lv)}, set ${st.set+1}` : `${st.label}, set ${snap.cset.index+1} of ${snap.cset.total}`;
+}
+// pack.script: recorded script units of stages that are on (opens Review with no words).
+const scriptCount = () => HAS_SCRIPT ? VC.recordedScriptUnits(SUNITS, prog, PACK).length : undefined;
+// The script choice card (pack.script, docs/SCRIPT_PRIMER.md §1): learn the primer before
+// the first word level, or skip it (VC.answerScriptChoice). Replaces Start today until
+// answered; reversible from Progress.
+function scriptChoiceHTML(){
+  const L = SCFG.stages.map(st => tw(st.label)).join(" and ");
+  return `<div class="stmt" id="scriptChoice">${L} first: learn to read the script, symbol by symbol, before ${escapeHtml(levelLabel(LEVELS[0]))}. If you can already read it, skip it. You can change this later in Progress.<button class="next" id="scriptLearn" style="margin-top:8px">Learn the script</button><button class="ghost" id="scriptSkip" style="margin-top:8px">I can read it, skip</button></div>`;
+}
+// The one-time line for a learner whose progress predates the primer (VC.scriptNotice):
+// shown while the primer is off, until dismissed.
+const showScriptNotice = () => HAS_SCRIPT && VC.scriptNotice(PACK, prog) && VC.scriptSkipped(prog);
+// What the Review line names: the pre-primer wording unless the plan holds script units.
+function reviewWhat(snap, plan){
+  const xs = !!(plan && plan.some(isScriptPlan));
+  if(!xs) return snap.charsStarted ? (plan && plan.some(x => x.unit) ? `, words and ${CHAR_CFG.label}` : ", words") : "";
+  const parts = [];
+  if(plan.some(x => x.word)) parts.push("words");
+  if(plan.some(x => x.unit && !isScriptPlan(x))) parts.push(CHAR_CFG.label);
+  parts.push("script");
+  return ", " + (parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : parts[0]);
 }
 // The one-time choice card: start the character stage now, or defer it (VC.answerCharChoice)
 // and go on to the next word level first. Replaces Start today until answered.
 function charChoiceHTML(){
-  const path = VC.stagePath(PACK, WORDS, CHAR_LIST, prog);
+  const path = VC.stagePath(PACK, WORDS, CHAR_LIST, prog, SU);
   const first = path.findIndex(s => s.kind === "chars");
   const next = path.slice(first + 1).find(s => s.kind === "words" && !s.done);
   const L = tw(CHAR_CFG.label), N = escapeHtml(next ? next.label : "");
   return `<div class="stmt" id="charChoice">${L} next: learn to recognise the written form of the words you already know. Or go on to ${N} first and do ${L} after it. You can change this later in Progress.<button class="next" id="choiceStart" style="margin-top:8px">Start ${L}</button><button class="ghost" id="choiceSkip" style="margin-top:8px">Skip to ${N}</button></div>`;
 }
 function todayRender(){
+  screenTop();
   setScore(0,0);
   const P = $("panel"); const lw = learnedWords(); const nn = nextNewSet();
   const n = (prog.sessions||0) + 1;
   const availSent = availableSentences();
   const snap = takeSnapshot();
-  const g = VC.todayGates(lw.length, snap ? snapLearns(snap) : !!nn, availSent.length);
+  const g = VC.todayGates(lw.length, snap ? snapLearns(snap) : !!nn, availSent.length, scriptCount());
   // With pack.characters the Review plan is built here, with the snapshot, and Start today
   // runs exactly this plan, so the line names units only when the plan holds some (a
-  // first character day has no unit records yet: "words" only).
-  todayPrep = snap ? { snap, review: g.review ? VC.buildReviewPlan(lw, prog, PACK, { size: snap.reviewSize, units: snap.charsStarted ? CHAR_LIST : undefined }) : null } : null;
+  // first character day has no unit records yet: "words" only). With pack.script recorded
+  // script units join it (opts.script).
+  todayPrep = snap ? { snap, review: g.review ? VC.buildReviewPlan(lw, prog, PACK, { size: snap.reviewSize, units: snap.charsStarted ? CHAR_LIST : undefined, script: SU, scriptCtx: scriptKindCtx() }) : null } : null;
   const reviewLine = snap
-    ? `${snap.reviewSize} items, weakest first${snap.charsStarted ? (todayPrep.review && todayPrep.review.some(x => x.unit) ? `, words and ${CHAR_CFG.label}` : ", words") : ""}`
+    ? `${snap.reviewSize} items, weakest first${reviewWhat(snap, todayPrep.review)}`
     : `${VC.REVIEW_SIZE} items, weakest first`;
   const steps = [
-    ["Review", g.review ? reviewLine : "skipped until 5+ words are learned"],
+    ["Review", g.review ? reviewLine : (snap && snap.stage && snap.stage.kind === "script" ? "skipped until a set is learned" : "skipped until 5+ words are learned")],
     ["Learn", snap ? snapLearnLine(snap) : (nn ? `${levelLabel(nn.lv)}, set ${nn.set+1}` : "everything covered")],
     ["Listen", g.listen ? "12 items" : "skipped until something is learned"],
     ["Recall", g.recall ? "8 items" : "skipped until something is learned"],
@@ -3060,8 +3834,10 @@ function todayRender(){
   refreshReadUnlocks();
   const readHint = HAS_PASSAGES ? VC.suggestPassage(PASSAGE_LIST, WORDS, PACK, prog) : null;
   const choice = !!(snap && snap.choice);
-  P.innerHTML = `<div class="drill-body top">${samsungNoticeHTML}${legacyNotice ? `<div class="stmt" id="legacyNotice">${legacyNotice}<button class="ghost" id="legacyOk" style="margin-top:8px">OK</button></div>` : ""}${legacyFail ? `<div class="stmt" id="legacyFail">${legacyFailHTML(legacyFail)}<button class="ghost" id="legacySkip" style="margin-top:8px">Start without it</button></div>` : ""}${pathStrip()}
-    ${showPlaceHint ?`<div class="stmt">New here? Placement finds where to start.<button class="next" id="hintPlace" style="margin-top:8px">Take the placement test</button></div>` : ""}${choice ? charChoiceHTML() : ""}
+  const xChoice = HAS_SCRIPT && !!(snap && snap.choice === "script");
+  const xNotice = showScriptNotice();
+  P.innerHTML = `<div class="drill-body top">${samsungNoticeHTML}${legacyNotice ? `<div class="stmt" id="legacyNotice">${legacyNotice}<button class="ghost" id="legacyOk" style="margin-top:8px">OK</button></div>` : ""}${legacyFail ? `<div class="stmt" id="legacyFail">${legacyFailHTML(legacyFail)}<button class="ghost" id="legacySkip" style="margin-top:8px">Start without it</button></div>` : ""}${xNotice ? `<div class="stmt" id="scriptNotice">A script primer is available. Turn it on in Progress.<button class="ghost" id="scriptNoticeOk" style="margin-top:8px">OK</button></div>` : ""}${pathStrip()}${xChoice ? scriptChoiceHTML() : ""}
+    ${showPlaceHint ?`<div class="stmt">New here? Placement finds where to start.<button class="next" id="hintPlace" style="margin-top:8px">Take the placement test</button></div>` : ""}${choice && !xChoice ? charChoiceHTML() : ""}
     ${showSoundsHint ? `<div class="stmt">A few short lessons explain how ${escapeHtml(PACK.name)} sounds and is written.<button class="next" id="hintSounds" style="margin-top:8px">Start the first lesson</button></div>` : ""}
     ${readHint ? `<div class="stmt" id="readHintBox">Read 1 passage: ${rubyTw(readHint.title, readHint.titleRuby)} (${escapeHtml(levelLabel(readHint.lv))}, ${VC.passageLength(readHint, PACK)} words).<button class="next" id="hintRead" style="margin-top:8px">Read 1 passage</button></div>` : ""}
     <p class="q">Session ${n}, about 15 minutes.<br>${lw.length} words learned so far.</p>
@@ -3072,14 +3848,20 @@ function todayRender(){
   if(showPlaceHint) $("hintPlace").onclick = enterPlacementFromToday;
   if(showSoundsHint) $("hintSounds").onclick = enterFirstSoundsLessonFromToday;
   if(readHint) $("hintRead").onclick = () => { switchToTab("read", "Read"); RD = null; startPassage(readHint); };
+  if(xNotice) $("scriptNoticeOk").onclick = () => { VC.dismissScriptNotice(prog); store.save(); todayRender(); };
   // The choice card replaces Start today until answered, so Learn never teaches a stage
   // the learner hasn't chosen.
+  if(xChoice){
+    $("scriptLearn").onclick = () => { VC.answerScriptChoice(prog, true); store.save(); todayRender(); };
+    $("scriptSkip").onclick = () => { VC.answerScriptChoice(prog, false); store.save(); todayRender(); };
+    return;
+  }
   if(choice){
     $("choiceStart").onclick = () => { VC.answerCharChoice(prog, true); store.save(); todayRender(); };
     $("choiceSkip").onclick = () => { VC.answerCharChoice(prog, false); store.save(); todayRender(); };
     return;
   }
-  $("go").onclick = () => { todayStepState = HAS_CHARACTERS ? (todayPrep ? { step:0, snap: todayPrep.snap, review: todayPrep.review } : { step:0, snap: takeSnapshot() }) : { step:0 }; todayPrep = null; todayStep(); };
+  $("go").onclick = () => { todayStepState = HAS_STAGES ? (todayPrep ? { step:0, snap: todayPrep.snap, review: todayPrep.review } : { step:0, snap: takeSnapshot() }) : { step:0 }; todayPrep = null; todayStep(); };
 }
 function enterPlacementFromToday(){ switchToTab("test", "Test"); testSel = "placement"; startPlacement(); }
 function enterFirstSoundsLessonFromToday(){
@@ -3095,16 +3877,16 @@ function enterFirstSoundsLessonFromToday(){
 // or unit), Review is snap.reviewSize, and Review/Recall rank units with words once
 // characters have started. Without it each step is the pre-characters code.
 function todayStep(){
-  const snap = HAS_CHARACTERS ? (todayStepState.snap || (todayStepState.snap = takeSnapshot())) : null;
+  const snap = HAS_STAGES ? (todayStepState.snap || (todayStepState.snap = takeSnapshot())) : null;
   const lw = learnedWords();
   const nn = snap ? (snap.stage && snap.stage.kind === "words" ? { lv: snap.stage.lv, set: snap.stage.set } : null) : nextNewSet();
   const avail = availableSentences();
-  const g = VC.todayGates(lw.length, snap ? snapLearns(snap) : !!nn, avail.length);
+  const g = VC.todayGates(lw.length, snap ? snapLearns(snap) : !!nn, avail.length, scriptCount());
   const units = snap && snap.charsStarted ? CHAR_LIST : undefined;
   const s = todayStepState.step++;
   if(s === 0){
     if(g.review && snap){
-      const plan = todayStepState.review || VC.buildReviewPlan(lw, prog, PACK, { size: snap.reviewSize, units });
+      const plan = todayStepState.review || VC.buildReviewPlan(lw, prog, PACK, { size: snap.reviewSize, units, script: SU, scriptCtx: scriptKindCtx() });
       todayStepState.review = null;
       drill(plan.map(planItem), todayStep, missSummary); return;
     }
@@ -3112,6 +3894,7 @@ function todayStep(){
     return todayStep();
   }
   if(s === 1){
+    if(g.learn && snap && snap.stage.kind === "script"){ scriptLearn(snap, 0); return; }
     if(g.learn && snap && snap.stage.kind === "chars"){
       const cs = snap.cset;
       charTeach(cs, snap.stage, () => drill(VC.learnCharPlan(cs.units, PACK).map(planItem), todayStep, missSummary));
@@ -3158,7 +3941,7 @@ function wordRowHTML(w, cls){
   return `<span class="wd${dispWord(w).isPron ? " pf" : ""}"${TA}>${wordFormHTML(w)}</span><span class="info">${p ? `<span class="pr">${readingHTML(p)}</span>` : ""}<span class="en">${escapeHtml(VC.gloss(w))}</span></span>`;
 }
 function vocabTeach(list, lv, onDrill){
-  setScore(0,0);
+  setScore(0,0); screenTop();
   const P = $("panel");
   const hint = hasSpeech ? " Tap a word to hear it." : "";
   P.innerHTML = `<p class="q">${escapeHtml(levelLabel(lv))}, new set.${hint}</p>
@@ -3183,22 +3966,45 @@ function vocabTeach(list, lv, onDrill){
 // large, its reading, the linked word's meaning and one example sentence of that word.
 // Tapping the head plays the word (panel data-wid listener), the sentence plays itself.
 function charTeach(cs, stage, onDrill){
-  setScore(0,0);
+  setScore(0,0); screenTop();
   const P = $("panel");
   const hint = hasSpeech ? " Tap one to hear it." : "";
   const cards = cs.units.map(u => {
     const w = VC.unitWord(u, WORDS_BY_ID), reading = VC.unitReading(u, WORDS_BY_ID);
     const tap = hasSpeech && w;
-    const ex = w ? wordExampleSentences(w, 1) : [];
+    const ex = VC.unitExampleSentences(u, w, SENTENCES, PACK, 1); // prefers one showing the unit written with ruby
     return `<div class="charteach"><div class="chead"${tap ? ` data-wid="${escapeHtml(w.id)}" style="cursor:pointer"` : ""}><span class="cform"${TA}>${escapeHtml(u.t)}</span><span class="info">${reading ? `<span class="pr">${readingHTML(reading)}</span>` : ""}<span class="en">${escapeHtml(VC.unitGloss(u, WORDS_BY_ID))}</span></span>${tap ? `<span style="color:var(--mute);flex:0 0 auto">${TEACH_PLAY_SVG}</span>` : ""}</div>${ex.map(s => sentenceRowHTML(s, w, u.words)).join("")}</div>`;
   }).join("");
   P.innerHTML = `<p class="q">${tw(stage.label)}, set ${cs.index+1} of ${cs.total}: the written form of words you already know.${hint}</p>
     <div id="ctl">${cards}</div><div class="actions"><button class="next" id="dr">Drill these</button></div>`;
   $("dr").onclick = onDrill;
 }
+// Teach cards for one script set (Learn, pack.script): the set's rule notes first, then a
+// card per unit (scriptTeachHTML). Sounds play from each card's own button (data-xs).
+function scriptTeach(ss, stage, onDrill){
+  setScore(0,0); screenTop();
+  const P = $("panel");
+  const set = ss.units.length ? ss.units[0].set : null;
+  P.innerHTML = `<p class="q">${tw(stage.label)}, set ${ss.index+1} of ${ss.total}: ${ss.units.length} new symbol${ss.units.length === 1 ? "" : "s"}.${scriptVoice() ? " Tap the speaker to hear one." : ""}</p>
+    <div id="xtl">${scriptNotesHTML(stage.key, set)}${ss.units.map(scriptTeachHTML).join("")}</div><div class="actions"><button class="next" id="dr">Drill these</button></div>`;
+  $("dr").onclick = onDrill;
+}
+// Script Learn: the snapshot's set i (teach, then learnScriptPlan), then, while the
+// snapshot holds another set (up to pack.script.setsPerSession), "One more set" on the
+// drill's end screen. Continue goes on to the next Today step either way.
+function scriptLearn(snap, i){
+  const ss = snap.ssets[i];
+  const more = i + 1 < snap.ssets.length;
+  scriptTeach(ss, snap.stage, () => {
+    const ctx = scriptCtx(ss.units);
+    drill(VC.learnScriptPlan(ss.units, PACK, scriptKindCtx()).map(p => scriptDrillItem(p.kind, p.unit, ctx)), todayStep,
+      more ? miss => `${missSummary(miss)}<button class="next" id="moreSet" style="margin-bottom:8px">One more set</button>` : missSummary,
+      more ? () => { $("moreSet").onclick = () => scriptLearn(snap, i + 1); } : undefined);
+  });
+}
 // Lesson card `body` is trusted pack HTML (pack authors write it); everything else is escaped.
 function lessonTeach(lesson, onDone, onBack){
-  setScore(0,0);
+  setScore(0,0); screenTop();
   if(!prog.soundsOpened){ prog.soundsOpened = true; store.save(); }
   const P = $("panel");
   P.innerHTML = `${onBack ? '<div class="row"><button id="back">‹ lessons</button></div>' : ""}<p class="q">${escapeHtml(lesson.blurb)}</p>
@@ -3228,8 +4034,9 @@ function lessonTeach(lesson, onDone, onBack){
 
 // ===================== Sounds (pack lessons) =====================
 function soundsRender(){
-  setScore(0,0);
+  setScore(0,0); screenTop();
   const P = $("panel");
+  if(SCRIPT_TAB){ scriptTabRender(); return; }
   if(soundsSel != null){
     const lesson = LESSON_LIST[soundsSel];
     lessonTeach(lesson,
@@ -3239,9 +4046,45 @@ function soundsRender(){
   }
   const done = LESSON_LIST.filter(l=>prog.lessons[l.id]).length;
   P.innerHTML = `<p class="q">Optional: how ${escapeHtml(PACK.name)} sounds and is written. ${LESSON_LIST.length} lessons, ${done} done.</p>
-    <div class="plist">${LESSON_LIST.map((l,i)=>`<button data-i="${i}"><span>${escapeHtml(l.title)}</span>${prog.lessons[l.id]?'<span class="tick">✓</span>':''}</button>`).join("")}</div>${SOUNDS_REF ? soundsRefHTML() : ""}`;
+    ${HAS_SCRIPT ? scriptTabHTML() : ""}<div class="plist">${LESSON_LIST.map((l,i)=>`<button data-i="${i}"><span>${escapeHtml(l.title)}</span>${prog.lessons[l.id]?'<span class="tick">✓</span>':''}</button>`).join("")}</div>${SOUNDS_REF ? soundsRefHTML() : ""}`;
   P.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{ soundsSel = +b.dataset.i; soundsRender(); });
   if(SOUNDS_REF) P.querySelectorAll("[data-rs]").forEach(b=>b.onclick=()=>speak(b.dataset.rs, b));
+  if(HAS_SCRIPT) scriptTabWire();
+}
+
+// ===================== Script tab (pack.script) =====================
+// Every unit in teaching order, by stage and set, marked taught (recorded) or mastered.
+// A cell tap plays that unit's sound once and shows its teach card above the chart
+// (panel data-xs/data-xopen listener). "Practise weakest 20" runs VC.scriptTestPlan.
+function scriptChartHTML(){
+  const recs = VC.scriptRecs(prog);
+  return SCFG.stages.map(st => `<div class="refh">${tw(st.label)}</div>` + VC.scriptSets(st.key, SUNITS).map((set, i) =>
+    `<div class="xset"><span class="xsn">${i + 1}</span><div class="refcells xcells">${set.map(u => {
+      const r = recs[u.id]; const m = !!r && VC.scriptMastered(r, PACK);
+      const state = m ? "mastered" : r ? "taught" : "";
+      return `<button type="button" class="${m ? "xm" : r ? "xt" : ""}" data-xs="${escapeHtml(u.id)}" data-xopen aria-label="${escapeHtml(VC.scriptGlyph(u))}, ${escapeHtml(u.roman)}${state ? `, ${state}` : ""}"><span class="xcg"${TA}>${escapeHtml(VC.scriptGlyph(u))}</span><span class="xcr">${escapeHtml(u.roman)}</span></button>`;
+    }).join("")}</div></div>`).join("")).join("");
+}
+const scriptPractisePlan = () => VC.scriptTestPlan(SUNITS, prog, PACK, 20, undefined, scriptKindCtx());
+function scriptTabHTML(){
+  const n = scriptPractisePlan().length;
+  return `<div id="xtab"><p class="q">Every symbol in teaching order. Tap one to see it${SUNITS.some(unitHasSound) ? " and hear it" : ""}. Marked: <span class="xkey xt">taught</span> <span class="xkey xm">mastered</span></p>
+    ${n ? `<button class="next" id="xPractise" style="margin-bottom:12px">Practise weakest ${n}</button>` : ""}<div id="xcard"></div>${scriptChartHTML()}</div>`;
+}
+function scriptTabWire(){
+  const b = $("xPractise");
+  if(b) b.onclick = () => drill(scriptPractisePlan().map(p => scriptDrillItem(p.kind, p.unit, scriptCtx())), soundsRender, missSummary);
+}
+// The card opens above the chart, so a tap low in the chart brings it into view; keyboard
+// activation (click with detail 0) also moves focus onto it.
+function scriptOpenCard(u, e){
+  const c = $("xcard"); if(!c) return;
+  c.innerHTML = scriptTeachHTML(u);
+  bringIntoView(c.firstElementChild, !!e && e.detail === 0);
+}
+function scriptTabRender(){
+  $("panel").innerHTML = scriptTabHTML();
+  scriptTabWire();
 }
 // pack.soundsReference: every one-character example row of the lessons (row[0] its
 // reading, card.say[i] its text), grouped by lesson, first occurrence of each reading
@@ -3337,6 +4180,7 @@ function refreshReadUnlocks(){ if(HAS_PASSAGES && VC.updateReadUnlocks(PASSAGE_L
 const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
 const passageDone = p => (prog.read && prog.read.done && prog.read.done[p.id]) || null;
 function readRender(){
+  screenTop();
   setScore(0,0);
   if(RD){ RD.resultsDone ? readResults() : (RD.qi == null ? readPassageScreen() : readQuestionScreen()); return; }
   refreshReadUnlocks();
@@ -3351,7 +4195,7 @@ function readRender(){
       const ps = PASSAGE_LIST.filter(p => p.lv === l.lv);
       return `<div class="rlv"><div class="rlh">${L}<span class="q" style="margin:0">${ps.filter(passageDone).length} / ${ps.length} done</span></div>
         <div class="plist">${ps.map(p => { const d = passageDone(p);
-          return `<button data-pid="${escapeHtml(p.id)}"${SCRIPT.rtl ? ' dir="rtl"' : ""}><span>${rubyTw(p.title, p.titleRuby, true)}<span class="q" style="display:block;margin:0;font-size:13px">${VC.passageLength(p, PACK)} words</span></span>${d ? `<span class="tick">✓ ${d.sc} / ${d.n}</span>` : ""}</button>`; }).join("")}</div></div>`;
+          return `<button data-pid="${escapeHtml(p.id)}"${DISP.rtl ? ' dir="rtl"' : ""}><span>${rubyTw(p.title, p.titleRuby, true)}<span class="q" style="display:block;margin:0;font-size:13px">${VC.passageLength(p, PACK)} words</span></span>${d ? `<span class="tick">✓ ${d.sc} / ${d.n}</span>` : ""}</button>`; }).join("")}</div></div>`;
     }).join("")}`;
   P.querySelectorAll("[data-pid]").forEach(b => b.onclick = () => startPassage(PASSAGE_LIST.find(p => p.id === b.dataset.pid)));
 }
@@ -3400,8 +4244,9 @@ function passageRubyHTML(t, toks, a, b){
 // (VC.rubyTiers); without it each linked word is one token, its reading while its unit
 // is below mastered (displayForm), else its written form. A span longer than its word
 // (这个 for 这, 越来越 for 越) reads as VC.composeSpanReading: the word's pron where its
-// written form occurs, each other character's single-character unit reading, and a
-// character with no reading stays written, so no character is ever dropped. Text outside
+// written form occurs, each other character its single-character unit reading when the
+// pack sets characters.compose, else (and with no reading) written, so no character is
+// ever dropped or given a guessed reading. Text outside
 // every token (a name with no word) stays as written: there is no reading for it.
 // taps: "pw" wraps linked words as data-pw tap spans (the Read screen, logged as
 // tapped), "tok" as word taps (tokTapHTML: question reveals and results, no log), false
@@ -3474,7 +4319,7 @@ const TOKBOX = PRON_FIRST ? " data-tokbox" : ""; // passage reveals hold word ta
 function pfRubyText(t, ruby){
   if(!PRON_FIRST || !Array.isArray(ruby) || !ruby.length) return null;
   const obj = { t: String(t == null ? "" : t), ruby };
-  const toks = VC.rubyTiers(obj, CHAR_LIST, prog, PACK, VC.charsStarted(PACK, WORDS, CHAR_LIST, prog));
+  const toks = VC.rubyTiers(obj, CHAR_LIST, prog, PACK, VC.charsStarted(PACK, WORDS, CHAR_LIST, prog, SU));
   if(!toks) return null;
   let hasRuby = false, anyPron = false;
   const html = VC.sentencePieces(obj, toks).map(p => {
@@ -3498,8 +4343,8 @@ function rubyTw(t, ruby, inButton){
 function passageHTML(hiIndex){ return RD.p.sentences.map((s, i) => passageSentenceHTML(s, i, i === hiIndex)).join(""); }
 // RTL packs: the popover runs right-to-left (tapped word at the right edge, then pron and
 // gloss in reading order); pron and the English gloss stay isolated LTR runs inside it.
-const LTR = SCRIPT.rtl ? ' dir="ltr"' : "";
-const glossBox = () => `<div class="gloss" id="gloss"${SCRIPT.rtl ? ' dir="rtl"' : ""} hidden></div>`;
+const LTR = DISP.rtl ? ' dir="ltr"' : "";
+const glossBox = () => `<div class="gloss" id="gloss"${DISP.rtl ? ' dir="rtl"' : ""} hidden></div>`;
 // spanGloss: the tapped span's display-only gloss (spans[i][3], carried as data-pg on
 // the tap span), shown instead of the word's gloss; without one the word's own gloss.
 // head (optional {surface, reading}, pronFirst phrase spans, spanHead): the headword is the
@@ -3541,7 +4386,7 @@ function wirePassage(box, glossEl){
   box.addEventListener("keydown", e => { const w = e.target.closest && e.target.closest("[data-pw]"); if(w && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); tap(w); } });
 }
 function readPassageScreen(){
-  setScore(0,0);
+  setScore(0,0); screenTop();
   const p = RD.p, P = $("panel");
   P.innerHTML = `<div class="row"><button id="rback">‹ passages</button></div>
     <h2 class="ptitle"${TA}>${rubyTextOr(p.title, p.titleRuby)}</h2>
@@ -3554,6 +4399,7 @@ function readPassageScreen(){
   $("rdone").onclick = () => { RD.qi = 0; RD.shown = false; readQuestionScreen(); };
 }
 function readQuestionScreen(){
+  screenTop();
   const p = RD.p, P = $("panel"), qi = RD.qi, q = p.questions[qi];
   if(!RD.answers[qi]) RD.answers[qi] = { ok: null, reopened: false, given: null };
   const rec = RD.answers[qi];
@@ -3582,7 +4428,7 @@ function readQuestionScreen(){
   order.forEach((v, i) => {
     const b = document.createElement("button");
     b.innerHTML = `<b class="num">${i+1}</b>${tf ? (v ? "True" : "False") : rubyTw(q.options[v], (q.optionsRuby || [])[v], true)}`;
-    if(!tf && SCRIPT.rtl) b.dir = "rtl";
+    if(!tf && DISP.rtl) b.dir = "rtl";
     b.dataset.v = String(v);
     b.onclick = () => {
       if(rec.ok !== null) return;
@@ -3592,7 +4438,7 @@ function readQuestionScreen(){
       const s = p.sentences[q.sentence];
       showReveal(`<div class="q" style="margin:0 0 6px">${rec.ok ? "Right." : "Not quite."} The answer is in this sentence:</div><div class="stmt hi" style="margin:0"${TOKBOX}><div${TA}><mark>${passagePlainHTML(s)}</mark></div><div class="q" style="margin:4px 0 0">${escapeHtml(s.en)}</div></div>`);
       const hs = $("pbox").querySelector(`[data-si="${q.sentence}"]`); if(hs) hs.classList.add("hi");
-      $("nx").style.display = "block"; setScore(qi+1, p.questions.length);
+      showNext(); setScore(qi+1, p.questions.length);
     };
     box.appendChild(b);
   });
@@ -3613,7 +4459,7 @@ function markPassageFinished(){
 }
 const WHY_LABEL = { tapped: "tapped while reading", wrong: "missed question", reopened: "looked back" };
 function readResults(){
-  drillKeyHandler = null; setScore(0,0);
+  drillKeyHandler = null; setScore(0,0); screenTop();
   const p = RD.p, P = $("panel");
   const sc = RD.answers.filter(a => a && a.ok).length;
   const weak = VC.passageWeakWords(p, { tapped: RD.tapped, answers: RD.answers }, WORDS_BY_ID);
@@ -3621,7 +4467,7 @@ function readResults(){
     <p class="q"${TA} style="margin-bottom:8px">${rubyTextOr(p.title, p.titleRuby)}</p>
     ${p.questions.map((q, i) => { const a = RD.answers[i] || {}; const s = p.sentences[q.sentence];
       return `<div class="stmt"${TOKBOX}><div class="q" style="margin:0 0 4px;color:${a.ok ? "var(--ok)" : "var(--bad)"}">${a.ok ? "✓" : "✗"} Question ${i+1}${a.reopened ? " · looked back" : ""}</div><div${TA}>${rubyTextOr(q.q, q.ruby)}</div><div style="margin-top:6px"${TA}><mark>${passagePlainHTML(s)}</mark></div><div class="q" style="margin:2px 0 0">${escapeHtml(s.en)}</div></div>`; }).join("")}
-    ${weak.length ? `<p class="q">Weak words from this passage</p><div id="weak">${weak.map((w, i) => `<label class="wk"${SCRIPT.rtl ? ' dir="rtl"' : ""}><input type="checkbox" data-wi="${i}" checked> ${glossHTML(w.id, RD.glosses && RD.glosses[w.id])} <span class="q" style="margin:0;font-size:13px">${escapeHtml(w.why.map(x => WHY_LABEL[x]).join(", "))}</span></label>`).join("")}</div>
+    ${weak.length ? `<p class="q">Weak words from this passage</p><div id="weak">${weak.map((w, i) => `<label class="wk"${DISP.rtl ? ' dir="rtl"' : ""}><input type="checkbox" data-wi="${i}" checked> ${glossHTML(w.id, RD.glosses && RD.glosses[w.id])} <span class="q" style="margin:0;font-size:13px">${escapeHtml(w.why.map(x => WHY_LABEL[x]).join(", "))}</span></label>`).join("")}</div>
       <button class="next" id="addrev">Add to review</button>` : `<p class="q">No weak words from this passage.</p>`}
     <div id="addmsg" class="q" hidden></div>
     <button class="ghost" id="rlist" style="margin-top:10px">Back to passages</button></div>`;
@@ -3630,12 +4476,14 @@ function readResults(){
     VC.applyWeakWords(prog, chosen, WORDS, PACK); store.save();
     $("addrev").disabled = true; P.querySelectorAll("[data-wi]").forEach(x => { x.disabled = true; });
     const m = $("addmsg"); m.hidden = false; m.textContent = chosen.length ? `Added ${chosen.length} word${chosen.length > 1 ? "s" : ""} to your next review.` : "Nothing added.";
+    bringIntoView(m);
   };
   $("rlist").onclick = () => { RD = null; readRender(); };
 }
 
 // ===================== Test (placement + free tests) =====================
 function testRender(){
+  screenTop();
   setScore(0,0);
   const P = $("panel");
   if(testSel === "placement"){ placeRender(); return; }
@@ -3647,7 +4495,7 @@ function testRender(){
   // 20 with learned words' unrecorded units, each a pack testKinds kind (VC.charTestPlan).
   // Shown once characters have started (VC.charsStarted), not only once a record exists.
   const charPlan = () => VC.charTestPlan(CHAR_LIST, learnedWords(), prog, PACK, 20);
-  const charN = HAS_CHARACTERS && VC.charsStarted(PACK, WORDS, CHAR_LIST, prog) ? charPlan().length : 0;
+  const charN = HAS_CHARACTERS && VC.charsStarted(PACK, WORDS, CHAR_LIST, prog, SU) ? charPlan().length : 0;
   P.innerHTML = `<p class="q">Placement finds where to start. Free tests draw from what's already learned.</p>
     <div class="actions">
       ${needMore ? `<div class="stmt">Free tests unlock at ${VC.TEST_MIN_WORDS} learned words (${lw.length} so far). Learn ${VC.TEST_MIN_WORDS} words first, or let placement find where to start.<button class="next" id="needPlace" style="margin-top:8px">Take the placement test</button></div>` : `<button class="next" id="pl">Take Placement</button>`}
@@ -3741,12 +4589,13 @@ function progressRender(){
   }).join("");
   const weak = weakFirst(lwAll.filter(w=>VC.weakScore(prog.w[w.id])>0), 10);
   const cp = HAS_CHARACTERS ? charProgress() : null;
+  const xp = HAS_SCRIPT ? scriptProgress() : null;
   P.innerHTML = `${hasSpeech ? "" : `<div class="warn">No text-to-speech voice is available in this browser, so listening and audio-replay features show the word instead of playing sound.</div>`}
-    <table class="stats">${rows}${cp ? cp.rows : ""}
+    <table class="stats">${xp ? xp.rows : ""}${rows}${cp ? cp.rows : ""}
       ${HAS_PASSAGES ? VC.readingStats(PASSAGE_LIST, PACK, prog).map(r => `<tr><td>${escapeHtml(levelLabel(r.lv))} reading</td><td>${r.done} / ${r.total} passages${r.avg != null ? ` · avg ${r.avg}%` : ""}</td></tr>`).join("") : ""}
       ${HAS_LESSONS ? `<tr><td>Sounds</td><td>${LESSON_LIST.filter(l=>prog.lessons[l.id]).length} / ${LESSON_LIST.length} lessons done</td></tr>` : ""}
       <tr><td>Sessions</td><td>${prog.sessions||0}</td></tr></table>
-    ${PACK.showPron !== false ? `<div class="row" style="margin-top:14px"><button class="chip ${showPron()?'on':''}" id="togglePron" aria-pressed="${showPron()}">Show pronunciation</button></div>` : ""}${cp ? cp.controls : ""}
+    ${PACK.showPron !== false ? `<div class="row" style="margin-top:14px"><button class="chip ${showPron()?'on':''}" id="togglePron" aria-pressed="${showPron()}">Show pronunciation</button></div>` : ""}${xp ? xp.controls : ""}${cp ? cp.controls : ""}
     <p class="q" style="margin-top:14px">${weak.length ? "Weakest words" : "No weak words yet — nice."}</p>
     ${weak.map(w=>`<div class="rowset">${wordRowHTML(w, "rowset")}</div>`).join("")}
     <div class="row" style="margin-top:16px">
@@ -3762,6 +4611,7 @@ function progressRender(){
     </div>
     <button class="ghost" id="reset" style="margin-top:16px;color:var(--bad);border-color:var(--bad)">Reset all progress</button>`;
   if(PACK.showPron !== false) $("togglePron").onclick = () => { prog.showPron = !showPron(); store.save(); progressRender(); };
+  if(xp) xp.wire();
   if(cp) cp.wire();
   $("exp").onclick = () => {
     const blob = new Blob([JSON.stringify(prog, null, 1)], {type:"application/json"});
@@ -3770,9 +4620,10 @@ function progressRender(){
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url), 1000);
   };
-  $("imp").onclick = () => { $("impbox").style.display = $("impbox").style.display==="none" ? "block" : "none"; };
+  // The import box, its error and its summary open below the last buttons of a long screen.
+  $("imp").onclick = () => { const b = $("impbox"), open = b.style.display === "none"; b.style.display = open ? "block" : "none"; if(open) bringIntoView(b); };
   $("impfile").onchange = e => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = () => { $("imptxt").value = r.result; }; r.readAsText(f); };
-  const showImportError = msg => { const el = $("impErr"); el.textContent = msg; el.style.display = "block"; };
+  const showImportError = msg => { const el = $("impErr"); el.textContent = msg; el.style.display = "block"; bringIntoView(el); };
   // Backup first; if it can't be written (read-only session, storage error) the import is
   // not applied, so the current progress is never lost unbacked.
   const applyImported = async next => {
@@ -3796,7 +4647,7 @@ function progressRender(){
         $("impErr").style.display = "none";
         const box = $("impSum");
         box.innerHTML = `${legacySummaryHTML(m, "the file you imported")}<button class="next" id="impApply" style="margin-top:8px">Import this progress</button><button class="ghost" id="impCancel" style="margin-top:8px">Cancel</button>`;
-        box.style.display = "block";
+        box.style.display = "block"; bringIntoView(box);
         $("impApply").onclick = () => applyImported(m.prog);
         $("impCancel").onclick = () => { box.style.display = "none"; box.innerHTML = ""; };
         return;
@@ -3819,21 +4670,22 @@ function progressRender(){
   };
 }
 // Progress additions for pack.characters: one row per character stage (taught = units in
-// fully taught sets, recorded = units with a record, mastered/bare by streak), and the
+// fully taught sets, recorded = units with a record, mastered/bare by streak), shown only
+// once characters have started (VC.charsStarted: no rows while the stage is locked), and the
 // controls: the path strip, the learning-order chips (VC.setCharOrder: reversible, flips
 // the path only) and the mix chip (prog.chars.mix: known units' written form in sentences).
 function charProgress(){
-  const stages = VC.stagePath(PACK, WORDS, CHAR_LIST, prog).filter(s => s.kind === "chars");
+  const stages = VC.stagePath(PACK, WORDS, CHAR_LIST, prog, SU).filter(s => s.kind === "chars");
   const recs = VC.charRecs(prog);
   const streak = u => ((recs[u.id] || {}).s || 0);
-  const rows = stages.map(st => {
+  const unlocked = VC.charsUnlocked(PACK, WORDS, prog), started = VC.charsStarted(PACK, WORDS, CHAR_LIST, prog, SU);
+  const rows = !started ? "" : stages.map(st => {
     const list = VC.charStageUnits(st.levels, CHAR_LIST, PACK);
     const taught = VC.charSets(st.levels, CHAR_LIST, PACK).filter(set => VC.charSetTaught(set, prog)).reduce((n, set) => n + set.length, 0);
     const masteredN = list.filter(u => recs[u.id] && VC.charTier(streak(u), PACK) !== "pron").length;
     const bareN = list.filter(u => recs[u.id] && VC.charTier(streak(u), PACK) === "bare").length;
     return `<tr><td>${tw(st.label)}</td><td>${taught} / ${list.length} taught · ${st.recorded} recorded · ${masteredN} mastered · ${bareN} bare</td></tr>`;
   }).join("");
-  const unlocked = VC.charsUnlocked(PACK, WORDS, prog), started = VC.charsStarted(PACK, WORDS, CHAR_LIST, prog);
   const defer = !!(prog.chars && prog.chars.defer === true);
   const deferred = VC.charStages(PACK, Object.assign({}, prog, { chars: Object.assign({}, prog.chars, { defer: true }) }));
   const top = deferred.length ? levelLabel(deferred[0].after) : "";
@@ -3849,6 +4701,32 @@ function charProgress(){
       $("ordBefore").onclick = () => { VC.setCharOrder(prog, false); store.save(); progressRender(); };
       $("ordAfter").onclick = () => { VC.setCharOrder(prog, true); store.save(); progressRender(); };
     }
+  };
+  return { rows, controls, wire };
+}
+// Progress additions for pack.script: one row per primer stage (taught = units in fully
+// taught sets, mastered by streak), a "Script mastered" line once every unit is, and the
+// on/off chips (VC.setScriptSkipped: flips one flag, the path is re-derived; with several
+// stages, one chip per stage while the primer is on).
+function scriptProgress(){
+  const recs = VC.scriptRecs(prog);
+  const isM = u => !!recs[u.id] && VC.scriptMastered(recs[u.id], PACK);
+  let rows = SCFG.stages.map(st => {
+    const list = VC.scriptStageUnits(st.key, SUNITS);
+    const taught = VC.scriptSets(st.key, SUNITS).filter(set => VC.scriptSetTaught(set, prog)).reduce((n, set) => n + set.length, 0);
+    return `<tr><td>${tw(st.label)}</td><td>${taught} / ${list.length} taught · ${list.filter(isM).length} mastered</td></tr>`;
+  }).join("");
+  if(SUNITS.every(isM)) rows += `<tr id="xMastered"><td colspan="2">Script mastered</td></tr>`;
+  const off = VC.scriptSkipped(prog);
+  const stageOn = st => !(prog.script && prog.script.skip && prog.script.skip[st.key] === true);
+  const multi = SCFG.stages.length > 1;
+  const controls = `<div id="scriptCtl" style="margin-top:14px"><div class="row"><button class="chip ${off ? "" : "on"}" id="xOn" aria-pressed="${!off}">Script primer on</button><button class="chip ${off ? "on" : ""}" id="xOff" aria-pressed="${off}">Script primer off</button></div>
+    ${multi && !off ? `<div class="row">${SCFG.stages.map((st, i) => `<button class="chip ${stageOn(st) ? "on" : ""}" id="xSt${i}" aria-pressed="${stageOn(st)}">${tw(st.label)}</button>`).join("")}</div>` : ""}
+    <p class="q" style="margin-top:6px">Changes what Today's Learn step teaches next. Nothing you've learned is lost.</p></div>`;
+  const wire = () => {
+    $("xOn").onclick = () => { VC.setScriptSkipped(prog, false); store.save(); progressRender(); };
+    $("xOff").onclick = () => { VC.setScriptSkipped(prog, true); store.save(); progressRender(); };
+    if(multi && !off) SCFG.stages.forEach((st, i) => { $("xSt" + i).onclick = () => { VC.setScriptSkipped(prog, stageOn(st), st.key); store.save(); progressRender(); }; });
   };
   return { rows, controls, wire };
 }
@@ -3963,4 +4841,4 @@ function legacyFailHTML(why){
 </script>
 </body>
 </html>
-<!--ve-build:2640945901-1377657-->
+<!--ve-build:3177358841-1441256-->

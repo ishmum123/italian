@@ -44,27 +44,27 @@ Levels: {'A1': 600, 'A2': 700, 'B1': 700}. POS: {'noun': 978, 'verb': 489, 'adj'
 
 ## Sentences
 
-- Final sentences: **3,152**, 469 with audio (`https://tatoeba.org/audio/download/<audio_id>`).
-- Word coverage: 0 = 2, 1 = 5, 2 = 1993.
+- Final sentences: **3,141**, 470 with audio (`https://tatoeba.org/audio/download/<audio_id>`).
+- Word coverage: 0 = 2, 1 = 6, 2 = 1992.
 - Words with no sentence: anzi, ovvero.
-- Candidate sentences (terminal punctuation, 3-14 tokens, content lemmas in pack/top-3000, >=1 link): 475,981. Rejected for a content lemma outside pack/top-3000: 142,865.
-- Passato remoto: 46,746 candidates contain one; 46,705 were blocked for A1/A2 words; 169 in the final set (all lv B1).
-- Primary word level of each sentence: {'A1': 807, 'A2': 1115, 'B1': 1230}.
+- Candidate sentences (terminal punctuation, 3-14 tokens, content lemmas in pack/top-3000, >=1 link): 475,563. Rejected for a content lemma outside pack/top-3000: 142,865.
+- Passato remoto: 46,337 candidates contain one; 46,290 were blocked for A1/A2 words; 159 in the final set (all lv B1).
+- Primary word level of each sentence: {'A1': 808, 'A2': 1110, 'B1': 1223}.
 - Token-length distribution of the final set:
 
 | tokens | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 13 |
 |---|---|---|---|---|---|---|---|---|---|
-| sentences | 229 | 686 | 97 | 1014 | 1071 | 42 | 8 | 4 | 1 |
+| sentences | 229 | 685 | 95 | 1010 | 1068 | 41 | 8 | 4 | 1 |
 
 ## Kelly CEFR cross-check (sanity only, not shipped)
 
-1,900 of 2,000 lemmas matched Kelly. Exact level agreement 795/1900 = 41.8%; within one level 1572/1900 = 82.7%.
+1,900 of 2,000 lemmas matched Kelly. Exact level agreement 799/1900 = 42.1%; within one level 1576/1900 = 82.9%.
 
 | pack \ kelly | A1 | A2 | B1 | B2 | C1 | C2 |
 |---|---|---|---|---|---|---|
-| **A1** | 403 | 74 | 47 | 23 | 17 | 3 |
-| **A2** | 318 | 242 | 77 | 28 | 11 | 2 |
-| **B1** | 134 | 206 | 150 | 102 | 59 | 4 |
+| **A1** | 404 | 73 | 47 | 23 | 17 | 3 |
+| **A2** | 320 | 242 | 74 | 27 | 13 | 2 |
+| **B1** | 131 | 207 | 153 | 103 | 57 | 4 |
 
 ## Top 100 by rank (lemma [pos] gloss)
 
@@ -172,6 +172,19 @@ Levels: {'A1': 600, 'A2': 700, 'B1': 700}. POS: {'noun': 978, 'verb': 489, 'adj'
 ```
 
 <!-- manual:begin -->
+## Policy rebuild 2026-09-25 (engine ff88f44; hand-written, preserved)
+- Words: ranks, ids, glosses unchanged; only levels moved. Word ceiling
+  (`word_ceiling_re`) to B1: uccidere A1; arma, sangue, sesso, omicidio, droga,
+  pistola, sessuale A2. Band-edge shifts: musica A2->A1; metodo, consigliare,
+  autorità, appunto, post, occhiata, tecnologia, zitto B1->A2.
+- Sentences 3,152 -> 3,141 (36 removed, 25 added, by text). Drop-everywhere:
+  s0553 "Perché la gente si uccide?", s1849 and s3131 (il suicidio). The rest is
+  example re-choice after the level moves. Levels A1 801->804, A2 1,097->1,106,
+  B1 1,254->1,231.
+- il suicidio (w1873) keeps one written example (`tools/generated_examples.tsv`,
+  exempt from `drop_all_levels`): "Il governo vuole ridurre i casi di suicidio."
+- passages.json byte-identical; double build byte-identical; ./check.sh green.
+
 ## v3 fix round (re-QA FIX-THEN-SHIP; hand-written, preserved across rebuilds)
 
 Before = round-2 pack; after = this build. Every item is a pipeline rule

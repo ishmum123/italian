@@ -62,6 +62,7 @@
       "Valdast",
       "ValentinaM",
       "Vallysing",
+      "Vortarulo",
       "Vy",
       "WM3DAS",
       "al_ex_an_der",
@@ -121,7 +122,6 @@
       "rado",
       "remod",
       "riccioberto",
-      "robbar42",
       "shoras",
       "sixtynine",
       "skywatcher",
@@ -142,9 +142,15 @@
       "CC BY 4.0": [
         {
           "recorder": "NM1",
-          "clips": 469
+          "clips": 470
         }
       ]
     }
+  },
+  "written_examples": {
+    "source": "written for this pack (tools/generated_examples.tsv) and reviewed; marked \"src\": \"gen\"",
+    "licence": "CC-BY-SA-4.0",
+    "count": 1,
+    "note": "Example sentences only, for words whose corpus sentences are missing or dropped by policy; no audio."
   }
 }

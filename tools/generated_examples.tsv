@@ -1,0 +1,7 @@
+# Example sentences written for this pack that serve only as word examples:
+# tagged apart from the corpus, so they never move the frequency pass or
+# glosses. Format: Italian<TAB>English. Reviewed by hand; they ship with
+# "src": "gen" and no audio, and are exempt from the drop-everywhere
+# filter (engine packbuilder README, drop_all_levels). Append only.
+# il suicidio: every Tatoeba example is dropped by the cross-pack suicide policy.
+Il governo vuole ridurre i casi di suicidio.	The government wants to reduce suicide cases.

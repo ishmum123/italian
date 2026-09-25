@@ -6,73 +6,85 @@ punctuation not counted). Level budget (passage + questions + options): A1 may u
 <=3 A2 lemmas and no B1; A2 may use <=3 B1 lemmas; B1 may use anything in the pack.
 Linked = tokens whose word id is also in the sentence's `words` (the stricter share:
 a pack lemma can go unlinked when the tagger reads it with another POS).
+words = the builder's word count (the band rule); ws_words = whitespace-separated
+tokens of the passage text, the count the app shows (report only).
 
-- **A1**: 20 passages; words/passage 63-90 (median 76.0); coverage min 1.000, median 1.000 (rule >= 0.95); linked min 0.987; questions mc 45, tf 40
-- **A2**: 20 passages; words/passage 91-119 (median 112.0); coverage min 0.971, median 1.000 (rule >= 0.95); linked min 0.971; questions mc 50, tf 42
-- **B1**: 20 passages; words/passage 120-141 (median 134.0); coverage min 0.992, median 1.000 (rule >= 0.93); linked min 0.992; questions mc 56, tf 41
+- **A1**: 20 passages; words/passage 63-90 (median 76.0); ws_words 63-90; coverage min 1.000, median 1.000 (rule >= 0.95); linked min 0.987; questions mc 45, tf 40
+- **A2**: 20 passages; words/passage 91-119 (median 112.0); ws_words 91-119; coverage min 0.971, median 1.000 (rule >= 0.95); linked min 0.971; questions mc 50, tf 42
+- **B1**: 20 passages; words/passage 120-141 (median 134.0); ws_words 122-141; coverage min 0.992, median 1.000 (rule >= 0.93); linked min 0.992; questions mc 56, tf 41
 
-| id | lv | title | words | coverage | linked | out-of-pack lemmas (reason) | higher-level lemmas |
-|---|---|---|---|---|---|---|---|
-| p0001 | A1 | La mia giornata | 70 | 1.000 | 1.000 | - | - |
-| p0002 | A1 | La famiglia di Giulia | 77 | 1.000 | 1.000 | - | - |
-| p0003 | A1 | Al mercato | 67 | 1.000 | 1.000 | - | A2: euro, signora |
-| p0004 | A1 | Un messaggio per Sara | 64 | 1.000 | 1.000 | - | - |
-| p0005 | A1 | Che tempo fa? | 75 | 1.000 | 0.987 | - | - |
-| p0006 | A1 | In treno | 74 | 1.000 | 1.000 | - | A2: viaggio |
-| p0007 | A1 | La nuova scuola | 89 | 1.000 | 1.000 | - | A2: calcio, classe, maestro |
-| p0008 | A1 | Al ristorante | 76 | 1.000 | 1.000 | - | - |
-| p0009 | A1 | Il mio cane Bruno | 79 | 1.000 | 1.000 | - | - |
-| p0010 | A1 | Il negozio chiude | 76 | 1.000 | 1.000 | - | A2: aperto, signora, vacanza |
-| p0011 | A1 | Una festa per il compleanno | 73 | 1.000 | 1.000 | - | A2: compleanno, vicino |
-| p0012 | A1 | La casa di Anna | 85 | 1.000 | 1.000 | - | A2: lontano |
-| p0013 | A1 | Una domenica al mare | 74 | 1.000 | 1.000 | - | A2: lontano, palla |
-| p0014 | A1 | Il primo giorno di lavoro | 88 | 1.000 | 1.000 | - | A2: alzare, gentile |
-| p0015 | A1 | Dov'è la stazione? | 63 | 1.000 | 1.000 | - | A2: destra, lontano, viaggio |
-| p0016 | A1 | Il gatto alla finestra | 86 | 1.000 | 1.000 | - | A2: aperto, fame |
-| p0017 | A1 | Tanta neve in montagna | 77 | 1.000 | 1.000 | - | A2: cadere, metro, ritardo |
-| p0018 | A1 | Al telefono con la mamma | 70 | 1.000 | 1.000 | - | A2: compleanno, università, vicino |
-| p0019 | A1 | Il sabato di Sara | 90 | 1.000 | 1.000 | - | A2: svegliare, tardi |
-| p0020 | A1 | Io studio l'italiano | 87 | 1.000 | 1.000 | - | A2: durare |
-| p0021 | A2 | Vacanze in Sicilia | 116 | 1.000 | 1.000 | - | B1: spiaggia |
-| p0022 | A2 | Il nuovo lavoro di Marco | 117 | 1.000 | 1.000 | - | - |
-| p0023 | A2 | Dal medico | 109 | 1.000 | 1.000 | - | B1: influenza |
-| p0024 | A2 | Appartamento in affitto | 108 | 1.000 | 1.000 | - | B1: affitto |
-| p0025 | A2 | La torta della nonna | 109 | 0.972 | 0.972 | farina x1 (recipe ingredient (flour), unavoidable), forno x2 (recipe (oven), unavoidable) | B1: olio |
-| p0026 | A2 | Una giornata difficile | 119 | 0.991 | 0.991 | bagnato x1 (natural wording (soaked clothes), requested in QA) | - |
-| p0027 | A2 | Un nuovo parco in città | 116 | 1.000 | 1.000 | - | B1: lago |
-| p0028 | A2 | Una festa a sorpresa | 108 | 1.000 | 1.000 | - | B1: concerto, sorpresa |
-| p0029 | A2 | Il programma di domani | 91 | 1.000 | 1.000 | - | B1: entro, riunione |
-| p0030 | A2 | Che film vediamo? | 104 | 1.000 | 1.000 | - | B1: fila |
-| p0031 | A2 | La partita | 106 | 0.990 | 0.990 | gol x1 (football term (goal), unavoidable in a match report) | B1: festeggiare, gridare, segnare |
-| p0032 | A2 | All'università | 111 | 1.000 | 0.990 | - | B1: biblioteca |
-| p0033 | A2 | Avviso in stazione | 112 | 0.971 | 0.971 | binario x2 (station term (platform), unavoidable in an announcement), convalidare x1 (station term (validate a ticket), requested in QA) | B1: orario |
-| p0034 | A2 | La spesa del sabato | 113 | 1.000 | 0.991 | - | B1: doppio, spendere |
-| p0035 | A2 | Il mio quartiere | 119 | 1.000 | 1.000 | - | - |
-| p0036 | A2 | Una caduta in bicicletta | 118 | 0.991 | 0.991 | frenare x1 (natural wording (to brake), requested in QA) | B1: giardino, rotto |
-| p0037 | A2 | Il corso d'italiano | 112 | 1.000 | 1.000 | - | B1: benvenuto, orario, straniero |
-| p0038 | A2 | Una lettera da Berlino | 117 | 1.000 | 1.000 | - | - |
-| p0039 | A2 | La festa del paese | 112 | 0.991 | 0.991 | artificio x1 (fixed phrase fuochi d'artificio (fireworks), requested in QA) | B1: tradizione |
-| p0040 | A2 | Un problema con il telefono | 92 | 1.000 | 1.000 | - | B1: scatola, spegnere |
-| p0041 | B1 | Una domanda difficile | 125 | 1.000 | 1.000 | - | - |
-| p0042 | B1 | Una lettera all'albergo | 120 | 1.000 | 1.000 | - | - |
-| p0043 | B1 | Chiude la vecchia fabbrica | 138 | 1.000 | 1.000 | - | - |
-| p0044 | B1 | Quando il nonno era bambino | 136 | 1.000 | 1.000 | - | - |
-| p0045 | B1 | Come dormire meglio | 128 | 1.000 | 0.992 | - | - |
-| p0046 | B1 | Un sabato in biblioteca | 139 | 1.000 | 1.000 | - | - |
-| p0047 | B1 | Troppe macchine in centro | 132 | 0.992 | 0.992 | parcheggio x1 (topic word (car park), requested in QA) | - |
-| p0048 | B1 | Il mio primo viaggio da solo | 135 | 1.000 | 1.000 | - | - |
-| p0049 | B1 | I ragazzi e il telefono | 124 | 1.000 | 1.000 | - | - |
-| p0050 | B1 | Il rumore di notte | 135 | 1.000 | 1.000 | - | - |
-| p0051 | B1 | Cambiare lavoro? | 127 | 1.000 | 1.000 | - | - |
-| p0052 | B1 | Un giardino in città | 136 | 1.000 | 1.000 | - | - |
-| p0053 | B1 | La gara di cucina | 133 | 0.992 | 0.992 | ingrediente x1 (recipe word (ingredient), requested in QA) | - |
-| p0054 | B1 | Il matrimonio di mia cugina | 141 | 1.000 | 1.000 | - | - |
-| p0055 | B1 | Il museo apre di sera | 140 | 1.000 | 1.000 | - | - |
-| p0056 | B1 | Lavorare da casa | 133 | 1.000 | 1.000 | - | - |
-| p0057 | B1 | La bicicletta rubata | 126 | 1.000 | 1.000 | - | - |
-| p0058 | B1 | Una lettera al giornale | 140 | 1.000 | 1.000 | - | - |
-| p0059 | B1 | Imparare una lingua da adulti | 136 | 1.000 | 1.000 | - | - |
-| p0060 | B1 | Tra dieci anni | 128 | 1.000 | 1.000 | - | - |
+| id | lv | title | words | ws_words | coverage | linked | out-of-pack lemmas (reason) | higher-level lemmas |
+|---|---|---|---|---|---|---|---|---|
+| p0001 | A1 | La mia giornata | 70 | 70 | 1.000 | 1.000 | - | - |
+| p0002 | A1 | La famiglia di Giulia | 77 | 77 | 1.000 | 1.000 | - | - |
+| p0003 | A1 | Al mercato | 67 | 67 | 1.000 | 1.000 | - | A2: euro, signora |
+| p0004 | A1 | Un messaggio per Sara | 64 | 64 | 1.000 | 1.000 | - | - |
+| p0005 | A1 | Che tempo fa? | 75 | 75 | 1.000 | 0.987 | - | - |
+| p0006 | A1 | In treno | 74 | 74 | 1.000 | 1.000 | - | A2: viaggio |
+| p0007 | A1 | La nuova scuola | 89 | 89 | 1.000 | 1.000 | - | A2: calcio, classe, maestro |
+| p0008 | A1 | Al ristorante | 76 | 76 | 1.000 | 1.000 | - | - |
+| p0009 | A1 | Il mio cane Bruno | 79 | 79 | 1.000 | 1.000 | - | - |
+| p0010 | A1 | Il negozio chiude | 76 | 76 | 1.000 | 1.000 | - | A2: aperto, signora, vacanza |
+| p0011 | A1 | Una festa per il compleanno | 73 | 73 | 1.000 | 1.000 | - | A2: compleanno, vicino |
+| p0012 | A1 | La casa di Anna | 85 | 85 | 1.000 | 1.000 | - | A2: lontano |
+| p0013 | A1 | Una domenica al mare | 74 | 74 | 1.000 | 1.000 | - | A2: lontano, palla |
+| p0014 | A1 | Il primo giorno di lavoro | 88 | 88 | 1.000 | 1.000 | - | A2: alzare, gentile |
+| p0015 | A1 | Dov'è la stazione? | 63 | 63 | 1.000 | 1.000 | - | A2: destra, lontano, viaggio |
+| p0016 | A1 | Il gatto alla finestra | 86 | 86 | 1.000 | 1.000 | - | A2: aperto, fame |
+| p0017 | A1 | Tanta neve in montagna | 77 | 77 | 1.000 | 1.000 | - | A2: cadere, metro, ritardo |
+| p0018 | A1 | Al telefono con la mamma | 70 | 70 | 1.000 | 1.000 | - | A2: compleanno, università, vicino |
+| p0019 | A1 | Il sabato di Sara | 90 | 90 | 1.000 | 1.000 | - | A2: svegliare, tardi |
+| p0020 | A1 | Io studio l'italiano | 87 | 87 | 1.000 | 1.000 | - | A2: durare |
+| p0021 | A2 | Vacanze in Sicilia | 116 | 116 | 1.000 | 1.000 | - | B1: spiaggia |
+| p0022 | A2 | Il nuovo lavoro di Marco | 117 | 117 | 1.000 | 1.000 | - | - |
+| p0023 | A2 | Dal medico | 109 | 109 | 1.000 | 1.000 | - | B1: influenza |
+| p0024 | A2 | Appartamento in affitto | 108 | 109 | 1.000 | 1.000 | - | B1: affitto |
+| p0025 | A2 | La torta della nonna | 109 | 109 | 0.972 | 0.972 | farina x1 (recipe ingredient (flour), unavoidable), forno x2 (recipe (oven), unavoidable) | B1: olio |
+| p0026 | A2 | Una giornata difficile | 119 | 119 | 0.991 | 0.991 | bagnato x1 (natural wording (soaked clothes), requested in QA) | - |
+| p0027 | A2 | Un nuovo parco in città | 116 | 116 | 1.000 | 1.000 | - | B1: lago |
+| p0028 | A2 | Una festa a sorpresa | 108 | 108 | 1.000 | 1.000 | - | B1: concerto, sorpresa |
+| p0029 | A2 | Il programma di domani | 91 | 91 | 1.000 | 1.000 | - | B1: entro, riunione |
+| p0030 | A2 | Che film vediamo? | 104 | 104 | 1.000 | 1.000 | - | B1: fila |
+| p0031 | A2 | La partita | 106 | 106 | 0.990 | 0.990 | gol x1 (football term (goal), unavoidable in a match report) | B1: festeggiare, gridare, segnare |
+| p0032 | A2 | All'università | 111 | 111 | 1.000 | 0.990 | - | B1: biblioteca |
+| p0033 | A2 | Avviso in stazione | 112 | 112 | 0.971 | 0.971 | binario x2 (station term (platform), unavoidable in an announcement), convalidare x1 (station term (validate a ticket), requested in QA) | B1: orario |
+| p0034 | A2 | La spesa del sabato | 113 | 113 | 1.000 | 0.991 | - | B1: doppio, spendere |
+| p0035 | A2 | Il mio quartiere | 119 | 119 | 1.000 | 1.000 | - | - |
+| p0036 | A2 | Una caduta in bicicletta | 118 | 118 | 0.991 | 0.991 | frenare x1 (natural wording (to brake), requested in QA) | B1: giardino, rotto |
+| p0037 | A2 | Il corso d'italiano | 112 | 112 | 1.000 | 1.000 | - | B1: benvenuto, orario, straniero |
+| p0038 | A2 | Una lettera da Berlino | 117 | 117 | 1.000 | 1.000 | - | - |
+| p0039 | A2 | La festa del paese | 112 | 112 | 0.991 | 0.991 | artificio x1 (fixed phrase fuochi d'artificio (fireworks), requested in QA) | B1: tradizione |
+| p0040 | A2 | Un problema con il telefono | 92 | 92 | 1.000 | 1.000 | - | B1: scatola, spegnere |
+| p0041 | B1 | Una domanda difficile | 125 | 125 | 1.000 | 1.000 | - | - |
+| p0042 | B1 | Una lettera all'albergo | 120 | 122 | 1.000 | 1.000 | - | - |
+| p0043 | B1 | Chiude la vecchia fabbrica | 138 | 138 | 1.000 | 1.000 | - | - |
+| p0044 | B1 | Quando il nonno era bambino | 136 | 136 | 1.000 | 1.000 | - | - |
+| p0045 | B1 | Come dormire meglio | 128 | 128 | 1.000 | 0.992 | - | - |
+| p0046 | B1 | Un sabato in biblioteca | 139 | 139 | 1.000 | 1.000 | - | - |
+| p0047 | B1 | Troppe macchine in centro | 132 | 132 | 0.992 | 0.992 | parcheggio x1 (topic word (car park), requested in QA) | - |
+| p0048 | B1 | Il mio primo viaggio da solo | 135 | 135 | 1.000 | 1.000 | - | - |
+| p0049 | B1 | I ragazzi e il telefono | 124 | 124 | 1.000 | 1.000 | - | - |
+| p0050 | B1 | Il rumore di notte | 135 | 135 | 1.000 | 1.000 | - | - |
+| p0051 | B1 | Cambiare lavoro? | 127 | 127 | 1.000 | 1.000 | - | - |
+| p0052 | B1 | Un giardino in città | 136 | 136 | 1.000 | 1.000 | - | - |
+| p0053 | B1 | La gara di cucina | 133 | 133 | 0.992 | 0.992 | ingrediente x1 (recipe word (ingredient), requested in QA) | - |
+| p0054 | B1 | Il matrimonio di mia cugina | 141 | 141 | 1.000 | 1.000 | - | - |
+| p0055 | B1 | Il museo apre di sera | 140 | 140 | 1.000 | 1.000 | - | - |
+| p0056 | B1 | Lavorare da casa | 133 | 133 | 1.000 | 1.000 | - | - |
+| p0057 | B1 | La bicicletta rubata | 126 | 126 | 1.000 | 1.000 | - | - |
+| p0058 | B1 | Una lettera al giornale | 140 | 140 | 1.000 | 1.000 | - | - |
+| p0059 | B1 | Imparare una lingua da adulti | 136 | 136 | 1.000 | 1.000 | - | - |
+| p0060 | B1 | Tra dieci anni | 128 | 128 | 1.000 | 1.000 | - | - |
+
+Title words, and question/option words the budget does not count (a numeral-like
+pack word), that are out of the pack or above the passage's level (report only;
+the budget rule above is unchanged):
+
+- p0011: title 'compleanno': compleanno A2
+- p0024: title 'affitto': affitto B1
+- p0028: title 'sorpresa': sorpresa B1
+- p0033: title 'avviso': out of pack
+- p0036: title 'caduta': out of pack
 
 <!-- manual section: kept across runs -->
 

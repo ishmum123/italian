@@ -49,6 +49,17 @@ already in place and their counts.
   every level), 23 moved to B1; 0 glosses changed; word ids and passages.json unchanged.
   `lower_level_gloss_re` stays off (uccidere/morire/morto keep their level).
 
+## Policy rebuild (2026-09-25, engine ff88f44)
+- Word ceiling: 8 words moved to B1 (uccidere A1; arma, sangue, sesso,
+  omicidio, droga, pistola, sessuale A2); band edges: musica A2->A1, metodo,
+  consigliare, autorità, appunto, post, occhiata, tecnologia, zitto B1->A2.
+  `lower_level_gloss_re` stays off; the shared `word_ceiling_re` covers it.
+- Drop-everywhere (suicide/self-harm): s0553, s1849, s3131 removed; il suicidio
+  (w1873) refilled from `tools/generated_examples.tsv`. Sentences 3,152 -> 3,141
+  (36 removed, 25 added, by text). passages.json unchanged.
+- anzi (w2185) and ovvero (w1794) still have no example sentence (none in the
+  corpus passes the filters; pre-existing, not caused by the policy).
+
 ## Reading passages
 - Regenerate `pack/*.js` and `index.html` after `pack/passages.json` changes.
   jsonify_pack.py appends PASSAGES to sentences.js, and until then

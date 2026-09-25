@@ -37,9 +37,15 @@ replaced by clean A1/A2 sentences. No word, gloss or word id changed. Sentences
 about rape or sexual assault/abuse are removed at every level (1 candidate),
 and the check fails on a match. A shared vulgar/sexual English word list also
 scans glosses: a matching sense never leads an A1/A2 gloss, and the check
-fails on any match (no Italian gloss matched). uccidere, morire and morto stay
-at their frequency level as neutral core vocabulary; their violent sentences
-reach learners only at B1. The 60 reading passages have no match either.
+fails on any match (no Italian gloss matched). The 60 reading passages have
+no match either. Since 2026-09-25 (engine ff88f44) two shared rules also apply.
+First, a word whose gloss names killing, murder, weapons, blood, sex or drugs
+ships at B1 only: uccidere (was A1), arma, sangue, sesso, omicidio, droga,
+pistola and sessuale (were A2). Ranks, ids and glosses did not change; the
+band edges moved musica up to A1 and 8 words from B1 to A2. Second, sentences
+about suicide or self-harm are removed at every level (3 removed). il suicidio
+keeps one neutral example written for the pack (`tools/generated_examples.tsv`,
+"src": "gen"). The pack has 3,141 sentences.
 
 ## Layout
 
@@ -56,6 +62,7 @@ tools/
   build_pack.py     shim: runs `python3 -m packbuilder build --lang it --repo .` from engine/tools
   gloss_overrides.json  hand gloss fixes for high-frequency words
   forced_a1.txt     A1 core list, forced into A1 (the closed sets are in langs/it.py)
+  generated_examples.tsv  hand-reviewed written examples (example only; exempt from the drop-everywhere filter)
   id_map_v1.json    frozen v1 word ids, reused for unchanged (lemma, pos)
   requirements.txt  engine/tools/packbuilder/requirements.txt + the Italian spaCy model
   REPORT.md         generated coverage report from the last build (manual section kept)

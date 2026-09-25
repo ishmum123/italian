@@ -20,16 +20,19 @@
     /* pack.fontFamily, when set, is prepended at boot: --wfont = <pack font>, var(--wbase). */
     --wfont: var(--wbase);
     --safe-b: env(safe-area-inset-bottom, 0px);
+    --t1:#3B6E99;--t2:#3E8B5C;--t3:#9C6B2E;--t4:#B33F3F;--t5:#8A8378;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       --bg:#161A18;--ink:#E7EAE7;--mute:#98A29C;--line:#2B322E;--card:#1E2320;
       --ok:#4FAE86;--ok-bg:#193028;--bad:#E08579;--bad-bg:#361F1D;
+      --t1:#6FA8D8;--t2:#6FC08C;--t3:#D0A059;--t4:#E07A6E;--t5:#A39C8E;
     }
   }
   :root[data-theme="dark"]{
     --bg:#161A18;--ink:#E7EAE7;--mute:#98A29C;--line:#2B322E;--card:#1E2320;
     --ok:#4FAE86;--ok-bg:#193028;--bad:#E08579;--bad-bg:#361F1D;
+    --t1:#6FA8D8;--t2:#6FC08C;--t3:#D0A059;--t4:#E07A6E;--t5:#A39C8E;
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 var(--font)}
@@ -124,6 +127,30 @@
   .rowset .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
   .rowset .info .pr{flex:0 0 auto;display:block;overflow-wrap:anywhere}
   .rowset .info .en{text-align:left;display:block}
+  /* Characters stage (pack.characters): Learn teach cards, and sentence ruby by tier.
+     A sentence carrying ruby gets a fixed tall line box, so lines with and without a
+     ruby token are the same height (no jump as tokens change tier) and wrapped lines
+     never collide with the reading above them. */
+  .charteach{padding:10px 0;border-bottom:1px solid var(--line)}
+  .charteach .chead{display:flex;align-items:center;gap:14px}
+  .charteach .cform{font-size:40px;line-height:1.2;flex:0 1 auto;min-width:56px;max-width:55%;text-align:center;overflow-wrap:anywhere}
+  .charteach .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .charteach .pr{font-size:16px}
+  .charteach .en{color:var(--mute);font-size:14px;text-align:left;margin:0}
+  .charteach .sent{border-bottom:none;padding:4px 0 0;font-size:14px}
+  .hasruby{line-height:2.3}
+  /* pack.pronFirst: the "show written form" tap beside a word shown by its reading. */
+  .showw{display:inline-block;width:auto;min-height:0;margin:0 0 0 6px;padding:2px 6px;border:0;background:none;color:var(--mute);font:400 12px/1.2 var(--font);text-decoration:underline;vertical-align:middle;cursor:pointer}
+  .wwr{color:var(--mute);font-size:.8em;margin-inline-start:3px}
+  .showw,.wwr{white-space:nowrap}
+  /* A row word shown by its reading (class pf) keeps reading and tap on one line: the
+     word column may take up to 75% (a reading has no break points), the gloss column
+     shrinks and wraps instead. Readings stay short (zh max 13 letters, 公共汽车). */
+  .wl .wd.pf,.rowset .wd.pf{white-space:nowrap;max-width:75%}
+  .psent .ptxt.hasruby{line-height:2.3}
+  .hasruby ruby{ruby-position:over}
+  .hasruby rt{font-family:var(--font);font-size:0.5em;line-height:1;color:var(--mute);font-weight:400}
+  .hasruby ruby.bare rt{visibility:hidden}
   .sent{padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
   .sent .st{font-family:var(--wfont);font-size:17px}
   .sent .sp{color:var(--mute);font-size:14px}
@@ -149,6 +176,19 @@
   .gloss{position:sticky;top:0;z-index:2;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:6px 0;font-size:15px;text-align:start}
   .gloss .gw{font-size:19px;font-weight:500}
   .gloss .gp,.gloss .ge,.wk .gp,.wk .ge{color:var(--mute)}
+  /* Pronunciation aids (docs/PACK_SCHEMA.md): syllable colours (pack.tones), word taps in
+     sentences (.tk, popover .tokgloss, sentence speaker .ssay), the Sounds Reference card. */
+  .t1{color:var(--t1)} .t2{color:var(--t2)} .t3{color:var(--t3)} .t4{color:var(--t4)} .t5{color:var(--t5)}
+  .sent.tks{cursor:auto}
+  .tk{border-bottom:1px dotted var(--line);cursor:pointer}
+  .tk.on{background:var(--ok-bg);border-bottom-color:var(--ok)}
+  .gloss.tokgloss{position:static;margin:6px 0 2px;font-family:var(--font)}
+  .ssay{width:32px;height:32px;margin:0 0 0 6px;vertical-align:middle;padding:0;display:inline-flex;align-items:center;justify-content:center}
+  .refcard{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card)}
+  .refcard summary{cursor:pointer;font-weight:500}
+  .refh{color:var(--mute);font-size:13px;margin:10px 0 4px}
+  .refcells{display:flex;flex-wrap:wrap;gap:6px}
+  .refcells button{min-width:48px;min-height:40px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:transparent;font-size:16px;color:var(--ink)}
   mark{background:var(--ok-bg);color:inherit;border-radius:4px;padding:0 2px}
   .wk{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px;min-height:44px}
   .wk input{width:20px;height:20px;flex:0 0 auto}
@@ -304,9 +344,10 @@ function wordOpts(entry, pool, showOf, pack, prefer){
   const hasPos = !!entry.pos;
   const fw = new Set((pack && pack.functionWords) || []);
   const ansFw = fw.has(entry.id);
+  const pf = pronFirstOn(pack); // pron display: no option may sound like another (pronClash)
   const cands = (pool||[]).filter(v =>
     v.id!==entry.id && !sharesSurface(v, entry) && normKey(v.en)!==ansGloss && !(ansF2 && firstTwoWords(v.en)===ansF2) &&
-    (ansFw || !fw.has(v.id)));
+    (ansFw || !fw.has(v.id)) && !(pf && pronClash(v, entry)));
   const samePos = v => hasPos && v.pos===entry.pos;
   const t1 = cands.filter(v=>v.lv===entry.lv && samePos(v));
   const t2 = cands.filter(v=>v.lv===entry.lv && !samePos(v));
@@ -318,13 +359,18 @@ function wordOpts(entry, pool, showOf, pack, prefer){
   function pass(strict){
     // Every answer surface is already excluded from `cands`; among distractors only
     // the displayed `w` must differ (their alts are never shown, so sharing one is fine).
+    // With a label fn (showOf) the label is not the written form, so distractors must
+    // also differ in every written surface: two same-w words with different labels
+    // (homographs read differently) would otherwise both be picked as one written word.
     const chosen = []; const usedW = new Set([...surfaces(entry), normKey(show(entry))]); const usedF2 = new Set();
     for(const v of ordered){
       if(chosen.length>=3) break;
       const k = normKey(show(v)), f2 = firstTwoWords(v.en);
       if(usedW.has(k)) continue;
+      if(showOf && surfaces(v).some(x => usedW.has(x))) continue;
+      if(pf && chosen.some(c => pronClash(c, v))) continue;
       if(strict && f2 && usedF2.has(f2)) continue;
-      chosen.push(v); usedW.add(k); if(f2) usedF2.add(f2);
+      chosen.push(v); usedW.add(k); if(showOf) surfaces(v).forEach(x => usedW.add(x)); if(f2) usedF2.add(f2);
     }
     return chosen;
   }
@@ -532,7 +578,9 @@ function visibleArticle(before, arts, pack){
 }
 // Indices into sentence.words that are legal cloze blanks: a known word at the
 // sentence's own level, not a pack function word, not repeated in the sentence (by id),
-// and with a gapMatch (visible exactly once, not inside a longer pack word/compound).
+// and with a gapMatch (visible exactly once, not inside a longer pack word/compound)
+// that leaves some letter or digit outside the blank (a one-word sentence such as
+// "不客气。" blanked whole is "____。", no cloze at all).
 function gapCandidateIndices(sentence, wordsById, pack){
   const fw = new Set((pack && pack.functionWords) || []);
   const words = sentence.words || [];
@@ -542,7 +590,10 @@ function gapCandidateIndices(sentence, wordsById, pack){
     if(fw.has(id) || counts[id] > 1) return;
     const entry = wordsById[id];
     if(!entry || entry.lv !== sentence.lv) return;
-    if(!gapMatch(sentence, entry, wordsById, pack)) return;
+    const m = gapMatch(sentence, entry, wordsById, pack);
+    if(!m) return;
+    const t = String(sentence.t || "");
+    if(!/[\p{L}\p{N}]/u.test(t.slice(0, m.start) + t.slice(m.end))) return;
     out.push(i);
   });
   return out;
@@ -868,7 +919,9 @@ const SENTENCE_MASTERED = 2;  // sentences draw on several known words at once: 
 function storageKey(pack){ return `vocab_${pack.key}`; }
 function defaultProg(pack){
   const sets = {}; levelIds(pack).forEach(id=>{ sets[id] = 0; });
-  return { v:PROG_VERSION, w:{}, s:{}, sets, lessons:{}, sessions:0, theme:null, showPron: pack.showPron !== false, placedOnce:false };
+  const p = { v:PROG_VERSION, w:{}, s:{}, sets, lessons:{}, sessions:0, theme:null, showPron: pack.showPron !== false, placedOnce:false };
+  if(charsConfig(pack)) p.chars = defaultCharsProg(); // absent without pack.characters: flag-off shape unchanged
+  return p;
 }
 const isObj = x => !!x && typeof x === "object" && !Array.isArray(x);
 function validateRecMap(m, name, allowWordFlags){
@@ -908,6 +961,7 @@ function validateProgShape(data, levelIdList){
   if(data.soundsOpened !== undefined && typeof data.soundsOpened !== "boolean" && typeof data.soundsOpened !== "number") return {ok:false, reason:"soundsOpened must be a boolean or number"};
   if(data.theme !== undefined && data.theme !== null && data.theme !== "light" && data.theme !== "dark") return {ok:false, reason:"theme must be null, \"light\" or \"dark\""};
   if(data.read !== undefined){ const e = validateReadShape(data.read); if(e) return {ok:false, reason:e}; }
+  if(data.chars !== undefined){ const e = validateCharsShape(data.chars); if(e) return {ok:false, reason:e}; }
   return {ok:true, data};
 }
 // Fills every missing field of validated (or stored) progress from the pack's
@@ -917,6 +971,7 @@ function normalizeProg(data, pack){
   const merged = Object.assign({}, base, data||{}, {v:PROG_VERSION});
   merged.sets = Object.assign({}, base.sets, (data && data.sets) || {});
   for(const k of ["w","s","lessons"]) if(!isObj(merged[k])) merged[k] = {};
+  if(charsConfig(pack)) merged.chars = normalizeCharsProg(data && data.chars);
   return merged;
 }
 // Parses a stored/imported progress string. Only a JSON object is progress;
@@ -968,6 +1023,8 @@ function applyImport(prev, text, pack){
   const prog = normalizeProg(v.data, pack);
   if(v.data.theme === undefined) prog.theme = prev ? prev.theme : null;
   if(v.data.showPron === undefined && prev && prev.showPron !== undefined) prog.showPron = prev.showPron;
+  // The characters mix preference survives an import that doesn't carry it, like theme.
+  if(prog.chars && !(isObj(v.data.chars) && v.data.chars.mix !== undefined) && prev && isObj(prev.chars) && typeof prev.chars.mix === "boolean") prog.chars.mix = prev.chars.mix;
   return {ok:true, prog};
 }
 function markRec(map, key, ok, isWord){
@@ -1034,8 +1091,13 @@ function kindMix(n, share, typing, rng){
 }
 // Review step: up to REVIEW_PROV provisional (placement-guessed) words plus the
 // weakest learned words, REVIEW_SIZE total, >= REVIEW_PRODUCTION_SHARE production.
+// opts.units (optional): the pack's character units. When the pack has a characters
+// block and some unit has a record, Review is unified (see unifiedReviewPlan); with no
+// such unit the code below runs unchanged, so the output is identical to a word-only plan.
 function buildReviewPlan(learned, prog, pack, opts){
   const o = opts || {}; const n = o.size || REVIEW_SIZE;
+  const ru = recordedUnits(o.units, prog, pack);
+  if(ru.length) return unifiedReviewPlan(learned, ru, prog, pack, n, o.rng);
   const pv = provPick(learned, Math.min(REVIEW_PROV, n), prog.w);
   const pvSet = new Set(pv.map(w=>w.id));
   const rest = weakFirst(learned.filter(x=>!pvSet.has(x.id)), n - pv.length, prog.w, null, o.rng);
@@ -1044,18 +1106,24 @@ function buildReviewPlan(learned, prog, pack, opts){
   return pool.map((word,i)=>({ kind: kinds[i], word }));
 }
 // Recall step: weakest n learned words, all production (recall/type mix).
-function buildRecallPlan(learned, prog, pack, n){
+// opts.units / opts.rng: as buildReviewPlan. Recorded units join the same weakest-first
+// ranking as charRecall items; with none the word-only code below runs unchanged.
+function buildRecallPlan(learned, prog, pack, n, opts){
+  const o = opts || {};
+  const ru = recordedUnits(o.units, prog, pack);
+  if(ru.length) return unifiedRecallPlan(learned, ru, prog, pack, n, o.rng);
   const pool = weakFirst(learned, n, prog.w);
   const kinds = kindMix(pool.length, 1, typingEnabled(pack));
   return pool.map((word,i)=>({ kind: kinds[i], word }));
 }
 // Sentence kind: hear 50 / read 25 / gap 25. Gap is "gapType" (type the blank) half
-// the time when the pack has typing, else multiple choice.
+// the time when the pack types written words, else multiple choice. A pack that types
+// the reading (typing "pron", pronTypingOn) never gets gapType: the blank is written.
 function sentenceKind(pack, rng){
   const r = (rng || Math.random)();
   if(r < 0.5) return "hear";
   if(r < 0.75) return "read";
-  return typingEnabled(pack) && (rng || Math.random)() < 0.5 ? "gapType" : "gap";
+  return typingEnabled(pack) && !pronTypingOn(pack) && (rng || Math.random)() < 0.5 ? "gapType" : "gap";
 }
 
 // ------------------------------------------------------------------ lessons
@@ -1188,6 +1256,10 @@ function passageLength(p, pack){
 // w, every alt and its bare form, as findSurface does for the pack; overlapping hits keep
 // the longest (per start, earliest first), so 为什么 wins over 为, and never cover a span.
 // A pack without spans behaves exactly as before. Joining every piece's text gives s.t.
+// A span may carry an optional 4th element, a display-only gloss string (zh: a phrase
+// such as 越来越 "more and more", or a sense of the word shown on tap); its piece then
+// has `gloss`, which the popover shows instead of the word's gloss. Pieces without one
+// are unchanged.
 // True when UTF-16 index i falls between the two halves of a surrogate pair.
 function splitsPair(t, i){ return i > 0 && i < t.length && t.codePointAt(i - 1) > 0xFFFF; }
 function passageSegments(s, wordsById, pack){
@@ -1201,7 +1273,7 @@ function passageSegments(s, wordsById, pack){
   ((s && Array.isArray(s.spans)) ? s.spans : [])
     .filter(x => Array.isArray(x) && Number.isInteger(x[0]) && Number.isInteger(x[1]) && x[0] >= 0 && x[0] < x[1] && x[1] <= t.length && idSet.has(x[2]) && by[x[2]]
       && t.slice(x[0], x[1]).trim() && !splitsPair(t, x[0]) && !splitsPair(t, x[1]))
-    .map(x => ({ start: x[0], end: x[1], id: x[2] }))
+    .map(x => (typeof x[3] === "string" && x[3].trim() ? { start: x[0], end: x[1], id: x[2], gloss: x[3] } : { start: x[0], end: x[1], id: x[2] }))
     .sort((a,b) => a.start - b.start)
     .forEach(h => { if(!keep.some(k => h.start < k.end && k.start < h.end)){ keep.push(h); spanned.add(h.id); } });
   const hits = [];
@@ -1214,7 +1286,7 @@ function passageSegments(s, wordsById, pack){
   hits.forEach(h => { if(!keep.some(k => h.start < k.end && k.start < h.end)) keep.push(h); });
   keep.sort((a,b) => a.start - b.start);
   const parts = []; let at = 0;
-  keep.forEach(h => { if(h.start > at) parts.push({ text: t.slice(at, h.start), id: null }); parts.push({ text: t.slice(h.start, h.end), id: h.id }); at = h.end; });
+  keep.forEach(h => { if(h.start > at) parts.push({ text: t.slice(at, h.start), id: null }); parts.push(h.gloss ? { text: t.slice(h.start, h.end), id: h.id, gloss: h.gloss } : { text: t.slice(h.start, h.end), id: h.id }); at = h.end; });
   if(at < t.length || !parts.length) parts.push({ text: t.slice(at), id: null });
   const placed = new Set(keep.map(h => h.id));
   return { parts, unplaced: ids.filter(id => !placed.has(id) && by[id]) };
@@ -1303,6 +1375,856 @@ function validateReadShape(r){
   return null;
 }
 
+// ------------------------------------------------------------------ characters
+// Optional characters stage (design: the merge plan in docs/, §2-3). Nothing here runs for a pack
+// without a `characters` block. A character unit is the written form of a known word:
+// {id, t, words:[wordId,...], lv, reading?} (pack characters.js). words[0] supplies the
+// gloss, the audio and the default reading. Progress lives in prog.chars =
+// {v, c:{[unitId]:{r,w,s}}, defer, choiceSeen, mix}; scoring writes prog.chars.c only.
+// Language-agnostic: the pack decides what a unit is (zh: every word, read by its pron;
+// ja: words written with non-kana glyphs, read by their kana pron).
+const CHARS_PROG_VERSION = 1;
+const CHAR_SET_SIZE = 10, CHAR_MASTERED = 3, CHAR_BARE = 6;
+const REVIEW_SIZE_CHARS = 20; // Review once characters have started (15 before)
+const CHAR_KINDS = ["charRead","charSound","charPick","charRecall"];
+const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+const cpLen = s => [...String(s == null ? "" : s)].length;
+// pack.characters with defaults filled, or null when the pack has none.
+function charsConfig(pack){
+  const c = pack && pack.characters;
+  if(!isObj(c)) return null;
+  const kinds = (k, d) => { const f = Array.isArray(k) ? k.filter(x => CHAR_KINDS.includes(x)) : []; return f.length ? f : d; };
+  return {
+    label: c.label != null ? String(c.label) : "",
+    stages: (Array.isArray(c.stages) ? c.stages : []).filter(isObj)
+      .map(st => ({ after: String(st.after), levels: (Array.isArray(st.levels) ? st.levels : []).map(String) })),
+    setSize: Number.isInteger(c.setSize) && c.setSize > 0 ? c.setSize : CHAR_SET_SIZE,
+    mastered: typeof c.mastered === "number" ? c.mastered : CHAR_MASTERED,
+    bare: typeof c.bare === "number" ? c.bare : CHAR_BARE,
+    learnKinds: kinds(c.learnKinds, ["charPick","charRead"]),
+    reviewKinds: kinds(c.reviewKinds, ["charRead","charSound"]),
+    testKinds: testKinds(c.testKinds),
+  };
+}
+// pack.characters.testKinds: {kind: weight} for the Test tab's Characters N (the predecessor app's mix,
+// charRead 40 / charSound 30 / charPick 30, by default). Unknown kinds and non-positive
+// or non-finite weights are dropped; nothing left means the default.
+const CHAR_TEST_KINDS = { charRead:40, charSound:30, charPick:30 };
+function testKinds(tk){
+  const out = {};
+  if(isObj(tk)) for(const k of CHAR_KINDS) if(typeof tk[k] === "number" && isFinite(tk[k]) && tk[k] > 0) out[k] = tk[k];
+  return Object.keys(out).length ? out : Object.assign({}, CHAR_TEST_KINDS);
+}
+// One kind drawn from a {kind: weight} map (rng in [0, 1)).
+function pickWeighted(weights, rng){
+  const ks = Object.keys(weights); const total = ks.reduce((a, k) => a + weights[k], 0);
+  let x = (rng || Math.random)() * total;
+  for(const k of ks){ x -= weights[k]; if(x < 0) return k; }
+  return ks[ks.length - 1];
+}
+
+// ---- progress (prog.chars)
+function defaultCharsProg(){ return { v:CHARS_PROG_VERSION, c:{}, defer:false, choiceSeen:false, mix:true }; }
+// Returns an error string or null. Validated whenever present, pack or no pack.
+// chars.v is its own version: any positive integer is accepted and kept, so a newer
+// chars shape never invalidates (and so resets) the whole progress record.
+function validateCharsShape(ch){
+  if(!isObj(ch)) return "chars must be an object";
+  if(ch.v !== undefined && !(Number.isInteger(ch.v) && ch.v >= 1)) return "chars.v must be a positive integer";
+  if(ch.c !== undefined){ const e = validateRecMap(ch.c, "chars.c", false); if(e) return e; }
+  for(const f of ["defer","choiceSeen","mix"]) if(ch[f] !== undefined && typeof ch[f] !== "boolean") return `chars.${f} must be a boolean`;
+  return null;
+}
+// Missing fields filled from defaults; fields present are kept.
+function normalizeCharsProg(ch){
+  const out = Object.assign(defaultCharsProg(), isObj(ch) ? ch : {});
+  if(!isObj(out.c)) out.c = {};
+  return out;
+}
+function ensureChars(prog){
+  if(!isObj(prog.chars)) prog.chars = defaultCharsProg();
+  if(!isObj(prog.chars.c)) prog.chars.c = {};
+  return prog.chars;
+}
+function charRecs(prog){ return (prog && isObj(prog.chars) && isObj(prog.chars.c)) ? prog.chars.c : {}; }
+const hasCharRec = (recs, id) => hasOwn(recs, id) && !!recs[id];
+// Scores one character item (writes prog.chars.c only).
+function markChar(prog, unitId, ok){ return markRec(ensureChars(prog).c, unitId, ok, false); }
+// The one-time choice card: start characters now, or defer them past the later levels.
+function answerCharChoice(prog, start){
+  const ch = ensureChars(prog); ch.choiceSeen = true; if(!start) ch.defer = true; return prog;
+}
+// The reversible learning-order switch (Progress): flips the flag only. The path is
+// re-derived from it; no record, set counter or choice state is touched.
+function setCharOrder(prog, defer){ ensureChars(prog).defer = !!defer; return prog; }
+
+// ---- units
+function unitWord(unit, byId){ return (byId || {})[((unit && unit.words) || [])[0]] || null; }
+function unitReading(unit, byId){
+  if(unit && unit.reading != null && unit.reading !== "") return String(unit.reading);
+  const w = unitWord(unit, byId); return w && w.pron ? String(w.pron) : "";
+}
+function unitGloss(unit, byId){ return gloss(unitWord(unit, byId)); }
+// wordId -> the unit whose words[0] it is (the unit a sentence ruby token follows).
+const UNIT_BY_WORD = new WeakMap();
+function unitByWord(units){
+  if(!Array.isArray(units)) return new Map();
+  let m = UNIT_BY_WORD.get(units);
+  if(!m){ m = new Map(); units.forEach(u => { const w = (u.words || [])[0]; if(w != null && !m.has(w)) m.set(w, u); }); UNIT_BY_WORD.set(units, m); }
+  return m;
+}
+// Units with a character record: the pool unified Review and Recall draw from.
+function recordedUnits(units, prog, pack){
+  if(!charsConfig(pack) || !Array.isArray(units) || !units.length) return [];
+  const recs = charRecs(prog);
+  return units.filter(u => hasCharRec(recs, u.id));
+}
+
+// ---- stages and sets
+// A stage's units: level order (pack order), then file order.
+function charStageUnits(levels, units, pack){
+  const want = new Set((levels || []).map(String)); const idx = levelIndexMap(pack);
+  const at = lv => idx[lv] !== undefined ? idx[lv] : Infinity;
+  return (units || []).map((u, i) => ({u, i})).filter(x => want.has(String(x.u.lv)))
+    .sort((a, b) => (at(String(a.u.lv)) - at(String(b.u.lv))) || (a.i - b.i)).map(x => x.u);
+}
+function charSets(levels, units, pack){
+  const cfg = charsConfig(pack); const size = cfg ? cfg.setSize : CHAR_SET_SIZE;
+  const list = charStageUnits(levels, units, pack); const out = [];
+  for(let i=0; i<list.length; i+=size) out.push(list.slice(i, i+size));
+  return out;
+}
+// A set is taught once every unit in it has a record (no separate counter).
+function charSetTaught(set, prog){ const r = charRecs(prog); return (set || []).every(u => hasCharRec(r, u.id)); }
+// First untaught set of the stage: {index, units, total} or null.
+function nextCharSet(levels, units, pack, prog){
+  const sets = charSets(levels, units, pack);
+  for(let i=0; i<sets.length; i++) if(!charSetTaught(sets[i], prog)) return { index:i, units:sets[i], total:sets.length };
+  return null;
+}
+// Character stages in path order for this learner: the configured stages, or with
+// prog.chars.defer one stage covering all their levels after the latest `after` level.
+// A stage whose `after` is not a pack level sits after the last level.
+// Each: {after, levels, label}. Later stages append their last level id to the label.
+function charStages(pack, prog){
+  const cfg = charsConfig(pack); if(!cfg || !cfg.stages.length) return [];
+  const ids = levelIds(pack), idx = levelIndexMap(pack);
+  if(!ids.length) return [];
+  const pos = a => idx[a] !== undefined ? idx[a] : ids.length - 1;
+  if(prog && isObj(prog.chars) && prog.chars.defer === true){
+    const lv = new Set(); cfg.stages.forEach(st => st.levels.forEach(l => lv.add(l)));
+    const levels = [...ids.filter(l => lv.has(l)), ...[...lv].filter(l => idx[l] === undefined)];
+    return [{ after: ids[Math.max(...cfg.stages.map(st => pos(st.after)))], levels, label: cfg.label }];
+  }
+  return cfg.stages.map((st, i) => ({ after: ids[pos(st.after)], levels: st.levels,
+    label: i === 0 ? cfg.label : cfg.label + (st.levels.length ? st.levels[st.levels.length-1] : "") }));
+}
+// Every stage in path order. Word stage: {kind:"words", lv, label, set, nsets, frac,
+// done} (set = the level's sets counter, as nextNewSet reports it). Character stage:
+// {kind:"chars", key, levels, label, recorded, nunits, nsets, frac, done}.
+// Without pack.characters this is exactly the level strip: one word stage per level.
+function stagePath(pack, words, units, prog){
+  const p = prog || {}; const sets = p.sets || {};
+  const size = setSizeOf(pack), byLv = wordsByLevel(words, pack), recs = charRecs(p);
+  const cfg = charsConfig(pack); const cs = charStages(pack, p);
+  const out = [];
+  levelIds(pack).forEach(lv => {
+    const n = nSets(byLv[lv], size), k = sets[lv] || 0;
+    out.push({ kind:"words", lv, label: levelLabel(pack, lv), set: k, nsets: n, frac: n ? k/n : 1, done: k >= n });
+    cs.filter(st => st.after === lv).forEach(st => {
+      const list = charStageUnits(st.levels, units, pack);
+      const rec = list.filter(u => hasCharRec(recs, u.id)).length;
+      out.push({ kind:"chars", key: st.levels.join("+"), levels: st.levels, label: st.label, recorded: rec,
+        nunits: list.length, nsets: Math.ceil(list.length / cfg.setSize), frac: list.length ? rec/list.length : 1, done: rec >= list.length });
+    });
+  });
+  return out;
+}
+function nextStage(pack, words, units, prog){ return stagePath(pack, words, units, prog).find(s => !s.done) || null; }
+// Every level up to the first character stage's `after` is taught: the point the
+// learning-order switch becomes available.
+function charsUnlocked(pack, words, prog){
+  const cfg = charsConfig(pack); if(!cfg || !cfg.stages.length) return false;
+  const path = stagePath(pack, words, [], Object.assign({}, prog, { chars: Object.assign({}, (prog && prog.chars) || {}, { defer:false }) }));
+  const first = path.findIndex(s => s.kind === "chars");
+  return first > 0 && path.slice(0, first).every(s => s.done);
+}
+// Characters have started: any character record exists, or the current stage is a
+// character stage. Gates every character surface outside the path strip.
+function charsStarted(pack, words, units, prog){
+  if(!charsConfig(pack)) return false;
+  if(Object.keys(charRecs(prog)).length) return true;
+  const st = nextStage(pack, words, units, prog);
+  return !!(st && st.kind === "chars");
+}
+// The one-time choice card shows iff it is unanswered, the order is not deferred, every
+// level before the first character stage is taught, that stage is incomplete (records
+// elsewhere don't matter), and a later word level that deferring would put first (up to
+// the latest stage's `after`) is still incomplete. Otherwise the choice changes nothing.
+function showCharChoice(pack, words, units, prog){
+  const cfg = charsConfig(pack); if(!cfg || !cfg.stages.length) return false;
+  const ch = (prog && isObj(prog.chars)) ? prog.chars : {};
+  if(ch.choiceSeen === true || ch.defer === true) return false;
+  const path = stagePath(pack, words, units, prog);
+  const first = path.findIndex(s => s.kind === "chars");
+  if(first < 0 || path[first].done || !path.slice(0, first).every(s => s.done)) return false;
+  const idx = levelIndexMap(pack), ids = levelIds(pack);
+  const last = Math.max(...cfg.stages.map(st => idx[st.after] !== undefined ? idx[st.after] : ids.length - 1));
+  return path.slice(first + 1).some(s => s.kind === "words" && idx[s.lv] <= last && !s.done);
+}
+
+// ---- tiers
+// Streak -> tier: "pron" below mastered, "ruby" (written form with its reading above)
+// from mastered, "bare" (written form alone) from bare.
+function charTier(streak, pack){
+  const cfg = charsConfig(pack); const s = +streak || 0;
+  if(s >= (cfg ? cfg.bare : CHAR_BARE)) return "bare";
+  if(s >= (cfg ? cfg.mastered : CHAR_MASTERED)) return "ruby";
+  return "pron";
+}
+// Per sentence token: null (no mixing: the sentence renders as it does without
+// characters) unless characters have started and the mix preference is on. Then "ruby"
+// below bare and "bare" at or above it. Word-first packs show the written form from day
+// one, so "pron" only exists for a pack.pronFirst pack (reading-only below mastered).
+function sentenceTokenTier(streak, started, mix, pack){
+  if(!started || !mix) return null;
+  const t = charTier(streak, pack);
+  return t === "pron" && !(pack && pack.pronFirst === true) ? "ruby" : t;
+}
+// sentence.ruby tokens with their tiers: [{start, end, reading, wordId, unitId, tier}],
+// or null when the sentence has no ruby or mixing is off (see sentenceTokenTier).
+// pack.pronFirst: tiers are always returned for a sentence with ruby (every token is
+// "pron" before characters start or with mix off: the reading replaces the written form,
+// as in the predecessor app's reading-only sentences), and follow sentenceTokenTier once
+// characters have started with mix on.
+function rubyTiers(sentence, units, prog, pack, started){
+  const mix = !!(prog && isObj(prog.chars) && prog.chars.mix !== false);
+  const pf = pronFirstOn(pack);
+  if(!charsConfig(pack) || !sentence || !Array.isArray(sentence.ruby)) return null;
+  if(!pf && (!started || !mix)) return null;
+  const byWord = unitByWord(units), recs = charRecs(prog);
+  return sentence.ruby.map(([start, end, reading, wordId]) => {
+    const u = byWord.get(wordId) || null; const rec = u && hasCharRec(recs, u.id) ? recs[u.id] : null;
+    const tier = pf && !(started && mix) ? "pron" : sentenceTokenTier(rec ? rec.s : 0, true, true, pack);
+    return { start, end, reading, wordId, unitId: u ? u.id : null, tier };
+  });
+}
+
+// ---- pronunciation-first (pack.pronFirst, docs/PACK_SCHEMA.md "pronFirst")
+// On only for pack.pronFirst === true with a characters stage: a word whose unit is below
+// the mastered tier is shown by its reading (pron) wherever its written form would appear
+// outside the characters stage, which is where the written form is learned.
+function pronFirstOn(pack){ return !!(pack && pack.pronFirst === true && charsConfig(pack)); }
+// word -> {text, isPron, written}: text is what to display for the word, written its `w`.
+// isPron when pronFirstOn, the word has a pron and a unit (unitByWord: the unit whose
+// words[0] it is) and that unit's streak is below mastered (charTier "pron"). A word with
+// no unit (kana/latin word) or no pron is shown as written. DOM-free, no side effects.
+function displayForm(word, units, prog, pack){
+  const written = String((word && word.w) || "");
+  const out = { text: written, isPron: false, written };
+  if(!word || !pronFirstOn(pack) || !word.pron) return out;
+  const u = unitByWord(units).get(word.id);
+  if(!u) return out;
+  const recs = charRecs(prog); const rec = hasCharRec(recs, u.id) ? recs[u.id] : null;
+  if(charTier(rec ? rec.s : 0, pack) !== "pron") return out;
+  return { text: String(word.pron), isPron: true, written };
+}
+// What a learner hears/reads for a word under pron display: its pron, else its w.
+const sayKey = e => normKey((e && (e.pron || e.w)) || "");
+// Homophone guard for pron display: two words that sound the same (same pron, or one's
+// written form is the other's reading, e.g. a word spelled in its reading and one read alike) are
+// indistinguishable once both are shown by their reading.
+function pronClash(a, b){ return !!(a && b) && sayKey(a) !== "" && sayKey(a) === sayKey(b); }
+
+const LATIN_RE = /\p{Script=Latin}/u;
+const HAN_RE = /\p{Script=Han}/u;
+// Full-width punctuation next to a Latin-script reading, as the reading line writes it.
+const ASCII_PUNCT = { "\uff0c":", ", "\u3001":", ", "\u3002":". ", "\uff01":"! ", "\uff1f":"? ", "\uff1a":": ", "\uff1b":"; ", "\uff08":" (", "\uff09":") ",
+  "\u201c":" \u201c", "\u201d":"\u201d ", "\u2018":" \u2018", "\u2019":"\u2019 ", "\u300a":" \u201c", "\u300b":"\u201d ", "\u2026":"\u2026 ", "\u2014":" \u2014 " };
+// Display pieces of a sentence under pron display, in order: ruby tokens (rubyTiers, or
+// any [{start, end, tier, reading, wordId}] non-overlapping and sorted) and the text
+// around them. A "pron"-tier token shows its reading instead of its written form.
+// blank (optional {start, end}): that range, widened to every token it overlaps, becomes
+// one {kind:"blank"} piece. cuts (optional offsets): text pieces are also split there
+// (passage tap-span edges). When any shown reading is Latin script, adjacent
+// tokens with a reading or blank between them are spaced (pre " ") and full-width punctuation
+// touching a reading or blank is shown in ASCII form with a space; readings in a
+// script written without spaces need neither. Piece: {kind:"text"|"tok"|"blank", start, end, text, pre, tier?, reading?,
+// wordId?, unitId?}. Joining pre+text of every piece gives the displayed line.
+function sentencePieces(sentence, toks, blank, cuts){
+  const t = String((sentence && sentence.t) || "");
+  const valid = []; let pos = 0;
+  (toks || []).forEach(k => { if(k && k.start >= pos && k.end > k.start && k.end <= t.length){ valid.push(k); pos = k.end; } });
+  let b = null;
+  if(blank && blank.end > blank.start){
+    b = { start: blank.start, end: blank.end };
+    valid.forEach(k => { if(k.start < b.end && k.end > b.start){ b.start = Math.min(b.start, k.start); b.end = Math.max(b.end, k.end); } });
+  }
+  const cutSet = [...new Set(cuts || [])].sort((x, y) => x - y);
+  const out = [];
+  const text = (a, z) => {
+    if(z <= a) return;
+    const cs = [a, ...cutSet.filter(c => c > a && c < z), z];
+    for(let i = 0; i < cs.length - 1; i++) out.push({ kind:"text", start: cs[i], end: cs[i+1], text: t.slice(cs[i], cs[i+1]), pre:"" });
+  };
+  const putBlank = () => { out.push({ kind:"blank", start: b.start, end: b.end, text:"____", pre:"" }); };
+  pos = 0; let blankDone = !b;
+  valid.forEach(k => {
+    if(b && k.start < b.end && k.end > b.start) return;
+    if(!blankDone && b.end <= k.start){ text(pos, b.start); putBlank(); pos = b.end; blankDone = true; }
+    text(pos, k.start);
+    const pr = k.tier === "pron";
+    const piece = { kind:"tok", start: k.start, end: k.end, text: pr ? String(k.reading == null ? "" : k.reading) : t.slice(k.start, k.end), pre:"", tier: k.tier, reading: k.reading };
+    if(k.wordId !== undefined) piece.wordId = k.wordId;
+    if(k.unitId !== undefined) piece.unitId = k.unitId;
+    out.push(piece); pos = k.end;
+  });
+  if(!blankDone){ text(pos, b.start); putBlank(); pos = b.end; }
+  text(pos, t.length);
+  const shown = p => (p.kind === "tok" && p.tier === "pron") || p.kind === "blank";
+  if(!out.some(p => p.kind === "tok" && p.tier === "pron" && LATIN_RE.test(p.text))) return out;
+  // Latin line: full-width punctuation in ASCII form; a reading or blank is spaced from
+  // a neighbour that meets it with a letter or digit (a token, or text such as a name).
+  const edgeL = p => p.kind !== "text" || /^[\p{L}\p{N}]/u.test(p.text);
+  const edgeR = p => p.kind !== "text" || /[\p{L}\p{N}]$/u.test(p.text);
+  out.forEach(p => { if(p.kind === "text") p.text = p.text.replace(/[\uff0c\u3001\u3002\uff01\uff1f\uff1a\uff1b\uff08\uff09\u201c\u201d\u2018\u2019\u300a\u300b\u2026\u2014]/g, c => ASCII_PUNCT[c]).replace(/\s+(?=[\u201d\u2019)\u2026,.!?:;])/g, ""); });
+  // A reading that starts a sentence is capitalised: the first one when only opening
+  // punctuation precedes it, the first after a sentence-internal . ! or ? (ba! Ni...), and
+  // the first inside a quote opened after a colon (Ta shuo: "Ni..."). An ellipsis (…) stays
+  // as written and starts nothing.
+  let atStart = true;
+  out.forEach(p => {
+    if(p.kind === "tok" && p.tier === "pron"){ if(atStart) p.text = p.text.charAt(0).toUpperCase() + p.text.slice(1); atStart = false; }
+    else if(p.kind !== "text") atStart = false;
+    else if(/[.!?][\s"'\u201d\u2019)]*$/.test(p.text) || /:\s*["'\u201c\u2018(]+\s*$/.test(p.text)) atStart = true;
+    else if(!/^[\s"'\u201c\u2018(]*$/.test(p.text)) atStart = false;
+  });
+  out.forEach((p, i) => { const prev = out[i-1]; if(prev && (shown(p) || shown(prev)) && edgeL(p) && edgeR(prev)) p.pre = " "; });
+  // tidy: no doubled or edge spaces
+  let last = "";
+  out.forEach((p, i) => {
+    if(/\s$/.test(last)){ p.pre = ""; p.text = p.text.replace(/^\s+/, ""); }
+    if(i === 0){ p.pre = ""; p.text = p.text.replace(/^\s+/, ""); }
+    p.text = p.text.replace(/\s{2,}/g, " ");
+    last = p.pre + p.text || last;
+  });
+  for(let i = out.length - 1; i >= 0; i--){ const p = out[i]; if(p.kind === "text"){ p.text = p.text.replace(/\s+$/, ""); if(p.text) break; } else break; }
+  return out;
+}
+// A sentence under pack.pronFirst: how to show it. null when pron display is off (the
+// caller renders as without it). Else {mode, pieces?, text?}:
+//  "pieces": ruby tokens by tier (sentencePieces), when every Han character of the text
+//    lies inside a ruby token;
+//  "pron": the sentence's own reading line (sentence.pron), when written characters
+//    would otherwise show outside any token (a name, a word with no unit) or the sentence
+//    has no ruby; never used for a blank (null then: the sentence cannot be a gap item);
+//  "text": the text as is (it has no Han characters: kana or Latin only).
+// written (optional, word ids): tokens of these words show at least the ruby tier (the
+// written form with its reading): the unit a characters-stage teach card is teaching.
+function sentenceDisplay(sentence, units, prog, pack, started, blank, written){
+  if(!pronFirstOn(pack) || !sentence) return null;
+  const t = String(sentence.t || "");
+  const ws = new Set(written || []);
+  const rt = rubyTiers(sentence, units, prog, pack, started);
+  const toks = rt && rt.map(k => k.tier === "pron" && ws.has(k.wordId) ? Object.assign({}, k, { tier:"ruby" }) : k);
+  if(toks){
+    const cov = new Array(t.length).fill(false);
+    toks.forEach(k => { for(let i = Math.max(0, k.start); i < Math.min(t.length, k.end); i++) cov[i] = true; });
+    let leak = false;
+    for(let i = 0; i < t.length && !leak; i++){ if(!cov[i]){ const cp = t.codePointAt(i); if(HAN_RE.test(String.fromCodePoint(cp))) leak = true; if(cp > 0xFFFF) i++; } }
+    if(!leak) return { mode:"pieces", pieces: sentencePieces(sentence, toks, blank) };
+  }
+  if(!HAN_RE.test(t)) return { mode:"text" };
+  if(blank) return null;
+  return sentence.pron ? { mode:"pron", text: String(sentence.pron) } : { mode:"text" };
+}
+
+// ---- options
+// Written-form distractors (charPick: reading+audio -> form; charRecall: meaning -> form).
+// Up to 3 other units, never a second right answer: not the answer's form or any surface
+// of its word, not the same reading (a homophone fits the pick stimulus), not the same
+// gloss or first two gloss words (fits the recall stimulus). Pairwise distinct forms and
+// glosses; a strict pass also keeps first-two-gloss-words distinct, relaxed for tiny pools.
+// Preference: same level and form length, then same level, then any.
+function charOpts(unit, units, byId){
+  const aw = unitWord(unit, byId);
+  const ansG = normKey(unitGloss(unit, byId)), ansF2 = firstTwoWords(unitGloss(unit, byId)), ansR = normKey(unitReading(unit, byId));
+  const ansForms = new Set([normKey(unit.t), ...(aw ? surfaces(aw) : [])]);
+  const len = cpLen(unit.t);
+  const cands = (units || []).filter(v => {
+    if(v.id === unit.id || ansForms.has(normKey(v.t))) return false;
+    const g = unitGloss(v, byId), vw = unitWord(v, byId);
+    if(normKey(g) === ansG || (ansF2 && firstTwoWords(g) === ansF2)) return false;
+    if(ansR && normKey(unitReading(v, byId)) === ansR) return false;
+    return !(aw && vw && samePron(aw, vw));
+  });
+  const t1 = cands.filter(v => v.lv === unit.lv && cpLen(v.t) === len);
+  const t2 = cands.filter(v => v.lv === unit.lv && cpLen(v.t) !== len);
+  const t3 = cands.filter(v => v.lv !== unit.lv);
+  const ordered = [...shuffle(t1), ...shuffle(t2), ...shuffle(t3)];
+  function pass(strict){
+    const chosen = []; const usedT = new Set(ansForms), usedG = new Set([ansG]), usedF2 = new Set();
+    for(const v of ordered){
+      if(chosen.length >= 3) break;
+      const t = normKey(v.t), g = unitGloss(v, byId), gk = normKey(g), f2 = firstTwoWords(g);
+      if(usedT.has(t) || usedG.has(gk)) continue;
+      if(strict && f2 && usedF2.has(f2)) continue;
+      chosen.push(v); usedT.add(t); usedG.add(gk); if(f2) usedF2.add(f2);
+    }
+    return chosen;
+  }
+  let chosen = pass(true);
+  if(chosen.length < 3) chosen = pass(false);
+  return chosen;
+}
+// charRecall options: the answer's form plus the charOpts distractors' forms.
+function recallCharOpts(unit, units, byId){ return [unit.t, ...charOpts(unit, units, byId).map(v => v.t)]; }
+// Reading distractors for charSound (form -> reading): up to 3 readings of other units,
+// never a homophone of the answer and never a reading the answer's form also has (a
+// homograph unit or word with the same form). Pairwise distinct. Preference: same level
+// and form length, then same form length, then same level, then any.
+function charSoundOpts(unit, units, byId){
+  const ansT = normKey(unit.t), ansR = normKey(unitReading(unit, byId));
+  const forbid = new Set([ansR]);
+  (units || []).forEach(v => { if(normKey(v.t) === ansT){ const r = normKey(unitReading(v, byId)); if(r) forbid.add(r); } });
+  Object.keys(byId || {}).forEach(k => { const w = byId[k]; if(w && w.pron && surfaces(w).includes(ansT)) forbid.add(normKey(w.pron)); });
+  const len = cpLen(unit.t);
+  const cands = (units || []).filter(v => v.id !== unit.id && normKey(v.t) !== ansT && unitReading(v, byId) && !forbid.has(normKey(unitReading(v, byId))));
+  const sameLen = v => cpLen(v.t) === len, sameLv = v => v.lv === unit.lv;
+  const ordered = [...shuffle(cands.filter(v => sameLv(v) && sameLen(v))), ...shuffle(cands.filter(v => !sameLv(v) && sameLen(v))),
+    ...shuffle(cands.filter(v => sameLv(v) && !sameLen(v))), ...shuffle(cands.filter(v => !sameLv(v) && !sameLen(v)))];
+  const out = []; const used = new Set(forbid);
+  for(const v of ordered){
+    if(out.length >= 3) break;
+    const r = unitReading(v, byId), k = normKey(r);
+    if(used.has(k)) continue;
+    used.add(k); out.push(r);
+  }
+  return out;
+}
+// Meaning distractors for charRead (form alone -> meaning): meaningOpts on the unit's
+// word, with every word the form could also be read as removed from the pool.
+function charReadOpts(unit, words, byId){
+  const w = unitWord(unit, byId); if(!w) return [];
+  const t = normKey(unit.t);
+  return meaningOpts(w, (words || []).filter(v => v.id === w.id || !surfaces(v).includes(t)));
+}
+// One drill item for a unit, DOM-free: {kind, key, unitId, wordId, t, reading, gloss,
+// show, audio, options, answer}. show is the stimulus field ("t", "reading" or "gloss");
+// audio: play words[0]. options are shuffled strings that include answer.
+// ctx: {units, words, byId?, rng?}.
+function charItem(kind, unit, ctx){
+  const c = ctx || {}; const byId = c.byId || Object.fromEntries((c.words || []).map(w => [w.id, w]));
+  const w = unitWord(unit, byId), t = String(unit.t), reading = unitReading(unit, byId), g = unitGloss(unit, byId);
+  const base = { kind, key: "c:" + unit.id, unitId: unit.id, wordId: w ? w.id : null, t, reading, gloss: g };
+  let show, audio = false, answer, others;
+  if(kind === "charRead"){ show = "t"; answer = g; others = charReadOpts(unit, c.words, byId).map(gloss); }
+  else if(kind === "charSound"){ show = "t"; answer = reading; others = charSoundOpts(unit, c.units, byId); }
+  else if(kind === "charPick"){ show = "reading"; audio = true; answer = t; others = charOpts(unit, c.units, byId).map(v => String(v.t)); }
+  else if(kind === "charRecall"){ show = "gloss"; answer = t; others = charOpts(unit, c.units, byId).map(v => String(v.t)); }
+  else throw new Error(`unknown character item kind ${kind}`);
+  return Object.assign(base, { show, audio, answer, options: shuffle([answer, ...others], c.rng) });
+}
+
+// ---- plans
+// Learn step for a character set: each unit gets one item per pack learnKinds, in order.
+function learnCharPlan(set, pack){
+  const cfg = charsConfig(pack); if(!cfg) return [];
+  const out = []; (set || []).forEach(unit => cfg.learnKinds.forEach(kind => out.push({ kind, unit })));
+  return out;
+}
+// Unified weakness score: words keep weakScore; an unmastered unit (s < mastered)
+// scores at least 0, tying with never-drilled words so fresh units aren't starved by a
+// large pool of unrecorded words. Mastered units keep w*3 - s.
+function charReviewScore(rec, pack){
+  const cfg = charsConfig(pack); const p = rec || {}; const sc = weakScore(p);
+  return (p.s || 0) < (cfg ? cfg.mastered : CHAR_MASTERED) ? Math.max(sc, 0) : sc;
+}
+// One ranking over words and units: the n weakest as [{kind:"w"|"c", entry, score}],
+// with weakFirst's jitter (below 1, so it only reorders equal scores).
+function rankUnified(words, wrecs, units, crecs, n, pack, rng){
+  const r = rng || Math.random;
+  const pool = [...(words || []).map(e => ({ kind:"w", entry:e, score: weakScore((wrecs || {})[e.id]) })),
+    ...(units || []).map(u => ({ kind:"c", entry:u, score: charReviewScore((crecs || {})[u.id], pack) }))];
+  return pool.map(x => ({ x, k: x.score + (r() - 0.5) })).sort((a, b) => b.k - a.k).slice(0, n).map(o => o.x);
+}
+// Unified Review: provisional words as before, then the weakest words and recorded units
+// under one ranking, n total. Word items keep the >= 40% production mix; each unit gets
+// a random pack reviewKind. Items: {kind, word} or {kind, unit}.
+function unifiedReviewPlan(learned, ru, prog, pack, n, rng){
+  const cfg = charsConfig(pack); const r = rng || Math.random;
+  const pv = provPick(learned, Math.min(REVIEW_PROV, n), prog.w);
+  const pvSet = new Set(pv.map(w => w.id));
+  const ranked = rankUnified(learned.filter(x => !pvSet.has(x.id)), prog.w, ru, charRecs(prog), n - pv.length, pack, rng);
+  const pool = shuffle([...ranked, ...pv.map(w => ({ kind:"w", entry:w }))], rng);
+  const kinds = kindMix(pool.filter(x => x.kind === "w").length, REVIEW_PRODUCTION_SHARE, typingEnabled(pack), rng);
+  let wi = 0;
+  return pool.map(x => x.kind === "w" ? { kind: kinds[wi++], word: x.entry }
+    : { kind: cfg.reviewKinds[Math.floor(r() * cfg.reviewKinds.length)], unit: x.entry });
+}
+// Unified Recall: the n weakest words and recorded units, weakest first; words as
+// recall/type, units as charRecall.
+function unifiedRecallPlan(learned, ru, prog, pack, n, rng){
+  const ranked = rankUnified(learned, prog.w, ru, charRecs(prog), n, pack, rng);
+  const kinds = kindMix(ranked.filter(x => x.kind === "w").length, 1, typingEnabled(pack), rng);
+  let wi = 0;
+  return ranked.map(x => x.kind === "w" ? { kind: kinds[wi++], word: x.entry } : { kind:"charRecall", unit: x.entry });
+}
+// Taken at "Start today" and kept for the whole session, so finishing a stage mid-session
+// changes neither what Learn teaches nor Review/Recall's mode: {stage, cset, charsStarted,
+// reviewSize, choice}. choice true means the choice card replaces Start today.
+// Without pack.characters: the next word stage, cset null, charsStarted false, REVIEW_SIZE.
+function todaySnapshot(pack, words, units, prog){
+  const stage = nextStage(pack, words, units, prog);
+  const cset = stage && stage.kind === "chars" ? nextCharSet(stage.levels, units, pack, prog) : null;
+  const started = charsStarted(pack, words, units, prog);
+  return { stage, cset, charsStarted: started, reviewSize: started ? REVIEW_SIZE_CHARS : REVIEW_SIZE, choice: showCharChoice(pack, words, units, prog) };
+}
+// Learned words' units without a record, level order then file order, at most n.
+function newCharUnits(units, learned, prog, pack, n){
+  const ids = new Set((learned || []).map(w => w.id)); const recs = charRecs(prog);
+  const ok = new Set((units || []).filter(u => ids.has((u.words || [])[0]) && !hasCharRec(recs, u.id)).map(u => u.id));
+  return charStageUnits(levelIds(pack), (units || []).filter(u => ok.has(u.id)), pack).slice(0, n);
+}
+// Test tab's Characters N (the predecessor app's test): the n weakest recorded units,
+// topped up to n with learned words' unrecorded units (newCharUnits: level order, then
+// file order); each gets a kind drawn from pack.characters.testKinds. [{kind, unit}].
+function charTestPlan(units, learned, prog, pack, n, rng){
+  const cfg = charsConfig(pack); if(!cfg) return [];
+  const rec = weakFirst(recordedUnits(units, prog, pack), n, charRecs(prog), undefined, rng);
+  const pool = rec.length >= n ? rec : rec.concat(newCharUnits(units, learned, prog, pack, n - rec.length));
+  return pool.map(unit => ({ kind: pickWeighted(cfg.testKinds, rng), unit }));
+}
+
+// ------------------------------------------------------------------ pronunciation aids
+// Pack-gated helpers (docs/PACK_SCHEMA.md "Pronunciation aids"), all pure. Off for every
+// pack without the field, so no other pack's output changes.
+//  - pack.tones: the reading is Latin letters with tone marks on a vowel (macron 1, acute
+//    2, caron 3, grave 4, unmarked 5 = neutral). The validator admits one mark system,
+//    whose syllable inventory is SYL_FINALS below; toneHTML colours each syllable.
+//  - pack.typing === "pron": typed production of the reading (checkPronTyped).
+//  - composeSpanReading: the reading of a tap span longer than its word.
+const TONE_MARKS = {
+  a: ["a","\u0101","\u00e1","\u01ce","\u00e0"],
+  e: ["e","\u0113","\u00e9","\u011b","\u00e8"],
+  i: ["i","\u012b","\u00ed","\u01d0","\u00ec"],
+  o: ["o","\u014d","\u00f3","\u01d2","\u00f2"],
+  u: ["u","\u016b","\u00fa","\u01d4","\u00f9"],
+  "\u00fc": ["\u00fc","\u01d6","\u01d8","\u01da","\u01dc"],
+};
+const MARK_OF = {}; // marked (or plain) vowel -> [plain vowel, tone 1-4, or 0 for none]
+Object.keys(TONE_MARKS).forEach(v => TONE_MARKS[v].forEach((c, t) => { MARK_OF[c] = [v, t]; }));
+function tonesOn(pack){ return !!(pack && typeof pack.tones === "string" && pack.tones); }
+// A reading with its tone marks removed, case and everything else kept.
+function stripMarks(s){
+  return [...String(s == null ? "" : s).normalize("NFC")].map(c => {
+    const m = MARK_OF[c.toLowerCase()]; if(!m) return c;
+    return c === c.toLowerCase() ? m[0] : m[0].toUpperCase();
+  }).join("");
+}
+// Tone of a marked letter string: the tone of its (first) marked vowel, 5 when unmarked.
+function syllableTone(s){
+  for(const c of String(s || "")){ const m = MARK_OF[c.toLowerCase()]; if(m && m[1]) return m[1]; }
+  return 5;
+}
+const markCount = s => [...String(s || "")].filter(c => { const m = MARK_OF[c.toLowerCase()]; return !!(m && m[1]); }).length;
+// Mark placement: a, else e, else o, else the last of i/u/ü. tone 0 or 5: unmarked.
+function markVowelIndex(letters){
+  const lower = String(letters).toLowerCase();
+  for(const v of ["a","e","o"]){ const i = lower.indexOf(v); if(i >= 0) return i; }
+  for(let i = lower.length - 1; i >= 0; i--) if("iu\u00fc".indexOf(lower[i]) >= 0) return i;
+  return -1;
+}
+function markSyllable(letters, tone){
+  const s = String(letters); const i = markVowelIndex(s); const t = +tone;
+  if(i < 0 || !(t >= 1 && t <= 4)) return s;
+  const c = s[i]; const m = MARK_OF[c.toLowerCase()];
+  const out = TONE_MARKS[m ? m[0] : c.toLowerCase()][t];
+  return s.slice(0, i) + (c !== c.toLowerCase() ? out.toUpperCase() : out) + s.slice(i + 1);
+}
+// Syllable inventory: initial -> finals, spelled as written (zero initial uses y/w forms;
+// j/q/x/y write ü as u). "" holds the zero-initial syllables.
+const SYL_FINALS = {
+  b: "a ai an ang ao o ei en eng i ie iao ian in iang ing u",
+  p: "a ai an ang ao o ei en eng ou i ie iao ian in iang ing u",
+  m: "a ai an ang ao o ei en eng ou i ie iao iu ian in iang ing u e",
+  f: "a an ang ei en eng ou u o",
+  d: "a ai an ang ao e ei en eng ong i ia ie iao iu ian ing ou u uo ui uan un",
+  t: "a ai an ang ao e eng ong i ian iao ie ing ou u uo ui uan un",
+  n: "a ai an ang ao e ei en eng i ian iang iao ie in ing iu ong ou u uan uo \u00fc \u00fce",
+  l: "a ai an ang ao e ei eng i ia ian iang iao ie in ing iu ong ou u uan un uo \u00fc \u00fce o",
+  g: "a ai an ang ao e ei en eng ong ou u ua uai uan uang ui un uo",
+  k: "a ai an ang ao e ei en eng ong ou u ua uai uan uang ui un uo",
+  h: "a ai an ang ao e ei en eng ong ou u ua uai uan uang ui un uo",
+  j: "i ia ian iang iao ie in ing iong iu u uan ue un",
+  q: "i ia ian iang iao ie in ing iong iu u uan ue un",
+  x: "i ia ian iang iao ie in ing iong iu u uan ue un",
+  zh: "a ai an ang ao e ei en eng i ong ou u ua uai uan uang ui un uo",
+  ch: "a ai an ang ao e en eng i ong ou u ua uai uan uang ui un uo",
+  sh: "a ai an ang ao e ei en eng i ou u ua uai uan uang ui un uo",
+  r: "an ang ao e en eng i ong ou u ua uan ui un uo",
+  z: "a ai an ang ao e ei en eng i ong ou u uan ui un uo",
+  c: "a ai an ang ao e en eng i ong ou u uan ui un uo",
+  s: "a ai an ang ao e en eng i ong ou u uan ui un uo",
+  "": "a o e ai ei ao ou an en ang eng er yi ya ye yao you yan yin yang ying yong wu wa wo wai wei wan wen wang weng yu yue yuan yun yo",
+};
+const SYL_SET = {}; Object.keys(SYL_FINALS).forEach(k => { SYL_SET[k] = new Set(SYL_FINALS[k].split(" ")); });
+const SYL_INITIALS = Object.keys(SYL_FINALS).filter(Boolean).sort((a, b) => b.length - a.length);
+// Toneless syllable -> {initial, final}, or null when it is not in the inventory.
+function splitSyllable(toneless){
+  const s = String(toneless || "").toLowerCase();
+  for(const ini of SYL_INITIALS) if(s.indexOf(ini) === 0 && SYL_SET[ini].has(s.slice(ini.length))) return { initial: ini, final: s.slice(ini.length) };
+  return SYL_SET[""].has(s) ? { initial: "", final: s } : null;
+}
+// A syllable with a trailing r-suffix ("r" after a full syllable, not "er" itself).
+const isRSuffixed = s => s.length > 1 && s[s.length - 1] === "r" && s !== "er" && !!splitSyllable(s.slice(0, -1));
+const SYL_MAX = 7;
+// One run of letters -> syllables [{text, tone, r}] or null when it does not split into
+// the inventory with at most one mark each. Fewest syllables wins; a syllable starting
+// with a/o/e inside the run (where the writing would put an apostrophe) costs extra;
+// among equals the longest first syllable wins (the usual left-to-right reading).
+function splitRun(run){
+  const chars = [...run]; const n = chars.length;
+  const bare = chars.map(c => { const m = MARK_OF[c.toLowerCase()]; return m ? m[0] : c.toLowerCase(); });
+  const best = new Array(n + 1).fill(null); best[n] = { cost: 0, next: -1 };
+  for(let i = n - 1; i >= 0; i--){
+    for(let j = Math.min(n, i + SYL_MAX); j > i; j--){
+      if(!best[j]) continue;
+      const b = bare.slice(i, j).join("");
+      const r = !splitSyllable(b) && isRSuffixed(b);
+      if(!r && !splitSyllable(b)) continue;
+      if(markCount(chars.slice(i, j).join("")) > 1) continue;
+      const cost = best[j].cost + 1 + (r ? 0.5 : 0) + (i > 0 && /^[aoe]/.test(b) ? 10 : 0);
+      if(!best[i] || cost < best[i].cost) best[i] = { cost, next: j, r };
+    }
+  }
+  if(!best[0]) return null;
+  const out = []; let i = 0;
+  while(i < n){ const j = best[i].next; const text = chars.slice(i, j).join(""); out.push({ text, tone: syllableTone(text), r: !!best[i].r }); i = j; }
+  return out;
+}
+// Reading -> pieces [{text, tone?}]: each syllable of each letter run with its tone; text
+// between runs (spaces, punctuation, other scripts) has no tone. A run that does not split
+// is one piece, toned only when it carries exactly one mark.
+const LETTER_RUN = /[\p{Script=Latin}\u0300-\u036f]+/gu;
+function splitReading(text){
+  const t = String(text == null ? "" : text).normalize("NFC");
+  const out = []; let pos = 0;
+  for(const m of t.matchAll(LETTER_RUN)){
+    if(m.index > pos) out.push({ text: t.slice(pos, m.index) });
+    const syl = splitRun(m[0]);
+    if(syl) syl.forEach(x => out.push({ text: x.text, tone: x.tone }));
+    else out.push(markCount(m[0]) === 1 ? { text: m[0], tone: syllableTone(m[0]) } : { text: m[0] });
+    pos = m.index + m[0].length;
+  }
+  if(pos < t.length) out.push({ text: t.slice(pos) });
+  return out;
+}
+// Escaped HTML of a reading, each syllable in <span class="t1".."t5">.
+function toneHTML(text){
+  return splitReading(text).map(p => p.tone ? `<span class="t${p.tone}">${escapeHtml(p.text)}</span>` : escapeHtml(p.text)).join("");
+}
+// ---- typed reading (pack.typing === "pron")
+function pronTypingOn(pack){ return !!(pack && pack.typing === "pron"); }
+// Comparison key: case-folded, v and u: as ü, ü after j/q/x/y as u (the writing drops
+// the dots there), apostrophes, hyphens, spaces and punctuation removed; marks and digits kept.
+function pronKey(s){
+  return String(s == null ? "" : s).normalize("NFC").toLowerCase()
+    .replace(/u:/g, "\u00fc").replace(/v/g, "\u00fc")
+    .replace(/[^\p{L}\p{N}]/gu, "")
+    .replace(/([jqxy])([\u00fc\u01d6\u01d8\u01da\u01dc])/g, (m, a, b) => a + TONE_MARKS.u[MARK_OF[b][1]]);
+}
+const NUMBERED_MAX = 64;
+// Every numbered spelling of pron: syllable letters + tone digit; a neutral syllable as
+// 5, 0 or no digit; an r-suffixed syllable with its digit after the r, or before it with
+// the r bare, r5 or r0.
+// [] when pron does not split into syllables (then only the marked form is accepted).
+function numberedForms(pron){
+  const runs = String(pron || "").normalize("NFC").match(LETTER_RUN) || [];
+  let combos = [""];
+  for(const run of runs){
+    const syl = splitRun(run); if(!syl) return [];
+    for(const x of syl){
+      const b = stripMarks(x.text).toLowerCase();
+      const d = x.tone === 5 ? ["5", "0", ""] : [String(x.tone)];
+      const opts = [];
+      // r-suffix: the digit also before the r, the r then bare or as its own neutral
+      // chunk ("yi1hui4r5", "hui4r0": how the predecessor app stored 一会儿).
+      d.forEach(k => { opts.push(b + k); if(x.r && k) ["r", "r5", "r0"].forEach(rr => opts.push(b.slice(0, -1) + k + rr)); });
+      const next = []; combos.forEach(c => opts.forEach(o => next.push(c + o)));
+      if(next.length > NUMBERED_MAX) return [];
+      combos = next;
+    }
+  }
+  return runs.length ? combos.map(pronKey) : [];
+}
+// Typed reading vs a word's pron: "ok" (marked, or numbered per numberedForms, case and
+// apostrophes ignored), "tones" (right letters, no tone marks or digits: counts as wrong,
+// the reveal gives the marked form) or "wrong".
+function checkPronTyped(input, pron){
+  const got = pronKey(input);
+  if(!got || !pron) return "wrong";
+  if(got === pronKey(pron) || numberedForms(pron).indexOf(got) >= 0) return "ok";
+  if(!/\p{N}/u.test(got) && markCount(got) === 0 && got === pronKey(stripMarks(pron))) return "tones";
+  return "wrong";
+}
+// ---- span reading
+// Joins two readings: with pack.tones an apostrophe goes before a syllable starting with
+// a/o/e (the writing's syllable-boundary rule), otherwise they are simply concatenated.
+function joinReadings(a, b, pack){
+  if(!a) return b; if(!b) return a;
+  return tonesOn(pack) && /^[aoe]/i.test(stripMarks(b)) && /[\p{L}]$/u.test(a) ? a + "'" + b : a + b;
+}
+// The reading of a tap span whose text may be longer than its word (越来越 for 越, 一下 for
+// 下). Returns pieces [{start, end, reading}] covering text in order, offsets relative to
+// text: each occurrence of the word's written form gets word.pron, every other character
+// readingOf(char) (e.g. its single-character unit's reading), and a character with no
+// reading gets reading "" (shown written). Adjacent read pieces are merged with
+// joinReadings, as are adjacent written ones. No character is ever dropped.
+function composeSpanReading(text, word, readingOf, pack){
+  const t = String(text == null ? "" : text); const w = String((word && word.w) || ""); const wp = String((word && word.pron) || "");
+  const raw = []; let i = 0;
+  while(i < t.length){
+    if(w && wp && t.startsWith(w, i)){ raw.push({ start: i, end: i + w.length, reading: wp }); i += w.length; continue; }
+    const cp = t.codePointAt(i); const c = String.fromCodePoint(cp);
+    const r = readingOf ? String(readingOf(c) || "") : "";
+    raw.push({ start: i, end: i + c.length, reading: r }); i += c.length;
+  }
+  const out = [];
+  raw.forEach(p => {
+    const last = out[out.length - 1];
+    if(last && !!last.reading === !!p.reading){ last.end = p.end; last.reading = p.reading ? joinReadings(last.reading, p.reading, pack) : ""; }
+    else out.push(Object.assign({}, p));
+  });
+  return out;
+}
+// The reading line of a span as one string: composeSpanReading's readings, with a written
+// piece's own text in place.
+function spanReadingText(text, word, readingOf, pack){
+  const t = String(text == null ? "" : text);
+  return composeSpanReading(t, word, readingOf, pack).map(p => p.reading || t.slice(p.start, p.end)).join("");
+}
+
+// ------------------------------------------------------------------ legacy migration
+// One-way import of a predecessor app's progress into this pack's shape (design: the
+// merge plan in docs/, §4). zh: the hsk trainer's "hsk_pinyin" record. Every hsk release
+// (v1, v2, v2.1 sentences, v2.2 characters, v2.3/HEAD path flags) stored v:1 or v:2 and
+// only ever added fields, so one reader covers them all. Pure and DOM-free.
+//
+// legacyMap is the pack's LEGACY const (legacy.js): {w: hanzi -> word id, s: sentence
+// text -> sentence id, c: hanzi -> character unit id}.
+//
+// migrateLegacy(pack, legacyMap, oldRecord), oldRecord an object or its JSON string:
+//   {ok:false, reason}  not a JSON object, an unknown legacy version, or no pack.legacy
+//   {ok:true, prog, unmapped, dropped, already}
+//     prog      normalizeProg output carrying the marker prog.legacy = {key, format}
+//     unmapped  [{path, value, reason}]: every part of the old record with no place in
+//               prog (a key the maps lack, an unknown field, a value of the wrong type).
+//               Nothing is discarded silently. Acceptance for the real switch: empty.
+//     dropped   [{path, value}]: fields retired on purpose (LEGACY_DROPPED).
+//     already   true when oldRecord carries the marker, i.e. it is already migrated:
+//               prog = normalizeProg(oldRecord) and both lists empty. A second run is a no-op.
+// Field mapping: v -> PROG_VERSION; w[hanzi] -> w[wordId] and s[text] -> s[sentId] with
+// r/w/s (and w's prov/d) verbatim; c[hanzi] -> chars.c[unitId]; sets, lessons, sessions,
+// theme, placedOnce, soundsOpened as-is; mixChars/charsAfterHsk4/charsChoiceSeen ->
+// chars.mix/defer/choiceSeen; showPron takes the pack default.
+//
+// Caller contract (boot hook and import path, not in this file):
+// - Boot: migrate only when pack.legacy is set, storageKey(pack) holds nothing and the
+//   legacy key (pack.legacy.key) holds a record. Never write or delete the legacy key.
+// - Before the first save of prog, copy the raw legacy string to legacyBackupKey(pack),
+//   unless that key already holds something (the first backup is never overwritten).
+// - Report a non-empty unmapped list to the learner; those parts survive in the backup.
+// - Import: isLegacyRecord() tells a legacy export from native progress.
+const LEGACY_DROPPED = ["showChars","dismissedSoundsHint"];
+const LEGACY_ONLY_FIELDS = ["showChars","dismissedSoundsHint","c","mixChars","charsAfterHsk4","charsChoiceSeen"];
+const NATIVE_ONLY_FIELDS = ["chars","showPron","read"];
+function legacyBackupKey(pack){ return `${pack.legacy.key}.bak`; }
+function legacyMarker(pack){ return { key: String(pack.legacy.key || ""), format: String(pack.legacy.format || "") }; }
+function hasLegacyMarker(data){ return isObj(data) && isObj(data.legacy) && typeof data.legacy.key === "string"; }
+// True when data looks like a legacy export rather than this engine's own progress.
+function isLegacyRecord(pack, legacyMap, data){
+  if(!isObj(pack && pack.legacy) || !isObj(data) || hasLegacyMarker(data)) return false;
+  if(NATIVE_ONLY_FIELDS.some(f => data[f] !== undefined)) return false;
+  if(data.v === 2 && PROG_VERSION !== 2) return true;
+  if(LEGACY_ONLY_FIELDS.some(f => data[f] !== undefined)) return true;
+  const known = b => isObj(data[b]) && isObj(legacyMap && legacyMap[b]) && Object.keys(data[b]).some(k => hasOwn(legacyMap[b], k));
+  return known("w") || known("s");
+}
+function migrateLegacy(pack, legacyMap, oldRecord){
+  if(!isObj(pack) || !isObj(pack.legacy)) return {ok:false, reason:"pack has no legacy block"};
+  let data = oldRecord;
+  if(typeof data === "string"){ const p = parseStored(data); if(!p.ok) return p; data = p.data; }
+  if(!isObj(data)) return {ok:false, reason:"not a JSON object"};
+  const lv = levelIds(pack);
+  if(hasLegacyMarker(data)){
+    const v = validateProgShape(data, lv); if(!v.ok) return v;
+    return {ok:true, already:true, prog: normalizeProg(data, pack), unmapped:[], dropped:[]};
+  }
+  if(data.v !== undefined && data.v !== 1 && data.v !== 2) return {ok:false, reason:`unknown legacy progress version ${data.v}`};
+  const maps = isObj(legacyMap) ? legacyMap : {};
+  const unmapped = [], dropped = [];
+  const miss = (path, value, reason) => { unmapped.push({path, value, reason}); };
+  const cfg = charsConfig(pack);
+  const isNum = x => typeof x === "number" && isFinite(x);
+  const numOrBool = x => isNum(x) || typeof x === "boolean";
+  // One record bucket: keys through the map, known fields verbatim, the rest reported.
+  function recMap(bucket, map, wordFlags){
+    const src = data[bucket], dst = {};
+    if(src === undefined) return dst;
+    if(!isObj(src)){ miss(bucket, src, "not an object"); return dst; }
+    const m = isObj(map) ? map : {};
+    for(const k of Object.keys(src)){
+      const rec = src[k], path = `${bucket}.${k}`;
+      if(!hasOwn(m, k)){ miss(path, rec, "key not in the legacy map"); continue; }
+      if(!isObj(rec)){ miss(path, rec, "record is not an object"); continue; }
+      const id = m[k];
+      if(hasOwn(dst, id)){ miss(path, rec, `maps to ${id}, already taken`); continue; }
+      const r = {};
+      for(const f of Object.keys(rec)){
+        const val = rec[f];
+        if(["r","w","s"].includes(f)){ if(isNum(val)) r[f] = val; else miss(`${path}.${f}`, val, "not a number"); }
+        else if(wordFlags && (f === "prov" || f === "d")){ if(numOrBool(val)) r[f] = val; else miss(`${path}.${f}`, val, "not a number or boolean"); }
+        else miss(`${path}.${f}`, val, "unknown record field");
+      }
+      dst[id] = r;
+    }
+    return dst;
+  }
+  const out = { legacy: legacyMarker(pack) };
+  const handled = new Set(["v","w","s","c","sets","lessons","sessions","theme","placedOnce","soundsOpened",
+    "mixChars","charsAfterHsk4","charsChoiceSeen", ...LEGACY_DROPPED]);
+  out.w = recMap("w", maps.w, true);
+  out.s = recMap("s", maps.s, false);
+  out.sets = {};
+  if(data.sets !== undefined){
+    if(!isObj(data.sets)) miss("sets", data.sets, "not an object");
+    else for(const k of Object.keys(data.sets)){
+      const n = data.sets[k];
+      if(!lv.includes(k)) miss(`sets.${k}`, n, "not a pack level");
+      else if(!Number.isInteger(n) || n < 0) miss(`sets.${k}`, n, "not a non-negative integer");
+      else out.sets[k] = n;
+    }
+  }
+  if(data.lessons !== undefined){ if(isObj(data.lessons)) out.lessons = Object.assign({}, data.lessons); else miss("lessons", data.lessons, "not an object"); }
+  if(data.sessions !== undefined){ if(isNum(data.sessions)) out.sessions = data.sessions; else miss("sessions", data.sessions, "not a number"); }
+  if(data.theme !== undefined){ if(data.theme === null || data.theme === "light" || data.theme === "dark") out.theme = data.theme; else miss("theme", data.theme, "not null, light or dark"); }
+  for(const f of ["placedOnce","soundsOpened"]) if(data[f] !== undefined){ if(numOrBool(data[f])) out[f] = data[f]; else miss(f, data[f], "not a boolean or number"); }
+  const flagMap = { mixChars:"mix", charsAfterHsk4:"defer", charsChoiceSeen:"choiceSeen" };
+  if(cfg){
+    out.chars = { v:CHARS_PROG_VERSION, c: recMap("c", maps.c, false) };
+    for(const f of Object.keys(flagMap)) if(data[f] !== undefined){ if(typeof data[f] === "boolean") out.chars[flagMap[f]] = data[f]; else miss(f, data[f], "not a boolean"); }
+  } else {
+    for(const f of ["c", ...Object.keys(flagMap)]) if(data[f] !== undefined) miss(f, data[f], "pack has no characters stage");
+  }
+  for(const f of LEGACY_DROPPED) if(data[f] !== undefined) dropped.push({path:f, value:data[f]});
+  for(const k of Object.keys(data)) if(!handled.has(k)) miss(k, data[k], "unknown field");
+  const prog = normalizeProg(out, pack);
+  const v = validateProgShape(prog, lv);
+  if(!v.ok) return {ok:false, reason:`migrated progress is invalid: ${v.reason}`};
+  return {ok:true, already:false, prog, unmapped, dropped};
+}
+
 // ------------------------------------------------------------------ export
 const API = { shuffle, escapeHtml, gloss, firstTwoWords, normKey,
   levelIds, levelIndexMap, levelLabel, setSizeOf, wordsByLevel, nSets,
@@ -1317,7 +2239,15 @@ const API = { shuffle, escapeHtml, gloss, firstTwoWords, normKey,
   markRec, weakScore, weakFirst, provPick, learnedWords, nextNewSet, currentLevelIndex, availableSentences,
   PRODUCTION_KINDS, REVIEW_SIZE, REVIEW_PRODUCTION_SHARE, kindMix, buildReviewPlan, buildRecallPlan, sentenceKind,
   READ_UNLOCK, READ_WEIGHT, readState, readingLevels, updateReadUnlocks, suggestPassage, passageLength, passageSegments,
-  gradeQuestion, passageWeakWords, applyWeakWords, markPassageDone, readingStats };
+  gradeQuestion, passageWeakWords, applyWeakWords, markPassageDone, readingStats,
+  CHARS_PROG_VERSION, CHAR_SET_SIZE, CHAR_MASTERED, CHAR_BARE, REVIEW_SIZE_CHARS, CHAR_KINDS, charsConfig,
+  defaultCharsProg, validateCharsShape, normalizeCharsProg, ensureChars, charRecs, markChar, answerCharChoice, setCharOrder,
+  unitWord, unitReading, unitGloss, unitByWord, recordedUnits,
+  charStageUnits, charSets, charSetTaught, nextCharSet, charStages, stagePath, nextStage, charsUnlocked, charsStarted, showCharChoice,
+  charTier, sentenceTokenTier, rubyTiers, pronFirstOn, displayForm, pronClash, sentencePieces, sentenceDisplay, charOpts, recallCharOpts, charSoundOpts, charReadOpts, charItem,
+  learnCharPlan, charReviewScore, rankUnified, unifiedReviewPlan, unifiedRecallPlan, todaySnapshot, newCharUnits, charTestPlan, pickWeighted,
+  tonesOn, stripMarks, syllableTone, markSyllable, splitSyllable, splitReading, toneHTML, pronTypingOn, pronKey, numberedForms, checkPronTyped, joinReadings, composeSpanReading, spanReadingText,
+  LEGACY_DROPPED, legacyBackupKey, isLegacyRecord, migrateLegacy };
 if(typeof module!=="undefined" && module.exports) module.exports = API;
 if(root) root.VocabCore = API;
 })(typeof window!=="undefined" ? window : (typeof globalThis!=="undefined" ? globalThis : null));
@@ -1336,12 +2266,24 @@ const HAS_LESSONS = !!PACK.hasLessons && LESSON_LIST.length > 0;
 // with passages.json. Without it the Read tab and every reading hint stay hidden.
 const PASSAGE_LIST = (typeof PASSAGES !== "undefined" && Array.isArray(PASSAGES)) ? PASSAGES : [];
 const HAS_PASSAGES = PASSAGE_LIST.length > 0;
+// CHARACTERS is optional too, like LESSONS: a pack without pack.characters leaves it
+// undeclared in dev mode (or the pack simply has no characters.json). Every character
+// surface (path stages, choice card, unit Learn, unit items in Review/Recall, sentence
+// ruby) is gated on HAS_CHARACTERS; without it each code path is the pre-characters one.
+const CHAR_LIST = (typeof CHARACTERS !== "undefined" && Array.isArray(CHARACTERS)) ? CHARACTERS : [];
+const HAS_CHARACTERS = VC.charsConfig(PACK) !== null && CHAR_LIST.length > 0;
+const CHAR_CFG = HAS_CHARACTERS ? VC.charsConfig(PACK) : null;
 const LEVELS = VC.levelIds(PACK);
 const SIZE = VC.setSizeOf(PACK);
 const BY_LV = VC.wordsByLevel(WORDS, PACK);
 const WORDS_BY_ID = {}; WORDS.forEach(w=>{ WORDS_BY_ID[w.id] = w; });
+const CHAR_CTX = { units: CHAR_LIST, words: WORDS, byId: WORDS_BY_ID }; // VC.charItem context
+// LEGACY is optional too (legacy.js, packs with pack.legacy): the predecessor app's key maps
+// VC.migrateLegacy reads. Without both, no boot migration and no legacy import ever runs.
+const LEGACY_MAP = (typeof LEGACY !== "undefined" && LEGACY && typeof LEGACY === "object") ? LEGACY : null;
+const HAS_LEGACY = !!(PACK.legacy && typeof PACK.legacy === "object" && typeof PACK.legacy.key === "string" && PACK.legacy.key) && !!LEGACY_MAP;
 const SENT_INDEX = new Map(SENTENCES.map((s,i)=>[s, i]));
-const TYPING = VC.typingEnabled(PACK);
+const TYPING = VC.typingEnabled(PACK) && !VC.pronTypingOn(PACK); // typing the written word (pack.typing object)
 const levelLabel = lv => VC.levelLabel(PACK, lv);
 document.title = PACK.name;
 // Target-language markup (pack.rtl / langTag / fontFamily / fonts / lineHeight). TA goes on
@@ -1397,6 +2339,7 @@ const store = {
 };
 function markWord(id, ok){ VC.markRec(prog.w, id, ok, true); store.save(); }
 function markSentence(id, ok){ VC.markRec(prog.s, id, ok, false); store.save(); }
+function markChar(unitId, ok){ VC.markChar(prog, unitId, ok); store.save(); } // prog.chars.c only
 const mastered = id => ((prog.w[id]||{}).s||0) >= VC.WORD_MASTERED;
 const sentenceMastered = id => ((prog.s[id]||{}).s||0) >= VC.SENTENCE_MASTERED;
 const weakFirst = (list, n) => VC.weakFirst(list, n, prog.w);
@@ -1418,10 +2361,13 @@ let D = null;                  // active drill session (generic drill runner)
 let drillKeyHandler = null;    // keydown handler while a drill is active
 let tab = "today";             // current tab
 let todayStepState = null;     // Today tab step UI state
+let todayPrep = null;          // pack.characters: the snapshot + Review plan Today last showed, run by Start today
 let soundsSel = null;          // Sounds tab selection
 let wordsLv = LEVELS[0], wordsSet = null, wordsQuery = ""; // Words tab state
 let RD = null;                 // active Read session
 let testSel = null, PL = null; // Test tab state
+let legacyNotice = null;       // one-time notice after the boot migration (HTML), until dismissed
+let legacyFail = null;         // boot found an old-app record it could not import: why (text); session read-only until "Start without it"
 // Set true right before the boot IIFE's own render() call, at the very end of this
 // script. The voice probe below can fire synchronously before boot has run at all —
 // before store.load() has even been called, so prog is still the just-in-case default
@@ -1521,17 +2467,53 @@ const TEACH_PLAY_SVG = speakerSVG(14);
 // pron is display-only: shown beside a word/sentence when the learner has it on.
 const showPron = () => PACK.showPron !== false && prog.showPron !== false;
 const pronOf = x => showPron() ? VC.pronShown(x) : ""; // "" when pron just repeats the text
+// ---- pronunciation-first (pack.pronFirst, core.js displayForm): a word whose character
+// unit is below the mastered tier is shown by its reading wherever its written form would
+// appear outside the characters stage. Off (every other pack), dispWord returns the
+// written form and every helper below renders exactly the pre-pronFirst markup.
+const PRON_FIRST = HAS_CHARACTERS && VC.pronFirstOn(PACK);
+const dispWord = e => VC.displayForm(e, CHAR_LIST, prog, PACK);
+// "show written form": a small tap beside a reading-shown word or sentence. It swaps
+// itself for the written form, for that item only, with no progress effect (panel
+// capture listener below), so a learner who wants the characters is never blocked.
+const showWrittenBtn = written => `<button type="button" class="showw" data-showw="${escapeHtml(written)}" aria-label="Show written form">show written</button>`;
+// A word's display markup: its written form, or its reading plus the show-written tap
+// (tap false: no tap, for places that are themselves tap targets).
+function wordFormHTML(e, tap){ const d = dispWord(e); return d.isPron ? `${readingHTML(d.text)}${tap === false ? "" : showWrittenBtn(d.written)}` : escapeHtml(d.text); }
+// The pron line beside a word: none when the word is already shown by its reading.
+const pronBeside = e => dispWord(e).isPron ? "" : pronOf(e);
+// ---- pronunciation aids (docs/PACK_SCHEMA.md "Pronunciation aids"); each is off unless the
+// pack sets its field, and then every helper below renders the markup it had before.
+// pack.tones: every displayed reading goes through readingHTML, which wraps each syllable
+// in <span class="t1".."t5"> (VC.toneHTML); off, it is escapeHtml.
+const TONES = VC.tonesOn(PACK);
+const readingHTML = s => TONES ? VC.toneHTML(s) : escapeHtml(s);
+const twReading = s => TONES ? `<bdi${TA}>${VC.toneHTML(s)}</bdi>` : tw(s); // tw() for a reading
+// pack.typing "pron": the production slot types the word's reading (pronTypeItem).
+const PRON_TYPING = VC.pronTypingOn(PACK);
+// Reading of one written character (a single-character unit's reading), for tap spans
+// longer than their word (VC.composeSpanReading). First unit in file order wins.
+const CHAR_READING = new Map();
+CHAR_LIST.forEach(u => { const t = String((u && u.t) || ""); if([...t].length === 1 && !CHAR_READING.has(t)){ const r = VC.unitReading(u, WORDS_BY_ID); if(r) CHAR_READING.set(t, r); } });
+const charReading = c => CHAR_READING.get(c) || "";
+// pack.soundsReference: a Reference card in the Sounds tab built from the lesson rows.
+const SOUNDS_REF = PACK.soundsReference === true && HAS_LESSONS;
 function bigWordHTML(entry){
-  const p = pronOf(entry);
-  return `<div class="big wd"${TA}>${escapeHtml(entry.w)}</div>${p ? `<div class="pron">${escapeHtml(p)}</div>` : ""}`;
+  const p = pronBeside(entry);
+  return `<div class="big wd"${TA}>${wordFormHTML(entry)}</div>${p ? `<div class="pron">${readingHTML(p)}</div>` : ""}`;
 }
-// Option label for word-choice items (recall/gap): the word, plus its pron when shown.
-function wordOptHtml(byW){
-  return o => { const e = byW[o]; const p = e ? pronOf(e) : ""; return `${tw(o)}${p ? `<span class="op"><bdi>${escapeHtml(p)}</bdi></span>` : ""}`; };
+// Option label for word-choice items (recall/gap): the word (its reading under
+// pronFirst below mastered), plus its pron when shown and not already the label.
+// byKey maps each option value to its word; written (optional) gives the written label
+// for a value that is not itself the label (recall keys options by word id).
+function wordOptHtml(byKey, written){
+  return o => { const e = byKey[o]; const d = e ? dispWord(e) : null; const p = e ? pronBeside(e) : ""; return `${d && d.isPron ? twReading(d.text) : tw(written ? written(o) : o)}${p ? `<span class="op"><bdi>${readingHTML(p)}</bdi></span>` : ""}`; };
 }
 
 // ===================== generic drill runner =====================
 // item: {kind:'mc'|'type', label, html, opts?, a?, optHtml?, reveal, onAnswer?, mount?, check?, onReveal?}
+// type items may add: placeholder (input hint), inputTA (input attributes instead of TA),
+// feedback(value) (extra reveal HTML after the answer, e.g. a partial-credit note).
 function drill(items, onDone, summary){ D = { q: shuffle(items.slice()), right:0, seen:0, miss:[], onDone, summary }; dnext(); }
 function setScore(answered, total){
   const left = total ? Math.max(0, total - answered) : 0;
@@ -1545,6 +2527,7 @@ function setScore(answered, total){
 function announce(html){
   const el = $("live"); if(!el) return;
   const tmp = document.createElement("div"); tmp.innerHTML = html || "";
+  tmp.querySelectorAll("[data-showw]").forEach(x => x.remove()); // the show-written button's label is not content
   el.textContent = tmp.textContent || "";
 }
 function showReveal(html){
@@ -1606,7 +2589,7 @@ function renderMcItem(it){
 function renderTypeItem(it){
   const P = $("panel");
   P.innerHTML = `<div class="drill-body"><p class="q">${escapeHtml(it.label)}</p>${noticeFor(it)}${it.html||""}
-    <input type="text" id="tin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"${TA} placeholder="${SCRIPT.rtl ? "type the word" : "type the word…"}">
+    <input type="text" id="tin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"${it.inputTA !== undefined ? it.inputTA : TA} placeholder="${escapeHtml(it.placeholder || (SCRIPT.rtl ? "type the word" : "type the word…"))}">
     <div class="reveal" id="rv"></div></div><div class="actions"><button class="next" id="submit">Check</button><button class="next" id="nx" style="display:none">Next</button></div>`;
   if(it.mount) it.mount();
   const input = $("tin"); input.focus();
@@ -1617,7 +2600,7 @@ function renderTypeItem(it){
     const ok = it.check(input.value);
     D.seen++; if(ok) D.right++; else { D.miss.push(it); D.q.push(it); }
     if(it.onAnswer) it.onAnswer(ok);
-    showReveal((ok ? "" : `<div class="diff">you typed: ${escapeHtml(input.value)}</div>`) + (it.reveal||""));
+    showReveal((ok ? "" : `<div class="diff">you typed: ${escapeHtml(input.value)}</div>`) + (it.feedback ? it.feedback(input.value) : "") + (it.reveal||""));
     if(it.onReveal) it.onReveal();
     $("nx").style.display = "block"; setScore(D.seen, D.seen + D.q.length);
   }
@@ -1632,31 +2615,191 @@ function renderTypeItem(it){
     }
   };
 }
-document.addEventListener("keydown", e => { if(drillKeyHandler) drillKeyHandler(e); });
+// A key on a show-written button (pack.pronFirst) is the button's own (Enter/Space reveal
+// the written form); it never reaches the drill's shortcuts (Enter = Next, 1-4 = answer).
+const onShowWritten = e => !!(e && e.target && e.target.closest && e.target.closest("[data-showw]"));
+// Enter/Space on a focused word tap are the tap's own; Escape still reaches the drill (after
+// the panel listener below has dismissed the popover).
+document.addEventListener("keydown", e => { if(drillKeyHandler && !onShowWritten(e) && !(onTok(e) && e.key !== "Escape")) drillKeyHandler(e); });
 function quitDrill(){ D = null; drillKeyHandler = null; render(); }
 
+// ---- word taps inside sentences (any pack whose sentences carry ruby, or pronFirst
+// passages): a sentence token wrapped by tokTapHTML is a tap target (data-tok = word id;
+// data-ts/data-tr = a phrase span's surface and reading, tokHead). A tap shows the word's
+// popover (glossHTML, the Read-tab one) inside the nearest data-tokbox and speaks the word
+// only; the whole sentence is heard from its speaker button (sentSayHTML). No progress
+// effect. Never used inside answer buttons.
+function tokTapHTML(wordId, inner, head){
+  const h = head ? ` data-ts="${escapeHtml(head.surface)}" data-tr="${escapeHtml(head.reading)}"` : "";
+  return `<span class="tk" data-tok="${escapeHtml(wordId)}"${h} role="button" tabindex="0">${inner}</span>`;
+}
+// A phrase token's popover head: a token whose surface contains its word's written form
+// and more (这个 for 这, 他们 for 他, 越来越 for 越) heads the popover with that surface and its
+// reading, and a tap speaks the surface; any other token (the word itself, or a token
+// covering only part of the word, as ja ruby over the written stem) keeps the word's own
+// headword (null). Used by sentence tokens and passage spans (spanHead).
+function phraseHead(surface, w, reading){
+  const ww = String((w && w.w) || ""), t = String(surface || "");
+  return ww && t !== ww && t.indexOf(ww) >= 0 ? { surface: t, reading: String(reading || "") } : null;
+}
+const sentSayHTML = s => canHearSentence(s) ? `<button type="button" class="replay ssay" data-sent="${SENT_INDEX.get(s)}" aria-label="Hear the sentence">${TEACH_PLAY_SVG}</button>` : "";
+const tokHeadOf = t => t.dataset.ts !== undefined ? { surface: t.dataset.ts, reading: t.dataset.tr || "" } : null;
+function tokTap(t){
+  const w = WORDS_BY_ID[t.dataset.tok]; if(!w) return;
+  const head = tokHeadOf(t);
+  const html = glossHTML(w.id, "", head);
+  const box = t.closest("[data-tokbox]");
+  if(box){
+    box.querySelectorAll(".tk.on").forEach(x => x.classList.remove("on"));
+    t.classList.add("on");
+    let g = box.querySelector(".tokgloss");
+    if(!g){ g = document.createElement("div"); g.className = "gloss tokgloss"; if(SCRIPT.rtl) g.setAttribute("dir", "rtl"); box.appendChild(g); }
+    g.innerHTML = html; g.hidden = false;
+  }
+  announce(html);
+  say(head ? head.surface : w.w);
+}
+// Hides the popover of the tap's data-tokbox and clears its highlight.
+function tokDismiss(t){
+  const box = t.closest("[data-tokbox]"); if(!box) return;
+  box.querySelectorAll(".tk.on").forEach(x => x.classList.remove("on"));
+  const g = box.querySelector(".tokgloss"); if(g) g.hidden = true;
+}
+const onTok = e => !!(e && e.target && e.target.closest && e.target.closest("[data-tok]"));
+
 // Tap-to-hear for markup anywhere in #panel: data-sent (a SENTENCES index) speaks that
-// sentence, data-wid (a word id) speaks that word. INVARIANT: this is the only listener
+// sentence, data-wid (a word id) speaks that word, data-tok (tokTap) shows a word's popover. INVARIANT: this is the only listener
 // for these attributes and it is attached exactly once, here, at load. #panel is
 // persistent (screens replace its innerHTML), so attaching per render/reveal/drill-end
 // would accumulate one more listener each time (N taps -> N sounds). Render code just
 // emits the attributes and never wires them.
 $("panel").addEventListener("click", e => {
-  const t = e.target.closest("[data-sent],[data-wid]");
+  const t = e.target.closest("[data-tok],[data-sent],[data-wid]");
   if(!t) return;
+  if(t.dataset.tok !== undefined){ tokTap(t); return; }
   if(t.dataset.wid !== undefined){ const w = WORDS_BY_ID[t.dataset.wid]; if(w) say(w.w); return; }
   const s = SENTENCES[+t.dataset.sent]; if(s) saySentence(s);
 });
+// Keyboard for word taps (role=button): Enter/Space. Attached once, here, like the above.
+$("panel").addEventListener("keydown", e => {
+  const t = e.target && e.target.closest ? e.target.closest("[data-tok]") : null;
+  if(t && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); tokTap(t); }
+  else if(t && e.key === "Escape") tokDismiss(t); // then the drill's own Escape runs as before
+});
+
+// pack.pronFirst "show written form" tap: capture phase, so it runs before (and stops) the
+// row/tap-to-hear handlers of whatever it sits in. Only attached for pronFirst packs.
+// The revealed span takes the button's place and, when the button had focus (keyboard),
+// the focus too (tabindex -1: focusable, not a tab stop), so focus never drops to body.
+function revealWritten(b){
+  const sp = document.createElement("span");
+  sp.className = "wwr"; sp.setAttribute("data-tl", ""); sp.setAttribute("lang", SCRIPT.lang); if(SCRIPT.rtl) sp.setAttribute("dir", "rtl");
+  sp.setAttribute("tabindex", "-1"); sp.textContent = b.dataset.showw || "";
+  const had = document.activeElement === b;
+  b.replaceWith("\u2009", sp); // a thin space: reading and written form never run together, in text too
+  if(had) sp.focus();
+  return sp;
+}
+if(PRON_FIRST) $("panel").addEventListener("click", e => {
+  const b = e.target && e.target.closest ? e.target.closest("[data-showw]") : null;
+  if(!b) return;
+  e.preventDefault(); e.stopPropagation(); revealWritten(b);
+}, true);
 
 // ===================== word drill items =====================
 // Sentence text with the taught word bolded where it is visible (VC.highlightParts).
 function highlightHTML(s, entry){
   return VC.highlightParts(s, entry, WORDS_BY_ID, PACK).map(x => x.hit ? `<b>${escapeHtml(x.text)}</b>` : escapeHtml(x.text)).join("");
 }
-// entry (optional): the taught word, highlighted in the sentence.
-function sentenceRowHTML(s, entry){
+// Sentence ruby by tier (pack.characters, sentence.ruby): VC.rubyTiers' tokens, or null
+// when the sentence renders exactly as without characters (no characters stage, no
+// ruby on it, characters not started, mix off, or pron hidden: showPron off hides all
+// ruby). Non-null replaces the sentence's pron line.
+function sentenceRuby(s){
+  if(!HAS_CHARACTERS || !s || !Array.isArray(s.ruby) || (!showPron() && !PRON_FIRST)) return null;
+  return VC.rubyTiers(s, CHAR_LIST, prog, PACK, VC.charsStarted(PACK, WORDS, CHAR_LIST, prog));
+}
+// One ruby token (base: escaped written form). Below the bare tier <ruby>t<rt>reading</rt></ruby>;
+// at or above it the same markup with class "bare", whose <rt> is visibility:hidden (CSS
+// .hasruby ruby.bare rt), so a token's width never changes across tiers and a line
+// wraps the same whether its tokens show their reading or not.
+const rubyTokHTML = (base, k) => k.tier === "bare"
+  ? `<ruby class="bare">${base}<rt>${readingHTML(k.reading)}</rt></ruby>`
+  : `<ruby>${base}<rt>${readingHTML(k.reading)}</rt></ruby>`;
+// Sentence text with ruby tokens (rubyTokHTML): below the bare tier with its reading shown,
+// at or above it hidden. entry (optional): the taught word, bolded as in
+// highlightHTML (a ruby token overlapping it is bolded whole). Offsets are UTF-16, as
+// JS string indices; a malformed token (overlapping, out of range) renders as plain text.
+// taps (optional): each token with a known word becomes a word tap (tokTapHTML).
+function rubyTextHTML(s, toks, entry, taps){
+  const t = String(s.t || ""); const hits = [];
+  if(entry){ let o = 0; VC.highlightParts(s, entry, WORDS_BY_ID, PACK).forEach(x => { if(x.hit) hits.push([o, o + x.text.length]); o += x.text.length; }); }
+  const inHit = (a, b) => hits.some(([h0, h1]) => a < h1 && b > h0);
+  const plain = (a, b) => {
+    const cuts = new Set([a, b]);
+    hits.forEach(([h0, h1]) => { if(h0 > a && h0 < b) cuts.add(h0); if(h1 > a && h1 < b) cuts.add(h1); });
+    const cs = [...cuts].sort((x, y) => x - y); let out = "";
+    for(let k = 0; k < cs.length - 1; k++){ const seg = escapeHtml(t.slice(cs[k], cs[k+1])); out += inHit(cs[k], cs[k+1]) ? `<b>${seg}</b>` : seg; }
+    return out;
+  };
+  let out = "", pos = 0;
+  toks.forEach(k => {
+    if(!(k.start >= pos && k.end > k.start && k.end <= t.length)) return;
+    out += plain(pos, k.start);
+    const base = escapeHtml(t.slice(k.start, k.end));
+    const tw0 = taps ? WORDS_BY_ID[k.wordId] : null;
+    const h = tw0 ? tokTapHTML(k.wordId, rubyTokHTML(base, k), phraseHead(t.slice(k.start, k.end), tw0, k.reading)) : rubyTokHTML(base, k);
+    out += inHit(k.start, k.end) ? `<b>${h}</b>` : h;
+    pos = k.end;
+  });
+  return out + plain(pos, t.length);
+}
+// pack.pronFirst sentence markup (core.js sentenceDisplay): null when off or when the
+// sentence has no written characters (render as without pronFirst); false when blank is
+// given and cannot be shown (the sentence falls back to its reading line: no gap item);
+// else {html, ruby, written}: tokens below mastered as their reading, others by tier
+// (ruby/bare, bare when pron is hidden), the taught word (entry) bolded, blank as ____;
+// written = the written sentence for the show-written tap (false: nothing hidden).
+// written (optional word ids): their tokens show written with ruby (VC.sentenceDisplay).
+// taps (optional): each token with a known word becomes a word tap (tokTapHTML); the
+// result's `taps` says whether any was made.
+function pfSentence(s, entry, blank, written, taps){
+  if(!PRON_FIRST) return null;
+  const d = VC.sentenceDisplay(s, CHAR_LIST, prog, PACK, VC.charsStarted(PACK, WORDS, CHAR_LIST, prog), blank, written);
+  if(d === null) return blank ? false : null;
+  if(d.mode === "text") return null;
+  if(d.mode === "pron") return { html: readingHTML(d.text), ruby: false, written: String(s.t || ""), taps: false };
+  const hits = [];
+  if(entry){ let o = 0; VC.highlightParts(s, entry, WORDS_BY_ID, PACK).forEach(x => { if(x.hit) hits.push([o, o + x.text.length]); o += x.text.length; }); }
+  const inHit = (a, b) => hits.some(([h0, h1]) => a < h1 && b > h0);
+  let ruby = false, anyPron = false, bl = null, tapped = false;
+  const html = d.pieces.map(p => {
+    let h;
+    if(p.kind === "blank"){ bl = p; h = `<span class="blank">____</span>`; }
+    else if(p.kind === "text") h = escapeHtml(p.text);
+    else if(p.tier === "pron"){ anyPron = true; h = readingHTML(p.text); }
+    else { ruby = true; h = rubyTokHTML(escapeHtml(p.text), showPron() ? p : Object.assign({}, p, { tier:"bare" })); }
+    if(taps && p.kind === "tok" && WORDS_BY_ID[p.wordId]){ tapped = true; h = tokTapHTML(p.wordId, h, phraseHead(String(s.t || "").slice(p.start, p.end), WORDS_BY_ID[p.wordId], p.reading)); }
+    if(p.kind !== "blank" && inHit(p.start, p.end)) h = `<b>${h}</b>`;
+    return escapeHtml(p.pre) + h;
+  }).join("");
+  const t = String(s.t || "");
+  return { html, ruby, written: anyPron ? (bl ? t.slice(0, bl.start) + "____" + t.slice(bl.end) : t) : false, taps: tapped };
+}
+const pfWrittenTap = pf => pf.written ? showWrittenBtn(pf.written) : "";
+// entry (optional): the taught word, highlighted in the sentence. written (optional
+// word ids, pronFirst only): tokens shown written with ruby (a unit's teach card).
+// A sentence whose tokens are word taps (tokTapHTML) is itself not a tap target: it is
+// heard from its own speaker button (sentSayHTML) and is a data-tokbox for the popover.
+function sentenceRowHTML(s, entry, written){
+  const pf = pfSentence(s, entry, null, written, true);
+  if(pf && pf.taps) return `<div class="sent tks" data-tokbox><div class="st${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${sentSayHTML(s)}${pfWrittenTap(pf)}</div><div class="se">${escapeHtml(s.en)}</div></div>`;
+  if(pf) return `<div class="sent" data-sent="${SENT_INDEX.get(s)}"><div class="st${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${pfWrittenTap(pf)}</div><div class="se">${escapeHtml(s.en)}</div></div>`;
+  const rt = sentenceRuby(s);
+  if(rt && rt.some(k => WORDS_BY_ID[k.wordId])) return `<div class="sent tks" data-tokbox><div class="st hasruby"${TA}>${rubyTextHTML(s, rt, entry, true)}${sentSayHTML(s)}</div><div class="se">${escapeHtml(s.en)}</div></div>`;
+  if(rt) return `<div class="sent" data-sent="${SENT_INDEX.get(s)}"><div class="st hasruby"${TA}>${rubyTextHTML(s, rt, entry)}</div><div class="se">${escapeHtml(s.en)}</div></div>`;
   const p = pronOf(s);
-  return `<div class="sent" data-sent="${SENT_INDEX.get(s)}"><div class="st"${TA}>${entry ? highlightHTML(s, entry) : escapeHtml(s.t)}</div>${p ? `<div class="sp">${escapeHtml(p)}</div>` : ""}<div class="se">${escapeHtml(s.en)}</div></div>`;
+  return `<div class="sent" data-sent="${SENT_INDEX.get(s)}"><div class="st"${TA}>${entry ? highlightHTML(s, entry) : escapeHtml(s.t)}</div>${p ? `<div class="sp">${readingHTML(p)}</div>` : ""}<div class="se">${escapeHtml(s.en)}</div></div>`;
 }
 function exampleSentencesHTML(entry){
   const ex = wordExampleSentences(entry, 2);
@@ -1664,9 +2807,9 @@ function exampleSentencesHTML(entry){
   return `<p class="q" style="margin-top:12px">Example${ex.length>1?"s":""}:</p>${ex.map(s => sentenceRowHTML(s, entry)).join("")}`;
 }
 function revealBlock(entry){
-  const p = pronOf(entry);
+  const p = pronBeside(entry);
   const icon = hasSpeech ? ` <span style="color:var(--mute);vertical-align:middle">${TEACH_PLAY_SVG}</span>` : "";
-  return `<div${hasSpeech ? ` data-wid="${escapeHtml(entry.id)}" style="cursor:pointer"` : ""}><div class="rw"${TA}>${escapeHtml(entry.w)}${icon}</div>${p ? `<div class="rp">${escapeHtml(p)}</div>` : ""}<div style="color:var(--mute)">${escapeHtml(VC.gloss(entry))}</div></div>${exampleSentencesHTML(entry)}`;
+  return `<div${hasSpeech ? ` data-wid="${escapeHtml(entry.id)}" style="cursor:pointer"` : ""}><div class="rw"${TA}>${wordFormHTML(entry)}${icon}</div>${p ? `<div class="rp">${readingHTML(p)}</div>` : ""}<div style="color:var(--mute)">${escapeHtml(VC.gloss(entry))}</div></div>${exampleSentencesHTML(entry)}`;
 }
 const meaningChoices = entry => [VC.gloss(entry), ...VC.meaningOpts(entry, WORDS).map(d=>VC.gloss(d))];
 // hear — TTS plays the word; pick the meaning. Without speech it degrades to read.
@@ -1688,11 +2831,13 @@ function readItem(entry){
 // recall — meaning shown; pick the word (wordOpts: same pos/level first, never a
 // distractor that would also be a right answer).
 function recallItem(entry){
-  const ds = VC.wordOpts(entry, WORDS, null, PACK); // same word class as the answer
-  const byW = {}; [entry, ...ds].forEach(e=>{ byW[e.w] = e; });
+  const ds = VC.wordOpts(entry, WORDS, PRON_FIRST ? (e => dispWord(e).text) : null, PACK); // same word class as the answer; pronFirst: distinct displayed labels, no homophones
+  // Options are keyed by word id (the label is optHtml's): two options can never collapse
+  // into one key, whatever they display as.
+  const byId = {}; [entry, ...ds].forEach(e=>{ byId[e.id] = e; });
   return { kind:"mc", key:"w:"+entry.id, label:"Which word is this?", optsClass:"opts-hero opts-w",
     html: `<div class="med" style="text-align:center">${escapeHtml(VC.gloss(entry))}</div>`,
-    opts: [entry.w, ...ds.map(d=>d.w)], a: entry.w, optHtml: wordOptHtml(byW), optsT: true, reveal: revealBlock(entry),
+    opts: [entry.id, ...ds.map(d=>d.id)], a: entry.id, optHtml: wordOptHtml(byId, o => byId[o].w), optsT: true, reveal: revealBlock(entry),
     onAnswer: ok=>markWord(entry.id, ok), onReveal: () => say(entry.w) };
 }
 // type — meaning shown; type the word (normalised per pack.typing, alt forms accepted).
@@ -1702,7 +2847,23 @@ function typeItem(entry){
     check: val => VC.acceptTyped(val, entry, PACK), reveal: revealBlock(entry),
     onAnswer: ok=>markWord(entry.id, ok), onReveal: () => say(entry.w) };
 }
-const WORD_ITEM = { hear: hearItem, read: readItem, recall: recallItem, type: e => TYPING ? typeItem(e) : recallItem(e) };
+// typePron — pack.typing "pron": meaning shown (plus a replay button for the word's
+// audio); type its reading. Accepted: tone marks or numbers (VC.checkPronTyped: neutral as
+// 5, 0 or nothing; case, spaces and apostrophes ignored). The right letters without any
+// tone count as wrong, with a "tones missing" note giving the marked form. This is the
+// word's production slot (kindMix "type"), the same slot recall fills: the reading is
+// never drilled on its own. A word with no pron gets recall instead.
+function pronTypeItem(entry){
+  const hear = hasSpeech;
+  return { kind:"type", key:"w:"+entry.id, label:"Type the reading (tone marks or numbers)",
+    html: `<div class="med" style="text-align:center">${escapeHtml(VC.gloss(entry))}</div>${hear ? `<div class="listen-stage"><button class="replay" id="rp2" aria-label="Replay">${REPLAY_SVG}</button></div>` : ""}`,
+    placeholder: "tone marks or numbers…", inputTA: "",
+    mount: () => { if(hear){ const b = $("rp2"); b.onclick = () => speak(entry.w, b); } },
+    check: val => VC.checkPronTyped(val, entry.pron) === "ok",
+    feedback: val => VC.checkPronTyped(val, entry.pron) === "tones" ? `<div class="diff">tones missing: <span class="tpron">${readingHTML(entry.pron)}</span></div>` : "",
+    reveal: revealBlock(entry), onAnswer: ok=>markWord(entry.id, ok), onReveal: () => say(entry.w) };
+}
+const WORD_ITEM = { hear: hearItem, read: readItem, recall: recallItem, type: e => PRON_TYPING && e.pron ? pronTypeItem(e) : TYPING ? typeItem(e) : recallItem(e) };
 const itemFromPlan = p => WORD_ITEM[p.kind](p.word);
 // One card per missed word/sentence (items carry `key`), however many question types
 // it was missed as; the most-missed first, with a count when missed more than once.
@@ -1713,16 +2874,28 @@ function missSummary(miss){
 
 // ===================== sentence drill items =====================
 function sentenceRevealBlock(s){
-  const p = pronOf(s);
+  const pf = pfSentence(s, null, null, null, true);
+  if(pf && pf.taps) return `<div data-tokbox><div class="rw${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${sentSayHTML(s)}${pfWrittenTap(pf)}</div><div style="color:var(--mute)">${escapeHtml(s.en)}</div></div>`;
+  if(pf){
+    const canHear = canHearSentence(s);
+    const icon = canHear ? ` <span style="color:var(--mute);vertical-align:middle">${TEACH_PLAY_SVG}</span>` : "";
+    return `<div${canHear ? ` data-sent="${SENT_INDEX.get(s)}" style="cursor:pointer"` : ""}><div class="rw${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${icon}${pfWrittenTap(pf)}</div><div style="color:var(--mute)">${escapeHtml(s.en)}</div></div>`;
+  }
+  const rt = sentenceRuby(s);
+  if(rt && rt.some(k => WORDS_BY_ID[k.wordId])) return `<div data-tokbox><div class="rw hasruby"${TA}>${rubyTextHTML(s, rt, null, true)}${sentSayHTML(s)}</div><div style="color:var(--mute)">${escapeHtml(s.en)}</div></div>`;
+  const p = rt ? "" : pronOf(s);
   const canHear = canHearSentence(s);
   const icon = canHear ? ` <span style="color:var(--mute);vertical-align:middle">${TEACH_PLAY_SVG}</span>` : "";
-  return `<div${canHear ? ` data-sent="${SENT_INDEX.get(s)}" style="cursor:pointer"` : ""}><div class="rw"${TA}>${escapeHtml(s.t)}${icon}</div>${p ? `<div class="rp">${escapeHtml(p)}</div>` : ""}<div style="color:var(--mute)">${escapeHtml(s.en)}</div></div>`;
+  return `<div${canHear ? ` data-sent="${SENT_INDEX.get(s)}" style="cursor:pointer"` : ""}><div class="rw${rt ? " hasruby" : ""}"${TA}>${rt ? rubyTextHTML(s, rt) : escapeHtml(s.t)}${icon}</div>${p ? `<div class="rp">${readingHTML(p)}</div>` : ""}<div style="color:var(--mute)">${escapeHtml(s.en)}</div></div>`;
 }
 const sentenceChoices = s => [s.en, ...VC.sentenceOpts(s, SENTENCES).map(d=>d.en)];
 function readSentence(s){
-  const p = pronOf(s);
+  const pf = pfSentence(s);
+  const rt = pf ? null : sentenceRuby(s);
+  const p = rt || pf ? "" : pronOf(s);
   return { kind:"mc", key:"s:"+s.id, label:"What does it mean?", optsClass:"opts-hero",
-    html: `<div class="med wd"${TA}>${escapeHtml(s.t)}</div>${p ? `<div class="q">${escapeHtml(p)}</div>` : ""}`,
+    html: pf ? `<div class="med wd${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${pfWrittenTap(pf)}</div>`
+      : `<div class="med wd${rt ? " hasruby" : ""}"${TA}>${rt ? rubyTextHTML(s, rt) : escapeHtml(s.t)}</div>${p ? `<div class="q">${readingHTML(p)}</div>` : ""}`,
     opts: sentenceChoices(s), a: s.en, reveal: sentenceRevealBlock(s), onAnswer: ok=>markSentence(s.id, ok),
     mount: () => saySentence(s), };
 }
@@ -1744,7 +2917,12 @@ function gapSentence(s, typed){
   const entry = WORDS_BY_ID[s.words[idxs[Math.floor(Math.random()*idxs.length)]]];
   const match = VC.gapMatch(s, entry, WORDS_BY_ID, PACK);
   const b = VC.blankSentence(s, match);
-  const html = `<div class="med wd"${TA}>${escapeHtml(b.before)}<span class="blank">____</span>${escapeHtml(b.after)}</div><div class="q">${escapeHtml(s.en)}</div>`;
+  // pronFirst: the blanked sentence by tiers (pfSentence); false = only its reading line
+  // could be shown, where no blank can be placed: no gap item (caller falls back).
+  const pf = pfSentence(s, null, match);
+  if(pf === false) return null;
+  const html = pf ? `<div class="med wd${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${pfWrittenTap(pf)}</div><div class="q">${escapeHtml(s.en)}</div>`
+    : `<div class="med wd"${TA}>${escapeHtml(b.before)}<span class="blank">____</span>${escapeHtml(b.after)}</div><div class="q">${escapeHtml(s.en)}</div>`;
   const base = { key:"s:"+s.id, reveal: sentenceRevealBlock(s), onAnswer: ok=>markSentence(s.id, ok),
     onReveal: () => saySentence(s) };
   if(typed && TYPING){
@@ -1761,6 +2939,37 @@ function sentenceItemFor(s){
   if(k === "read") return readSentence(s);
   return gapSentence(s, k === "gapType") || readSentence(s);
 }
+
+// ===================== character drill items =====================
+// One renderer per VC.charItem kind (pack.characters only). The stimulus is what the
+// item's `show` says: charRead/charSound the written form alone (no reading, no audio),
+// charPick the reading plus the linked word's audio, charRecall the meaning. The reveal
+// always gives form, reading and meaning. Scoring writes prog.chars.c only (markChar).
+const sayUnit = (it, btn) => { const w = WORDS_BY_ID[it.wordId]; speak(w ? w.w : it.t, btn); };
+function charRevealBlock(it){
+  const tap = hasSpeech && WORDS_BY_ID[it.wordId];
+  const icon = tap ? ` <span style="color:var(--mute);vertical-align:middle">${TEACH_PLAY_SVG}</span>` : "";
+  return `<div${tap ? ` data-wid="${escapeHtml(it.wordId)}" style="cursor:pointer"` : ""}><div class="rw"${TA}>${escapeHtml(it.t)}${icon}</div>${it.reading ? `<div class="rp">${readingHTML(it.reading)}</div>` : ""}<div style="color:var(--mute)">${escapeHtml(it.gloss)}</div></div>`;
+}
+function charDrillItem(kind, unit){
+  const it = VC.charItem(kind, unit, CHAR_CTX);
+  const base = { kind:"mc", key: it.key, opts: it.options, a: it.answer, reveal: charRevealBlock(it),
+    onAnswer: ok => markChar(it.unitId, ok), onReveal: () => sayUnit(it) };
+  const form = `<div class="big wd"${TA}>${escapeHtml(it.t)}</div>`;
+  const formOpts = { optsClass:"opts-hero opts-w", optHtml: o => tw(o), optsT: true };
+  if(kind === "charRead") return Object.assign(base, { label:"What does it mean?", optsClass:"opts-hero", html: form });
+  if(kind === "charSound") return Object.assign(base, { label:"How is it said?", optsClass:"opts-hero", html: form, optHtml: o => `<bdi>${readingHTML(o)}</bdi>` });
+  if(kind === "charPick"){
+    const hear = it.audio && hasSpeech;
+    return Object.assign(base, formOpts, { label:"How is it written?",
+      html: `${hear ? `<div class="hear-stage"><button class="speaker" id="sp" aria-label="Replay">${SPEAKER_SVG}</button></div>` : ""}<div class="med" style="text-align:center">${readingHTML(it.reading)}</div>`,
+      mount: () => { if(!hear) return; const btn = $("sp"); sayUnit(it, btn); btn.onclick = () => sayUnit(it, btn); },
+      onReveal: null });
+  }
+  return Object.assign(base, formOpts, { label:"How is it written?", html: `<div class="med" style="text-align:center">${escapeHtml(it.gloss)}</div>` });
+}
+// Plan entries are {kind, word} or, from the unified plans, {kind, unit}.
+const planItem = p => p.unit ? charDrillItem(p.kind, p.unit) : itemFromPlan(p);
 
 // ===================== lesson item wrapper =====================
 // mode from VC.lessonSayMode: "audio" plays `say`; "inq" runs without audio (the
@@ -1797,19 +3006,51 @@ function switchToTab(t, title){
 }
 
 // ===================== Today =====================
+// With pack.characters the strip is VC.stagePath: word levels plus the character
+// stages in this learner's order (label from pack.characters, target-language text).
 function pathStrip(){
-  const stages = LEVELS.map(lv=>({ label: levelLabel(lv), frac: nSets(lv) ? (prog.sets[lv]||0)/nSets(lv) : 1 }));
-  return `<div class="path">${stages.map(s=>`<div class="seg"><div class="bar"><i style="width:${Math.round(s.frac*100)}%"></i></div>${escapeHtml(s.label)}</div>`).join("")}</div>`;
+  const stages = HAS_CHARACTERS
+    ? VC.stagePath(PACK, WORDS, CHAR_LIST, prog).map(s => ({ label: s.label, frac: s.frac, tl: s.kind === "chars" }))
+    : LEVELS.map(lv=>({ label: levelLabel(lv), frac: nSets(lv) ? (prog.sets[lv]||0)/nSets(lv) : 1 }));
+  return `<div class="path">${stages.map(s=>`<div class="seg"><div class="bar"><i style="width:${Math.round(s.frac*100)}%"></i></div>${s.tl ? tw(s.label) : escapeHtml(s.label)}</div>`).join("")}</div>`;
+}
+// The snapshot (VC.todaySnapshot) Today runs on: taken at Start today and kept for the
+// session, so finishing a stage mid-session changes neither what Learn teaches nor
+// whether Review/Recall include units. null without pack.characters.
+const takeSnapshot = () => HAS_CHARACTERS ? VC.todaySnapshot(PACK, WORDS, CHAR_LIST, prog) : null;
+// Learn has something to teach: the snapshot's stage (word set, or a unit set).
+const snapLearns = snap => !!(snap.stage && (snap.stage.kind === "words" || snap.cset));
+function snapLearnLine(snap){
+  const st = snap.stage;
+  if(!st || !snapLearns(snap)) return "everything covered";
+  return st.kind === "words" ? `${levelLabel(st.lv)}, set ${st.set+1}` : `${st.label}, set ${snap.cset.index+1} of ${snap.cset.total}`;
+}
+// The one-time choice card: start the character stage now, or defer it (VC.answerCharChoice)
+// and go on to the next word level first. Replaces Start today until answered.
+function charChoiceHTML(){
+  const path = VC.stagePath(PACK, WORDS, CHAR_LIST, prog);
+  const first = path.findIndex(s => s.kind === "chars");
+  const next = path.slice(first + 1).find(s => s.kind === "words" && !s.done);
+  const L = tw(CHAR_CFG.label), N = escapeHtml(next ? next.label : "");
+  return `<div class="stmt" id="charChoice">${L} next: learn to recognise the written form of the words you already know. Or go on to ${N} first and do ${L} after it. You can change this later in Progress.<button class="next" id="choiceStart" style="margin-top:8px">Start ${L}</button><button class="ghost" id="choiceSkip" style="margin-top:8px">Skip to ${N}</button></div>`;
 }
 function todayRender(){
   setScore(0,0);
   const P = $("panel"); const lw = learnedWords(); const nn = nextNewSet();
   const n = (prog.sessions||0) + 1;
   const availSent = availableSentences();
-  const g = VC.todayGates(lw.length, !!nn, availSent.length);
+  const snap = takeSnapshot();
+  const g = VC.todayGates(lw.length, snap ? snapLearns(snap) : !!nn, availSent.length);
+  // With pack.characters the Review plan is built here, with the snapshot, and Start today
+  // runs exactly this plan, so the line names units only when the plan holds some (a
+  // first character day has no unit records yet: "words" only).
+  todayPrep = snap ? { snap, review: g.review ? VC.buildReviewPlan(lw, prog, PACK, { size: snap.reviewSize, units: snap.charsStarted ? CHAR_LIST : undefined }) : null } : null;
+  const reviewLine = snap
+    ? `${snap.reviewSize} items, weakest first${snap.charsStarted ? (todayPrep.review && todayPrep.review.some(x => x.unit) ? `, words and ${CHAR_CFG.label}` : ", words") : ""}`
+    : `${VC.REVIEW_SIZE} items, weakest first`;
   const steps = [
-    ["Review", g.review ? `${VC.REVIEW_SIZE} items, weakest first` : "skipped until 5+ words are learned"],
-    ["Learn", nn ? `${levelLabel(nn.lv)}, set ${nn.set+1}` : "everything covered"],
+    ["Review", g.review ? reviewLine : "skipped until 5+ words are learned"],
+    ["Learn", snap ? snapLearnLine(snap) : (nn ? `${levelLabel(nn.lv)}, set ${nn.set+1}` : "everything covered")],
     ["Listen", g.listen ? "12 items" : "skipped until something is learned"],
     ["Recall", g.recall ? "8 items" : "skipped until something is learned"],
     ["Sentences", g.sentences ? "8 items, weakest first" : "skipped until 8+ sentences are available"]
@@ -1818,17 +3059,27 @@ function todayRender(){
   const showSoundsHint = HAS_LESSONS && !prog.soundsOpened;
   refreshReadUnlocks();
   const readHint = HAS_PASSAGES ? VC.suggestPassage(PASSAGE_LIST, WORDS, PACK, prog) : null;
-  P.innerHTML = `<div class="drill-body top">${samsungNoticeHTML}${pathStrip()}
-    ${showPlaceHint ?`<div class="stmt">New here? Placement finds where to start.<button class="next" id="hintPlace" style="margin-top:8px">Take the placement test</button></div>` : ""}
+  const choice = !!(snap && snap.choice);
+  P.innerHTML = `<div class="drill-body top">${samsungNoticeHTML}${legacyNotice ? `<div class="stmt" id="legacyNotice">${legacyNotice}<button class="ghost" id="legacyOk" style="margin-top:8px">OK</button></div>` : ""}${legacyFail ? `<div class="stmt" id="legacyFail">${legacyFailHTML(legacyFail)}<button class="ghost" id="legacySkip" style="margin-top:8px">Start without it</button></div>` : ""}${pathStrip()}
+    ${showPlaceHint ?`<div class="stmt">New here? Placement finds where to start.<button class="next" id="hintPlace" style="margin-top:8px">Take the placement test</button></div>` : ""}${choice ? charChoiceHTML() : ""}
     ${showSoundsHint ? `<div class="stmt">A few short lessons explain how ${escapeHtml(PACK.name)} sounds and is written.<button class="next" id="hintSounds" style="margin-top:8px">Start the first lesson</button></div>` : ""}
-    ${readHint ? `<div class="stmt" id="readHintBox">Read 1 passage: ${tw(readHint.title)} (${escapeHtml(levelLabel(readHint.lv))}, ${VC.passageLength(readHint, PACK)} words).<button class="next" id="hintRead" style="margin-top:8px">Read 1 passage</button></div>` : ""}
+    ${readHint ? `<div class="stmt" id="readHintBox">Read 1 passage: ${rubyTw(readHint.title, readHint.titleRuby)} (${escapeHtml(levelLabel(readHint.lv))}, ${VC.passageLength(readHint, PACK)} words).<button class="next" id="hintRead" style="margin-top:8px">Read 1 passage</button></div>` : ""}
     <p class="q">Session ${n}, about 15 minutes.<br>${lw.length} words learned so far.</p>
     <table class="stats steps">${steps.map((s,i)=>`<tr><td>${i+1}. ${s[0]}</td><td>${escapeHtml(s[1])}</td></tr>`).join("")}</table>
-    </div><div class="actions"><button class="next" id="go">Start today</button></div>`;
+    </div>${choice ? "" : `<div class="actions"><button class="next" id="go">Start today</button></div>`}`;
+  if(legacyNotice) $("legacyOk").onclick = () => { legacyNotice = null; todayRender(); };
+  if(legacyFail) $("legacySkip").onclick = () => { legacyFail = null; storeReadOnly = false; store.save(); todayRender(); };
   if(showPlaceHint) $("hintPlace").onclick = enterPlacementFromToday;
   if(showSoundsHint) $("hintSounds").onclick = enterFirstSoundsLessonFromToday;
   if(readHint) $("hintRead").onclick = () => { switchToTab("read", "Read"); RD = null; startPassage(readHint); };
-  $("go").onclick = () => { todayStepState = { step:0 }; todayStep(); };
+  // The choice card replaces Start today until answered, so Learn never teaches a stage
+  // the learner hasn't chosen.
+  if(choice){
+    $("choiceStart").onclick = () => { VC.answerCharChoice(prog, true); store.save(); todayRender(); };
+    $("choiceSkip").onclick = () => { VC.answerCharChoice(prog, false); store.save(); todayRender(); };
+    return;
+  }
+  $("go").onclick = () => { todayStepState = HAS_CHARACTERS ? (todayPrep ? { step:0, snap: todayPrep.snap, review: todayPrep.review } : { step:0, snap: takeSnapshot() }) : { step:0 }; todayPrep = null; todayStep(); };
 }
 function enterPlacementFromToday(){ switchToTab("test", "Test"); testSel = "placement"; startPlacement(); }
 function enterFirstSoundsLessonFromToday(){
@@ -1839,16 +3090,33 @@ function enterFirstSoundsLessonFromToday(){
 }
 // review(15, >=40% production) -> learn(next set) -> listen(12 hear) -> recall(8
 // recall/type) -> sentences(8) -> finish. Each step skips itself when its pool is too small.
+// With pack.characters every step reads the Start-today snapshot (todayStepState.snap,
+// taken lazily if a step is entered without one): Learn teaches its stage's set (word
+// or unit), Review is snap.reviewSize, and Review/Recall rank units with words once
+// characters have started. Without it each step is the pre-characters code.
 function todayStep(){
-  const lw = learnedWords(); const nn = nextNewSet();
+  const snap = HAS_CHARACTERS ? (todayStepState.snap || (todayStepState.snap = takeSnapshot())) : null;
+  const lw = learnedWords();
+  const nn = snap ? (snap.stage && snap.stage.kind === "words" ? { lv: snap.stage.lv, set: snap.stage.set } : null) : nextNewSet();
   const avail = availableSentences();
-  const g = VC.todayGates(lw.length, !!nn, avail.length);
+  const g = VC.todayGates(lw.length, snap ? snapLearns(snap) : !!nn, avail.length);
+  const units = snap && snap.charsStarted ? CHAR_LIST : undefined;
   const s = todayStepState.step++;
   if(s === 0){
+    if(g.review && snap){
+      const plan = todayStepState.review || VC.buildReviewPlan(lw, prog, PACK, { size: snap.reviewSize, units });
+      todayStepState.review = null;
+      drill(plan.map(planItem), todayStep, missSummary); return;
+    }
     if(g.review){ drill(VC.buildReviewPlan(lw, prog, PACK).map(itemFromPlan), todayStep, missSummary); return; }
     return todayStep();
   }
   if(s === 1){
+    if(g.learn && snap && snap.stage.kind === "chars"){
+      const cs = snap.cset;
+      charTeach(cs, snap.stage, () => drill(VC.learnCharPlan(cs.units, PACK).map(planItem), todayStep, missSummary));
+      return;
+    }
     if(g.learn){
       const list = levelList(nn.lv).slice(nn.set*SIZE, nn.set*SIZE+SIZE);
       vocabTeach(list, nn.lv, () => {
@@ -1865,6 +3133,7 @@ function todayStep(){
     return todayStep();
   }
   if(s === 3){
+    if(g.recall && units){ drill(VC.buildRecallPlan(lw, prog, PACK, 8, { units }).map(planItem), todayStep, missSummary); return; }
     if(g.recall){ drill(VC.buildRecallPlan(lw, prog, PACK, 8).map(itemFromPlan), todayStep, missSummary); return; }
     return todayStep();
   }
@@ -1885,8 +3154,8 @@ function wordRowHTML(w, cls){
   // Pron + gloss always share one .info column so the pron span never has to
   // shrink to width:0 next to the gloss (that caused unbreakable transliterations
   // like "budan" to overlap the gloss text when the gloss was long).
-  const p = pronOf(w);
-  return `<span class="wd"${TA}>${escapeHtml(w.w)}</span><span class="info">${p ? `<span class="pr">${escapeHtml(p)}</span>` : ""}<span class="en">${escapeHtml(VC.gloss(w))}</span></span>`;
+  const p = pronBeside(w);
+  return `<span class="wd${dispWord(w).isPron ? " pf" : ""}"${TA}>${wordFormHTML(w)}</span><span class="info">${p ? `<span class="pr">${readingHTML(p)}</span>` : ""}<span class="en">${escapeHtml(VC.gloss(w))}</span></span>`;
 }
 function vocabTeach(list, lv, onDrill){
   setScore(0,0);
@@ -1910,6 +3179,23 @@ function vocabTeach(list, lv, onDrill){
   });
   $("dr").onclick = onDrill;
 }
+// Teach cards for a character-unit set (Learn, pack.characters): per unit the written form
+// large, its reading, the linked word's meaning and one example sentence of that word.
+// Tapping the head plays the word (panel data-wid listener), the sentence plays itself.
+function charTeach(cs, stage, onDrill){
+  setScore(0,0);
+  const P = $("panel");
+  const hint = hasSpeech ? " Tap one to hear it." : "";
+  const cards = cs.units.map(u => {
+    const w = VC.unitWord(u, WORDS_BY_ID), reading = VC.unitReading(u, WORDS_BY_ID);
+    const tap = hasSpeech && w;
+    const ex = w ? wordExampleSentences(w, 1) : [];
+    return `<div class="charteach"><div class="chead"${tap ? ` data-wid="${escapeHtml(w.id)}" style="cursor:pointer"` : ""}><span class="cform"${TA}>${escapeHtml(u.t)}</span><span class="info">${reading ? `<span class="pr">${readingHTML(reading)}</span>` : ""}<span class="en">${escapeHtml(VC.unitGloss(u, WORDS_BY_ID))}</span></span>${tap ? `<span style="color:var(--mute);flex:0 0 auto">${TEACH_PLAY_SVG}</span>` : ""}</div>${ex.map(s => sentenceRowHTML(s, w, u.words)).join("")}</div>`;
+  }).join("");
+  P.innerHTML = `<p class="q">${tw(stage.label)}, set ${cs.index+1} of ${cs.total}: the written form of words you already know.${hint}</p>
+    <div id="ctl">${cards}</div><div class="actions"><button class="next" id="dr">Drill these</button></div>`;
+  $("dr").onclick = onDrill;
+}
 // Lesson card `body` is trusted pack HTML (pack authors write it); everything else is escaped.
 function lessonTeach(lesson, onDone, onBack){
   setScore(0,0);
@@ -1922,7 +3208,7 @@ function lessonTeach(lesson, onDone, onBack){
   (lesson.cards||[]).forEach(c => {
     const el = document.createElement("div"); el.className = "card-teach";
     el.innerHTML = `<h3>${escapeHtml(c.h)}</h3><p>${c.body}</p>
-      ${c.rows ? `<div>${c.rows.map(r=>`<div class="rowset">${r.map((cell,i)=>`<span class="${["pr","wd","en"][i]||"en"}"${i===1 ? TA : ""}>${escapeHtml(cell)}</span>`).join("")}</div>`).join("")}</div>` : ""}
+      ${c.rows ? `<div>${c.rows.map(r=>`<div class="rowset">${r.map((cell,i)=>`<span class="${["pr","wd","en"][i]||"en"}"${i===1 ? TA : ""}>${i === 0 ? readingHTML(cell) : escapeHtml(cell)}</span>`).join("")}</div>`).join("")}</div>` : ""}
       ${c.say ? `<div class="taplist">${c.say.map((s,i)=>`<button data-s="${i}">▶ ${tw(s)}</button>`).join("")}</div>` : ""}`;
     if(c.say) el.querySelectorAll("[data-s]").forEach((b,i)=>b.onclick=()=>say(c.say[i]));
     cw.appendChild(el);
@@ -1953,8 +3239,31 @@ function soundsRender(){
   }
   const done = LESSON_LIST.filter(l=>prog.lessons[l.id]).length;
   P.innerHTML = `<p class="q">Optional: how ${escapeHtml(PACK.name)} sounds and is written. ${LESSON_LIST.length} lessons, ${done} done.</p>
-    <div class="plist">${LESSON_LIST.map((l,i)=>`<button data-i="${i}"><span>${escapeHtml(l.title)}</span>${prog.lessons[l.id]?'<span class="tick">✓</span>':''}</button>`).join("")}</div>`;
+    <div class="plist">${LESSON_LIST.map((l,i)=>`<button data-i="${i}"><span>${escapeHtml(l.title)}</span>${prog.lessons[l.id]?'<span class="tick">✓</span>':''}</button>`).join("")}</div>${SOUNDS_REF ? soundsRefHTML() : ""}`;
   P.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{ soundsSel = +b.dataset.i; soundsRender(); });
+  if(SOUNDS_REF) P.querySelectorAll("[data-rs]").forEach(b=>b.onclick=()=>speak(b.dataset.rs, b));
+}
+// pack.soundsReference: every one-character example row of the lessons (row[0] its
+// reading, card.say[i] its text), grouped by lesson, first occurrence of each reading
+// only. The lessons already teach every sound, so the reference is built from them.
+function soundsRefGroups(){
+  const seen = new Set(), groups = [];
+  LESSON_LIST.forEach(l => {
+    const cells = [];
+    (l.cards || []).forEach(c => (c.rows || []).forEach((r, i) => {
+      const say = c.say && c.say[i], label = Array.isArray(r) ? r[0] : null;
+      if(typeof say !== "string" || typeof label !== "string" || !label || [...say].length !== 1 || seen.has(label)) return;
+      seen.add(label); cells.push({ label, say });
+    }));
+    if(cells.length) groups.push({ title: l.title, cells });
+  });
+  return groups;
+}
+// Compact and collapsed: a <details> card below the lesson list. Tap a cell to hear it.
+function soundsRefHTML(){
+  const groups = soundsRefGroups();
+  if(!groups.length) return "";
+  return `<details class="refcard"><summary>Reference: every sound in the lessons</summary>${hasSpeech ? `<p class="q">Tap a sound to hear it.</p>` : ""}${groups.map(g => `<div class="refh">${escapeHtml(g.title)}</div><div class="refcells">${g.cells.map(c => `<button type="button" data-rs="${escapeHtml(c.say)}" aria-label="${escapeHtml(c.label)}">${readingHTML(c.label)}</button>`).join("")}</div>`).join("")}</details>`;
 }
 
 // ===================== Words =====================
@@ -2042,33 +3351,172 @@ function readRender(){
       const ps = PASSAGE_LIST.filter(p => p.lv === l.lv);
       return `<div class="rlv"><div class="rlh">${L}<span class="q" style="margin:0">${ps.filter(passageDone).length} / ${ps.length} done</span></div>
         <div class="plist">${ps.map(p => { const d = passageDone(p);
-          return `<button data-pid="${escapeHtml(p.id)}"${SCRIPT.rtl ? ' dir="rtl"' : ""}><span>${tw(p.title)}<span class="q" style="display:block;margin:0;font-size:13px">${VC.passageLength(p, PACK)} words</span></span>${d ? `<span class="tick">✓ ${d.sc} / ${d.n}</span>` : ""}</button>`; }).join("")}</div></div>`;
+          return `<button data-pid="${escapeHtml(p.id)}"${SCRIPT.rtl ? ' dir="rtl"' : ""}><span>${rubyTw(p.title, p.titleRuby, true)}<span class="q" style="display:block;margin:0;font-size:13px">${VC.passageLength(p, PACK)} words</span></span>${d ? `<span class="tick">✓ ${d.sc} / ${d.n}</span>` : ""}</button>`; }).join("")}</div></div>`;
     }).join("")}`;
   P.querySelectorAll("[data-pid]").forEach(b => b.onclick = () => startPassage(PASSAGE_LIST.find(p => p.id === b.dataset.pid)));
 }
 function startPassage(p){
   if(!p) return;
-  RD = { p, tapped: [], answers: [], qi: null, shown: false, resultsDone: false };
+  RD = { p, tapped: [], glosses: {}, answers: [], qi: null, shown: false, resultsDone: false };
   readPassageScreen();
 }
 // One passage sentence: linked words as tappable spans (data-pw), words not visible in
 // the text as chips below, and a read-aloud button when speech works (or it has audio).
+// With pack.characters a passage sentence carrying `ruby` (sentences.json format) gets the
+// same tiers as sentence rows (sentenceRuby): each tap segment's text renders its ruby
+// tokens (passageRubyHTML); the line box is the fixed tall one, so no line jumps.
 function passageSentenceHTML(s, si, hi){
   const seg = VC.passageSegments(s, WORDS_BY_ID, PACK);
-  const txt = seg.parts.map(x => x.id ? `<span class="pw" data-pw="${escapeHtml(x.id)}" role="button" tabindex="0">${escapeHtml(x.text)}</span>` : escapeHtml(x.text)).join("");
-  const chips = seg.unplaced.length ? `<div class="pchips">${seg.unplaced.map(id => `<span class="pw pchip" data-pw="${escapeHtml(id)}" role="button" tabindex="0"${TA}>${escapeHtml(WORDS_BY_ID[id].w)}</span>`).join("")}</div>` : "";
+  const pf = pfPassage(s, seg, "pw");
+  if(pf){
+    const chips = seg.unplaced.length ? `<div class="pchips">${seg.unplaced.map(id => `<span class="pw pchip" data-pw="${escapeHtml(id)}" role="button" tabindex="0"${TA}>${wordFormHTML(WORDS_BY_ID[id], false)}</span>`).join("")}</div>` : "";
+    const aloud = canHearSentence(s) ? `<button class="replay psay" data-say="${si}" aria-label="Read sentence aloud">${TEACH_PLAY_SVG}</button>` : "";
+    return `<div class="psent${hi ? " hi" : ""}" data-si="${si}"><div class="ptxt${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}</div>${aloud}${chips}</div>`;
+  }
+  const rt = sentenceRuby(s);
+  let at = 0;
+  const inner = x => { const a = at; at += x.text.length; return rt ? passageRubyHTML(String(s.t || ""), rt, a, at) : escapeHtml(x.text); };
+  const txt = seg.parts.map(x => x.id ? `<span class="pw" data-pw="${escapeHtml(x.id)}"${x.gloss ? ` data-pg="${escapeHtml(x.gloss)}"` : ""} role="button" tabindex="0">${inner(x)}</span>` : inner(x)).join("");
+  const chips = seg.unplaced.length ? `<div class="pchips">${seg.unplaced.map(id => `<span class="pw pchip" data-pw="${escapeHtml(id)}" role="button" tabindex="0"${TA}>${wordFormHTML(WORDS_BY_ID[id], false)}</span>`).join("")}</div>` : "";
   const aloud = canHearSentence(s) ? `<button class="replay psay" data-say="${si}" aria-label="Read sentence aloud">${TEACH_PLAY_SVG}</button>` : "";
-  return `<div class="psent${hi ? " hi" : ""}" data-si="${si}"><div class="ptxt"${TA}>${txt}</div>${aloud}${chips}</div>`;
+  return `<div class="psent${hi ? " hi" : ""}" data-si="${si}"><div class="ptxt${rt ? " hasruby" : ""}"${TA}>${txt}</div>${aloud}${chips}</div>`;
+}
+// Text t[a, b) with the ruby tokens that lie wholly inside it (rubyTokHTML: reading shown
+// below bare, hidden at or above it). A token crossing a tap-segment edge, or malformed,
+// renders plain.
+function passageRubyHTML(t, toks, a, b){
+  let out = "", pos = a;
+  toks.forEach(k => {
+    if(!(k.start >= pos && k.end > k.start && k.end <= b)) return;
+    out += escapeHtml(t.slice(pos, k.start));
+    const base = escapeHtml(t.slice(k.start, k.end));
+    out += rubyTokHTML(base, k);
+    pos = k.end;
+  });
+  return out + escapeHtml(t.slice(pos, b));
+}
+// pack.pronFirst passage sentence (null when off): its tap segments (VC.passageSegments)
+// rendered by the same rule as sentences. With `ruby` the tokens follow their tiers
+// (VC.rubyTiers); without it each linked word is one token, its reading while its unit
+// is below mastered (displayForm), else its written form. A span longer than its word
+// (这个 for 这, 越来越 for 越) reads as VC.composeSpanReading: the word's pron where its
+// written form occurs, each other character's single-character unit reading, and a
+// character with no reading stays written, so no character is ever dropped. Text outside
+// every token (a name with no word) stays as written: there is no reading for it.
+// taps: "pw" wraps linked words as data-pw tap spans (the Read screen, logged as
+// tapped), "tok" as word taps (tokTapHTML: question reveals and results, no log), false
+// plain. A phrase span (spanHead) carries its surface and reading for the popover.
+function pfPassage(s, seg, taps){
+  if(!PRON_FIRST) return null;
+  const t = String(s.t || "");
+  const rt = sentenceRuby(s);
+  let toks = rt;
+  const cuts = []; let at = 0;
+  seg.parts.forEach(x => { cuts.push(at); at += x.text.length; });
+  if(!toks){
+    toks = []; at = 0;
+    seg.parts.forEach(x => {
+      const a = at; at += x.text.length;
+      const w = x.id ? WORDS_BY_ID[x.id] : null; if(!w) return;
+      const d = dispWord(w);
+      if(!d.isPron || x.text === w.w){ toks.push({ start: a, end: at, tier: d.isPron ? "pron" : "plain", reading: w.pron || "", wordId: w.id }); return; }
+      VC.composeSpanReading(x.text, w, charReading, PACK).forEach(q => { if(q.reading) toks.push({ start: a + q.start, end: a + q.end, tier: "pron", reading: q.reading, wordId: w.id }); });
+    });
+  }
+  const pieces = VC.sentencePieces(s, toks, null, cuts);
+  let ruby = false;
+  const pieceHTML = p => {
+    if(p.kind === "tok" && (p.tier === "ruby" || p.tier === "bare")){ ruby = true; return rubyTokHTML(escapeHtml(p.text), showPron() ? p : Object.assign({}, p, { tier:"bare" })); }
+    return p.kind === "tok" && p.tier === "pron" ? readingHTML(p.text) : escapeHtml(p.text);
+  };
+  let html = ""; at = 0;
+  seg.parts.forEach(x => {
+    const a = at; at += x.text.length;
+    const mine = pieces.filter(p => p.start >= a && p.start < at);
+    if(!mine.length) return;
+    const inner = mine.map((p, i) => (i ? escapeHtml(p.pre) : "") + pieceHTML(p)).join("");
+    const w = x.id ? WORDS_BY_ID[x.id] : null;
+    const head = w && taps ? spanHead(x.text, w, rt, a) : null;
+    const hd = head ? ` data-ts="${escapeHtml(head.surface)}" data-tr="${escapeHtml(head.reading)}"` : "";
+    html += escapeHtml(mine[0].pre) + (w && taps === "pw" ? `<span class="pw" data-pw="${escapeHtml(x.id)}"${x.gloss ? ` data-pg="${escapeHtml(x.gloss)}"` : ""}${hd} role="button" tabindex="0">${inner}</span>`
+      : w && taps === "tok" ? tokTapHTML(w.id, inner, head) : inner);
+  });
+  return { html, ruby };
+}
+// Popover head of a phrase span (pronFirst): a span whose text contains its word's written
+// form and more (越来越 for 越, 一下 for 下) is shown in the popover as the tapped surface
+// with its reading: from the sentence's ruby tokens inside it when it has ruby (a
+// character outside every token stays written), else VC.spanReadingText. null for any
+// other span (the word's own headword). rt: the sentence's ruby tiers or null; a: the
+// span's offset in the sentence.
+function spanHead(text, w, rt, a){
+  if(!phraseHead(text, w, "")) return null;
+  if(!rt) return { surface: text, reading: VC.spanReadingText(text, w, charReading, PACK) };
+  let r = "", pos = 0;
+  rt.filter(k => k.start >= a && k.end <= a + text.length).forEach(k => {
+    if(k.start - a > pos) r += text.slice(pos, k.start - a);
+    r = VC.joinReadings(r, String(k.reading || ""), PACK); pos = k.end - a;
+  });
+  return { surface: text, reading: r + text.slice(pos) };
+}
+// A passage sentence as display text (question reveal, results): pronFirst by pfPassage
+// with word taps (tokTapHTML; the caller's container is a data-tokbox), else the written text.
+function passagePlainHTML(s){
+  const pf = PRON_FIRST ? pfPassage(s, VC.passageSegments(s, WORDS_BY_ID, PACK), "tok") : null;
+  return pf ? pf.html : escapeHtml(s.t);
+}
+const TOKBOX = PRON_FIRST ? " data-tokbox" : ""; // passage reveals hold word taps (passagePlainHTML)
+// pack.pronFirst text carrying its own ruby (passages.json titleRuby, questions[].ruby,
+// questions[].optionsRuby): reading-first by the sentence tier rules (VC.rubyTiers +
+// VC.sentencePieces), readings tone-coloured (readingHTML); a token with a null wordId (a
+// name) shows its reading. No word taps. null when pronFirst is off or the text has no
+// ruby: the caller shows it as written, exactly as before.
+function pfRubyText(t, ruby){
+  if(!PRON_FIRST || !Array.isArray(ruby) || !ruby.length) return null;
+  const obj = { t: String(t == null ? "" : t), ruby };
+  const toks = VC.rubyTiers(obj, CHAR_LIST, prog, PACK, VC.charsStarted(PACK, WORDS, CHAR_LIST, prog));
+  if(!toks) return null;
+  let hasRuby = false, anyPron = false;
+  const html = VC.sentencePieces(obj, toks).map(p => {
+    if(p.kind === "tok" && p.tier === "pron"){ anyPron = true; return escapeHtml(p.pre) + readingHTML(p.text); }
+    if(p.kind === "tok"){ hasRuby = true; return escapeHtml(p.pre) + rubyTokHTML(escapeHtml(p.text), showPron() ? p : Object.assign({}, p, { tier:"bare" })); }
+    return escapeHtml(p.pre) + escapeHtml(p.text);
+  }).join("");
+  return { html, ruby: hasRuby, written: anyPron ? obj.t : false };
+}
+// Target-language text with optional ruby, as inner HTML: under pronFirst by pfRubyText
+// plus the show-written tap (none when inButton: option and list buttons are tap targets
+// themselves), else escaped as written.
+function rubyTextOr(t, ruby, inButton){
+  const pf = pfRubyText(t, ruby);
+  return pf ? pf.html + (inButton ? "" : pfWrittenTap(pf)) : escapeHtml(t);
+}
+// The same wrapped as target-language text (tw) for places that used tw(text).
+function rubyTw(t, ruby, inButton){
+  return pfRubyText(t, ruby) ? `<bdi${TA}>${rubyTextOr(t, ruby, inButton)}</bdi>` : tw(t);
 }
 function passageHTML(hiIndex){ return RD.p.sentences.map((s, i) => passageSentenceHTML(s, i, i === hiIndex)).join(""); }
 // RTL packs: the popover runs right-to-left (tapped word at the right edge, then pron and
 // gloss in reading order); pron and the English gloss stay isolated LTR runs inside it.
 const LTR = SCRIPT.rtl ? ' dir="ltr"' : "";
 const glossBox = () => `<div class="gloss" id="gloss"${SCRIPT.rtl ? ' dir="rtl"' : ""} hidden></div>`;
-function glossHTML(id){
+// spanGloss: the tapped span's display-only gloss (spans[i][3], carried as data-pg on
+// the tap span), shown instead of the word's gloss; without one the word's own gloss.
+// head (optional {surface, reading}, pronFirst phrase spans, spanHead): the headword is the
+// tapped surface (越来越), shown as its reading while the word is shown by its reading
+// (with the show-written tap), else written with the reading beside it.
+function glossHTML(id, spanGloss, head){
   const w = WORDS_BY_ID[id]; if(!w) return "";
-  const p = pronOf(w);
-  return `<span class="gw"${TA}>${escapeHtml(w.w)}</span>${p ? ` <span class="gp"${LTR}>${escapeHtml(p)}</span>` : ""} <span class="ge"${LTR}>${escapeHtml(VC.gloss(w))}</span>`;
+  const g = spanGloss ? String(spanGloss).replace(/\s+/g, " ").trim() : "";
+  const ge = ` <span class="ge"${LTR}>${escapeHtml(g || VC.gloss(w))}</span>`;
+  if(head){
+    const r = head.reading || "";
+    if(dispWord(w).isPron && r) return `<span class="gw"${TA}>${readingHTML(r)}${showWrittenBtn(head.surface)}</span>${ge}`;
+    const hp = r && showPron() ? r : "";
+    return `<span class="gw"${TA}>${escapeHtml(head.surface)}</span>${hp ? ` <span class="gp"${LTR}>${readingHTML(hp)}</span>` : ""}${ge}`;
+  }
+  const p = pronBeside(w);
+  return `<span class="gw"${TA}>${wordFormHTML(w)}</span>${p ? ` <span class="gp"${LTR}>${readingHTML(p)}</span>` : ""}${ge}`;
 }
 // Wires tap-to-gloss and read-aloud on a freshly rendered passage container (its
 // innerHTML is replaced on every render, so listeners never accumulate).
@@ -2078,8 +3526,13 @@ function wirePassage(box, glossEl){
     if(RD && RD.tapped.indexOf(id) < 0) RD.tapped.push(id);
     box.querySelectorAll(".pw.on").forEach(x => x.classList.remove("on"));
     t.classList.add("on");
-    if(glossEl){ glossEl.innerHTML = glossHTML(id); glossEl.hidden = false; }
-    announce(glossHTML(id));
+    // RD.glosses: the sense last seen per tapped word, so the results screen's weak-word
+    // list shows the gloss the learner actually looked at.
+    const g = t.dataset.pg || "";
+    if(RD && RD.glosses){ if(g) RD.glosses[id] = g; else delete RD.glosses[id]; }
+    const head = tokHeadOf(t);
+    if(glossEl){ glossEl.innerHTML = glossHTML(id, g, head); glossEl.hidden = false; }
+    announce(glossHTML(id, g, head));
   };
   box.addEventListener("click", e => {
     const w = e.target.closest("[data-pw]"); if(w){ tap(w); return; }
@@ -2091,7 +3544,7 @@ function readPassageScreen(){
   setScore(0,0);
   const p = RD.p, P = $("panel");
   P.innerHTML = `<div class="row"><button id="rback">‹ passages</button></div>
-    <h2 class="ptitle"${TA}>${escapeHtml(p.title)}</h2>
+    <h2 class="ptitle"${TA}>${rubyTextOr(p.title, p.titleRuby)}</h2>
     <p class="q">${escapeHtml(levelLabel(p.lv))} · ${VC.passageLength(p, PACK)} words. Tap a word to see its meaning.</p>
     ${glossBox()}
     <div class="passage" id="pbox">${passageHTML(-1)}</div>
@@ -2110,7 +3563,7 @@ function readQuestionScreen(){
   const tf = q.type === "tf";
   const order = tf ? [true, false] : shuffle([0,1,2,3]);
   P.innerHTML = `<div class="drill-body top"><p class="q">Question ${qi+1} / ${p.questions.length}</p>
-    <div class="med wd"${TA}>${escapeHtml(q.q)}</div>${q.en ? `<div class="q">${escapeHtml(q.en)}</div>` : ""}
+    <div class="med wd"${TA}>${rubyTextOr(q.q, q.ruby)}</div>${q.en ? `<div class="q">${escapeHtml(q.en)}</div>` : ""}
     <div class="opts ${tf ? "" : "opts-w"}" id="o"></div>
     <div class="reveal" id="rv"></div>
     <button class="ghost" id="ptoggle" aria-expanded="${RD.shown}" style="margin-top:12px">${RD.shown ? "Hide passage" : "Show passage"}</button>
@@ -2128,7 +3581,7 @@ function readQuestionScreen(){
   const box = $("o");
   order.forEach((v, i) => {
     const b = document.createElement("button");
-    b.innerHTML = `<b class="num">${i+1}</b>${tf ? (v ? "True" : "False") : tw(q.options[v])}`;
+    b.innerHTML = `<b class="num">${i+1}</b>${tf ? (v ? "True" : "False") : rubyTw(q.options[v], (q.optionsRuby || [])[v], true)}`;
     if(!tf && SCRIPT.rtl) b.dir = "rtl";
     b.dataset.v = String(v);
     b.onclick = () => {
@@ -2137,7 +3590,7 @@ function readQuestionScreen(){
       [...box.children].forEach(x => { x.disabled = true; if(x.dataset.v === String(q.answer)) x.classList.add("ok"); });
       if(!rec.ok) b.classList.add("bad");
       const s = p.sentences[q.sentence];
-      showReveal(`<div class="q" style="margin:0 0 6px">${rec.ok ? "Right." : "Not quite."} The answer is in this sentence:</div><div class="stmt hi" style="margin:0"><div${TA}><mark>${escapeHtml(s.t)}</mark></div><div class="q" style="margin:4px 0 0">${escapeHtml(s.en)}</div></div>`);
+      showReveal(`<div class="q" style="margin:0 0 6px">${rec.ok ? "Right." : "Not quite."} The answer is in this sentence:</div><div class="stmt hi" style="margin:0"${TOKBOX}><div${TA}><mark>${passagePlainHTML(s)}</mark></div><div class="q" style="margin:4px 0 0">${escapeHtml(s.en)}</div></div>`);
       const hs = $("pbox").querySelector(`[data-si="${q.sentence}"]`); if(hs) hs.classList.add("hi");
       $("nx").style.display = "block"; setScore(qi+1, p.questions.length);
     };
@@ -2165,10 +3618,10 @@ function readResults(){
   const sc = RD.answers.filter(a => a && a.ok).length;
   const weak = VC.passageWeakWords(p, { tapped: RD.tapped, answers: RD.answers }, WORDS_BY_ID);
   P.innerHTML = `<div class="done"><h2>${sc} / ${p.questions.length}</h2>
-    <p class="q"${TA} style="margin-bottom:8px">${escapeHtml(p.title)}</p>
+    <p class="q"${TA} style="margin-bottom:8px">${rubyTextOr(p.title, p.titleRuby)}</p>
     ${p.questions.map((q, i) => { const a = RD.answers[i] || {}; const s = p.sentences[q.sentence];
-      return `<div class="stmt"><div class="q" style="margin:0 0 4px;color:${a.ok ? "var(--ok)" : "var(--bad)"}">${a.ok ? "✓" : "✗"} Question ${i+1}${a.reopened ? " · looked back" : ""}</div><div${TA}>${escapeHtml(q.q)}</div><div style="margin-top:6px"${TA}><mark>${escapeHtml(s.t)}</mark></div><div class="q" style="margin:2px 0 0">${escapeHtml(s.en)}</div></div>`; }).join("")}
-    ${weak.length ? `<p class="q">Weak words from this passage</p><div id="weak">${weak.map((w, i) => `<label class="wk"${SCRIPT.rtl ? ' dir="rtl"' : ""}><input type="checkbox" data-wi="${i}" checked> ${glossHTML(w.id)} <span class="q" style="margin:0;font-size:13px">${escapeHtml(w.why.map(x => WHY_LABEL[x]).join(", "))}</span></label>`).join("")}</div>
+      return `<div class="stmt"${TOKBOX}><div class="q" style="margin:0 0 4px;color:${a.ok ? "var(--ok)" : "var(--bad)"}">${a.ok ? "✓" : "✗"} Question ${i+1}${a.reopened ? " · looked back" : ""}</div><div${TA}>${rubyTextOr(q.q, q.ruby)}</div><div style="margin-top:6px"${TA}><mark>${passagePlainHTML(s)}</mark></div><div class="q" style="margin:2px 0 0">${escapeHtml(s.en)}</div></div>`; }).join("")}
+    ${weak.length ? `<p class="q">Weak words from this passage</p><div id="weak">${weak.map((w, i) => `<label class="wk"${SCRIPT.rtl ? ' dir="rtl"' : ""}><input type="checkbox" data-wi="${i}" checked> ${glossHTML(w.id, RD.glosses && RD.glosses[w.id])} <span class="q" style="margin:0;font-size:13px">${escapeHtml(w.why.map(x => WHY_LABEL[x]).join(", "))}</span></label>`).join("")}</div>
       <button class="next" id="addrev">Add to review</button>` : `<p class="q">No weak words from this passage.</p>`}
     <div id="addmsg" class="q" hidden></div>
     <button class="ghost" id="rlist" style="margin-top:10px">Back to passages</button></div>`;
@@ -2190,6 +3643,11 @@ function testRender(){
   const tg = VC.testGates(lw.length, availSent.length);
   const needMore = tg.needPlacement;
   const n20 = Math.min(20, lw.length), sentN = Math.min(20, availSent.length);
+  // Characters N (pack.characters, predecessor-app parity): recorded units weakest first, topped up to
+  // 20 with learned words' unrecorded units, each a pack testKinds kind (VC.charTestPlan).
+  // Shown once characters have started (VC.charsStarted), not only once a record exists.
+  const charPlan = () => VC.charTestPlan(CHAR_LIST, learnedWords(), prog, PACK, 20);
+  const charN = HAS_CHARACTERS && VC.charsStarted(PACK, WORDS, CHAR_LIST, prog) ? charPlan().length : 0;
   P.innerHTML = `<p class="q">Placement finds where to start. Free tests draw from what's already learned.</p>
     <div class="actions">
       ${needMore ? `<div class="stmt">Free tests unlock at ${VC.TEST_MIN_WORDS} learned words (${lw.length} so far). Learn ${VC.TEST_MIN_WORDS} words first, or let placement find where to start.<button class="next" id="needPlace" style="margin-top:8px">Take the placement test</button></div>` : `<button class="next" id="pl">Take Placement</button>`}
@@ -2197,7 +3655,8 @@ function testRender(){
         <button class="ghost" id="tListen" style="flex:1">Listen ${n20}</button>
         <button class="ghost" id="tRecall" style="flex:1">Recall ${n20}</button>
       </div>` : ""}
-      ${tg.sentences ? `<button class="ghost" id="tSentences">Sentences ${sentN}</button>` : ""}
+      ${tg.sentences ? `<button class="ghost" id="tSentences">Sentences ${sentN}</button>` : ""}${charN ? `
+      <button class="ghost" id="tChars">Characters ${charN}</button>` : ""}
     </div>`;
   if(needMore) $("needPlace").onclick = enterPlacementFromToday;
   else $("pl").onclick = () => { testSel = "placement"; testRender(); };
@@ -2208,6 +3667,7 @@ function testRender(){
   if(tg.sentences){
     $("tSentences").onclick = () => drill(weakFirstSentences(availSent,20).map(hearSentence), testRender, missSummary);
   }
+  if(charN) $("tChars").onclick = () => drill(charPlan().map(planItem), testRender, missSummary);
 }
 function placementItemTotal(){ return VC.strata(WORDS, PACK.placement, SIZE).reduce((n,_,i)=>n+VC.placementItemCount(i), 0); }
 function placeRender(){
@@ -2280,12 +3740,13 @@ function progressRender(){
       ${sentLv.length ? `<tr><td>${L} sentences</td><td>${sentAvailLv.length} / ${sentLv.length} available · ${sentMasteredN} mastered</td></tr>` : ""}`;
   }).join("");
   const weak = weakFirst(lwAll.filter(w=>VC.weakScore(prog.w[w.id])>0), 10);
+  const cp = HAS_CHARACTERS ? charProgress() : null;
   P.innerHTML = `${hasSpeech ? "" : `<div class="warn">No text-to-speech voice is available in this browser, so listening and audio-replay features show the word instead of playing sound.</div>`}
-    <table class="stats">${rows}
+    <table class="stats">${rows}${cp ? cp.rows : ""}
       ${HAS_PASSAGES ? VC.readingStats(PASSAGE_LIST, PACK, prog).map(r => `<tr><td>${escapeHtml(levelLabel(r.lv))} reading</td><td>${r.done} / ${r.total} passages${r.avg != null ? ` · avg ${r.avg}%` : ""}</td></tr>`).join("") : ""}
       ${HAS_LESSONS ? `<tr><td>Sounds</td><td>${LESSON_LIST.filter(l=>prog.lessons[l.id]).length} / ${LESSON_LIST.length} lessons done</td></tr>` : ""}
       <tr><td>Sessions</td><td>${prog.sessions||0}</td></tr></table>
-    ${PACK.showPron !== false ? `<div class="row" style="margin-top:14px"><button class="chip ${showPron()?'on':''}" id="togglePron" aria-pressed="${showPron()}">Show pronunciation</button></div>` : ""}
+    ${PACK.showPron !== false ? `<div class="row" style="margin-top:14px"><button class="chip ${showPron()?'on':''}" id="togglePron" aria-pressed="${showPron()}">Show pronunciation</button></div>` : ""}${cp ? cp.controls : ""}
     <p class="q" style="margin-top:14px">${weak.length ? "Weakest words" : "No weak words yet — nice."}</p>
     ${weak.map(w=>`<div class="rowset">${wordRowHTML(w, "rowset")}</div>`).join("")}
     <div class="row" style="margin-top:16px">
@@ -2296,10 +3757,12 @@ function progressRender(){
       <textarea id="imptxt" placeholder="Paste exported JSON here"></textarea>
       <input type="file" id="impfile" accept="application/json" style="margin-top:8px">
       <button class="next" id="doimport">Load</button>
-      <div id="impErr" class="warn" style="display:none;margin-top:8px"></div>
+      <div id="impErr" class="warn" style="display:none;margin-top:8px"></div>${HAS_LEGACY ? `
+      <div id="impSum" class="stmt" style="display:none;margin-top:8px"></div>` : ""}
     </div>
     <button class="ghost" id="reset" style="margin-top:16px;color:var(--bad);border-color:var(--bad)">Reset all progress</button>`;
   if(PACK.showPron !== false) $("togglePron").onclick = () => { prog.showPron = !showPron(); store.save(); progressRender(); };
+  if(cp) cp.wire();
   $("exp").onclick = () => {
     const blob = new Blob([JSON.stringify(prog, null, 1)], {type:"application/json"});
     const url = URL.createObjectURL(blob);
@@ -2310,15 +3773,37 @@ function progressRender(){
   $("imp").onclick = () => { $("impbox").style.display = $("impbox").style.display==="none" ? "block" : "none"; };
   $("impfile").onchange = e => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = () => { $("imptxt").value = r.result; }; r.readAsText(f); };
   const showImportError = msg => { const el = $("impErr"); el.textContent = msg; el.style.display = "block"; };
+  // Backup first; if it can't be written (read-only session, storage error) the import is
+  // not applied, so the current progress is never lost unbacked.
+  const applyImported = async next => {
+    if(!(await store.backup("pre_import_backup", JSON.stringify(prog)))){ showImportError("Import not applied: the current progress couldn't be backed up first (storage unavailable)."); return; }
+    prog = next;
+    store.save(); applyTheme(); progressRender();
+  };
   $("doimport").onclick = async () => {
     try{
-      const r = VC.applyImport(prog, $("imptxt").value, PACK);
+      const text = $("imptxt").value;
+      // A predecessor app's export (pack.legacy) goes through VC.migrateLegacy, and its
+      // summary (counts, anything that has no place here) is shown before applying.
+      const parsed = HAS_LEGACY ? VC.parseStored(text) : null;
+      if(parsed && parsed.ok && VC.isLegacyRecord(PACK, LEGACY_MAP, parsed.data)){
+        const m = VC.migrateLegacy(PACK, LEGACY_MAP, parsed.data);
+        if(!m.ok){ showImportError("That looks like progress from the older app, but it could not be converted: " + m.reason); return; }
+        // Like applyImport: what the file doesn't carry keeps the current value.
+        if(parsed.data.theme === undefined) m.prog.theme = prog.theme;
+        if(prog.showPron !== undefined) m.prog.showPron = prog.showPron;
+        if(m.prog.chars && prog.chars && parsed.data.mixChars === undefined) m.prog.chars.mix = prog.chars.mix !== false;
+        $("impErr").style.display = "none";
+        const box = $("impSum");
+        box.innerHTML = `${legacySummaryHTML(m, "the file you imported")}<button class="next" id="impApply" style="margin-top:8px">Import this progress</button><button class="ghost" id="impCancel" style="margin-top:8px">Cancel</button>`;
+        box.style.display = "block";
+        $("impApply").onclick = () => applyImported(m.prog);
+        $("impCancel").onclick = () => { box.style.display = "none"; box.innerHTML = ""; };
+        return;
+      }
+      const r = VC.applyImport(prog, text, PACK);
       if(!r.ok){ showImportError("That doesn't look like valid exported progress for this pack: " + r.reason); return; }
-      // Backup first; if it can't be written (read-only session, storage error) the
-      // import is not applied, so the current progress is never lost unbacked.
-      if(!(await store.backup("pre_import_backup", JSON.stringify(prog)))){ showImportError("Import not applied: the current progress couldn't be backed up first (storage unavailable)."); return; }
-      prog = r.prog;
-      store.save(); applyTheme(); progressRender();
+      await applyImported(r.prog);
     }catch(e){
       showImportError("That doesn't look like valid exported progress: " + (e && e.message ? e.message : "could not be read"));
     }
@@ -2326,9 +3811,62 @@ function progressRender(){
   $("reset").onclick = async () => {
     if(!confirm(`Reset all progress? A copy is kept under ${STORE_KEY}_reset_backup until the next reset.`)) return;
     if(!(await store.backup("reset_backup", JSON.stringify(prog)))){ alert("Reset cancelled: the current progress couldn't be backed up first (storage unavailable)."); return; }
+    // defaultProg: with pack.characters that includes fresh prog.chars (records, order,
+    // choice and mix all cleared). Only this pack's own key and its _reset_backup are
+    // written; the legacy key and its backup (pack.legacy) are never touched.
     prog = Object.assign(VC.defaultProg(PACK), { theme: prog.theme, showPron: prog.showPron });
     store.save(); progressRender();
   };
+}
+// Progress additions for pack.characters: one row per character stage (taught = units in
+// fully taught sets, recorded = units with a record, mastered/bare by streak), and the
+// controls: the path strip, the learning-order chips (VC.setCharOrder: reversible, flips
+// the path only) and the mix chip (prog.chars.mix: known units' written form in sentences).
+function charProgress(){
+  const stages = VC.stagePath(PACK, WORDS, CHAR_LIST, prog).filter(s => s.kind === "chars");
+  const recs = VC.charRecs(prog);
+  const streak = u => ((recs[u.id] || {}).s || 0);
+  const rows = stages.map(st => {
+    const list = VC.charStageUnits(st.levels, CHAR_LIST, PACK);
+    const taught = VC.charSets(st.levels, CHAR_LIST, PACK).filter(set => VC.charSetTaught(set, prog)).reduce((n, set) => n + set.length, 0);
+    const masteredN = list.filter(u => recs[u.id] && VC.charTier(streak(u), PACK) !== "pron").length;
+    const bareN = list.filter(u => recs[u.id] && VC.charTier(streak(u), PACK) === "bare").length;
+    return `<tr><td>${tw(st.label)}</td><td>${taught} / ${list.length} taught · ${st.recorded} recorded · ${masteredN} mastered · ${bareN} bare</td></tr>`;
+  }).join("");
+  const unlocked = VC.charsUnlocked(PACK, WORDS, prog), started = VC.charsStarted(PACK, WORDS, CHAR_LIST, prog);
+  const defer = !!(prog.chars && prog.chars.defer === true);
+  const deferred = VC.charStages(PACK, Object.assign({}, prog, { chars: Object.assign({}, prog.chars, { defer: true }) }));
+  const top = deferred.length ? levelLabel(deferred[0].after) : "";
+  const mix = !!(prog.chars && prog.chars.mix !== false);
+  const showMix = started; // mixing changes nothing until characters have started
+  const controls = (unlocked || showMix) ? `<div id="charCtl" style="margin-top:14px">${pathStrip()}
+    ${showMix ? `<div class="row"><button class="chip ${mix ? "on" : ""}" id="toggleMix" aria-pressed="${mix}">Mix known characters into sentences</button></div>` : ""}
+    ${unlocked ? `<div class="row"><button class="chip ${defer ? "" : "on"}" id="ordBefore" aria-pressed="${!defer}">Characters before ${escapeHtml(top)}</button><button class="chip ${defer ? "on" : ""}" id="ordAfter" aria-pressed="${defer}">Characters after ${escapeHtml(top)}</button></div>
+    <p class="q" style="margin-top:6px">Changes what Today's Learn step teaches next. Nothing you've learned is lost.</p>` : ""}</div>` : "";
+  const wire = () => {
+    if(showMix) $("toggleMix").onclick = () => { VC.ensureChars(prog).mix = !mix; store.save(); progressRender(); };
+    if(unlocked){
+      $("ordBefore").onclick = () => { VC.setCharOrder(prog, false); store.save(); progressRender(); };
+      $("ordAfter").onclick = () => { VC.setCharOrder(prog, true); store.save(); progressRender(); };
+    }
+  };
+  return { rows, controls, wire };
+}
+// What a legacy migration brought over (VC.migrateLegacy result m): record counts, the
+// retired settings, and every part of the old record with no place here, which survives
+// in `kept` (the backup key at boot, the imported file on import).
+function legacySummaryHTML(m, kept){
+  const p = m.prog, n = o => Object.keys(o || {}).length;
+  const setsN = Object.values(p.sets || {}).reduce((a, b) => a + (b || 0), 0);
+  const parts = [`${n(p.w)} word records`, `${n(p.s)} sentence records`];
+  if(p.chars) parts.push(`${n(p.chars.c)} ${tw(CHAR_CFG ? CHAR_CFG.label : "")} records`);
+  parts.push(`${setsN} sets done`, `${p.sessions || 0} sessions`);
+  const LIST_MAX = 20;
+  const um = m.unmapped || [];
+  const umHTML = um.length ? `<p class="q" style="margin:8px 0 4px">${um.length} part${um.length > 1 ? "s" : ""} of the old record ${um.length > 1 ? "have" : "has"} no place here and ${um.length > 1 ? "were" : "was"} not brought over (kept in ${escapeHtml(kept)}):</p><ul id="legacyUnmapped" style="margin:0;padding-left:20px;font-size:14px">${um.slice(0, LIST_MAX).map(u => `<li><bdi>${escapeHtml(u.path)}</bdi>: ${escapeHtml(u.reason)}</li>`).join("")}${um.length > LIST_MAX ? `<li>and ${um.length - LIST_MAX} more</li>` : ""}</ul>` : "";
+  const dr = (m.dropped || []).map(d => d.path);
+  const drHTML = dr.length ? `<p class="q" style="margin:8px 0 0">Settings this app doesn't have, left out: ${escapeHtml(dr.join(", "))}.</p>` : "";
+  return `<div>Progress from the older app: ${parts.join(", ")}.</div>${umHTML}${drHTML}`;
 }
 
 // ===================== theme =====================
@@ -2340,11 +3878,52 @@ $("themebtn").onclick = () => {
 };
 
 // ===================== boot =====================
+// The predecessor app's record (localStorage[pack.legacy.key]) -> {m} (VC.migrateLegacy
+// result), {fail: why} when a record is (or may be) there but was not imported, or null
+// when there is nothing to import. The raw string is first copied to VC.legacyBackupKey(pack)
+// unless that key already holds something (the first backup is never overwritten); the
+// legacy key itself is only read.
+async function legacyBootMigration(){
+  const old = await store.getRaw(PACK.legacy.key);
+  if(!old.ok) return { fail: "it could not be read (storage error)" };
+  if(old.value == null || old.value === "") return null;
+  const m = VC.migrateLegacy(PACK, LEGACY_MAP, old.value);
+  if(!m.ok){ console.warn(`${PACK.legacy.key}: not migrated (${m.reason})`); return { fail: `it could not be converted (${m.reason})` }; }
+  const bk = VC.legacyBackupKey(PACK);
+  const had = await store.getRaw(bk);
+  if(!had.ok) return { fail: `its safety copy (${bk}) could not be checked (storage error)` };
+  if((had.value == null || had.value === "") && !(await store.setRaw(bk, String(old.value)))) return { fail: `its safety copy (${bk}) could not be saved (storage error)` };
+  if(m.unmapped.length) console.warn(`${PACK.legacy.key}: ${m.unmapped.length} unmapped part(s), kept in ${bk}`, m.unmapped);
+  return { m };
+}
+// Boot found an old-app record it could not import: this session saves nothing (store
+// read-only), so this pack's key stays empty and the next boot tries the import again.
+// "Start without it" lifts that and saves from here on (the old record stays untouched).
+function legacyFailHTML(why){
+  return `<div>Progress from the older app was found but not imported: ${escapeHtml(why)}. It is left untouched, and nothing you do now is saved, so the import runs again the next time this page loads. Reload to try again, or start without it.</div>`;
+}
 (async function(){
   // VC.bootProg: unparseable / invalid stored progress is preserved under
   // <key>_invalid_backup before defaults take over; sets for levels the pack no
   // longer has are dropped (warned), everything else kept.
   const got = await store.load();
+  // Legacy migration (pack.legacy, core.js "legacy migration" contract): only when this
+  // pack's own key read fine and holds nothing.
+  const lm = (HAS_LEGACY && got.ok && (got.value == null || got.value === "")) ? await legacyBootMigration() : null;
+  const mig = lm && lm.m;
+  if(mig){
+    prog = mig.prog;
+    applyTheme();
+    await store.save();
+    legacyNotice = legacySummaryHTML(mig, VC.legacyBackupKey(PACK));
+    booted = true;
+    render();
+    return;
+  }
+  if(lm && lm.fail){
+    storeReadOnly = true;
+    legacyFail = lm.fail;
+  }
   const b = VC.bootProg(got.value, PACK, !got.ok);
   if(b.readOnly){
     storeReadOnly = true;
@@ -2384,4 +3963,4 @@ $("themebtn").onclick = () => {
 </script>
 </body>
 </html>
-<!--ve-build:1678908343-1269737-->
+<!--ve-build:2640945901-1377657-->

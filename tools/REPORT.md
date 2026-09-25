@@ -348,4 +348,11 @@ by sentence id and links `/audio/download/<audio_id>`.
 
 See the orchestrator report. `./check.sh` passes: check_pack, the engine
 validator with 0 errors and 0 warnings, and the stale-build guard.
+
+## Engine bump (2026-09-25)
+
+Engine bumped to 072795d (voice-init fix, no-voice notice timing, word
+ceiling). Italian was already rebuilt with the shared word-level ceiling;
+words/sentences/passages are byte-identical to the previous build. No rank,
+id, level or gloss changed.
 <!-- manual:end -->

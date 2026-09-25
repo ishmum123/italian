@@ -4,10 +4,10 @@
 #      (engine/tools/packbuilder/qa/check.py with the Italian spec)
 #   2. engine/tools/validate_pack.py - engine's schema, referential-integrity,
 #      and generated-.js-in-sync checks
-#   3. stale-build guard - rebuilds index.html to a scratch file and
-#      byte-compares it against the committed one, so a forgotten
-#      `./build.sh` after editing the pack or engine is caught here
-#      rather than shipping a stale page.
+#   3. stale-build guard (engine/tools/check_site.sh) - rebuilds index.html and sw.js
+#      to a scratch dir and byte-compares them against the committed files, and checks
+#      both are tracked by git and committed, so a forgotten `./build.sh` or a page
+#      published without its sw.js is caught here rather than shipping stale.
 # Usage: ./check.sh   (PACKBUILDER_PATH=<vocab-engine>/tools overrides engine/tools)
 set -e
 cd "$(dirname "$0")"
@@ -21,15 +21,7 @@ python3 engine/tools/validate_pack.py pack
 
 echo
 echo "== stale-build guard =="
-TMP="$(mktemp /tmp/italian_index_check.XXXXXX.html)"
-trap 'rm -f "$TMP"' EXIT
-./build.sh "$TMP" > /dev/null
-if ! cmp -s "$TMP" index.html; then
-  echo "FAIL index.html is stale: rebuild differs from the committed file." >&2
-  echo "      Run ./build.sh and commit the result." >&2
-  exit 1
-fi
-echo "OK index.html matches a fresh build ($(wc -c < index.html | tr -d ' ') bytes)"
+sh engine/tools/check_site.sh pack        # [page], default index.html
 
 echo
 echo "All checks passed."

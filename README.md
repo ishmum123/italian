@@ -146,6 +146,8 @@ rebuild with `./build.sh`.
 | Sentence audio | Tatoeba `sentences_with_audio.tar.bz2` | CC BY / CC BY-SA / CC0 (per clip, only permissive clips linked) | `sentences.json[].audio`; recorders per licence in `pack/attribution.json` |
 | CEFR cross-check (not shipped) | [kotoshu/frequency-list-kelly](https://github.com/kotoshu/frequency-list-kelly) `it.json` | licence unclear, research use only | sanity-check only, read from `.cache/`, never copied into `pack/` |
 
+Licence: code MIT, pack data CC BY-SA 4.0, see LICENSE.
+
 Note: the Tatoeba CC0-only Italian subset (`ita_sentences_CC0.tsv.bz2`)
 contains only ~19 sentences and was unusable alone, exactly as the brief
 anticipated; the CC-BY 2.0 FR detailed export is used instead, with

@@ -6,10 +6,10 @@ sentences with translations and (where licence permits) native audio. The
 Read tab adds 60 short reading passages with comprehension questions (see
 "Reading passages" below).
 
-**Live:** https://ishmum123.github.io/italian/
+**Live:** https://bannerless-studio.github.io/italian/
 
 This repo holds the Italian data pack and the Italian data files its build
-reads, plus [`vocab-engine`](https://github.com/ishmum123/vocab-engine) as a
+reads, plus [`vocab-engine`](https://github.com/Bannerless-Studio/vocab-engine) as a
 git submodule at `engine/`. The engine holds the shared UI and drill logic
 and the shared pack builder, `engine/tools/packbuilder`. The builder's
 Italian rules live in `engine/tools/packbuilder/langs/it.py`. Every language

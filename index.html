@@ -94,6 +94,16 @@
      under a long one (профессиональный + its pron at 360px) instead of overflowing. */
   .opts button .op{display:inline-block;max-width:100%;color:var(--mute);font-size:14px;font-weight:400;margin-inline-start:8px}
   .opts button[dir=rtl]{text-align:right}
+  /* .num and .op carry UIA (dir=ltr data-ui, docs/PACK_SCHEMA.md "RTL rendering"), so
+     their own margin-inline-* resolves against their OWN ltr direction, not the RTL
+     button's. In an RTL button the number sits first (rightmost) with the word to its
+     left, and the pron span sits after the word (further left, word to ITS right): both
+     gaps are on each element's physical-left/right, the opposite of the ltr case, so the
+     inline-end/inline-start pair flips here rather than moving to a flex gap (the button
+     is a plain wrapping text run, not a flex row, and .opts uses grid for the button
+     list itself — restructuring it to flex would change dist bytes for every pack). */
+  .opts button[dir=rtl] b.num{margin-inline-end:0;margin-inline-start:8px}
+  .opts button[dir=rtl] .op{margin-inline-start:0;margin-inline-end:8px}
   .opts button.ok{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
   .opts button.bad{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
   .opts-hero button{font-size:18px;padding:18px 18px;min-height:58px;font-weight:500}
@@ -117,6 +127,8 @@
   .row button, .chip{padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:transparent;font-size:14px;color:var(--ink);min-height:44px;font-family:var(--font)}
   .row button.on, .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
   .replay{border:1px solid var(--line);background:transparent;border-radius:999px;width:44px;height:44px;font-size:17px;color:var(--ink);flex:0 0 auto}
+  .ktag{text-align:center;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:0 0 10px}
+  .ktag b{font-weight:600;color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
   .listen-stage{display:flex;flex-direction:column;align-items:center;gap:10px;margin:18px 0}
   input[type=text]{width:100%;padding:14px 14px;border:1px solid var(--line);border-radius:12px;font-size:19px;background:var(--card);color:var(--ink);font-family:var(--wfont)}
   input[type=text]:focus{outline:3px solid #7AA7D9;outline-offset:1px}
@@ -487,10 +499,11 @@ function sentenceOpts(sentence, pool){
 //  - Latin/Greek/Cyrillic combining diacritics: folded (é -> e, ñ -> n, stress о́ -> о,
 //    ё -> е). Kept as letters: Cyrillic й, ї, ў (FOLD_KEEP).
 //  - Arabic script: harakat, Quranic marks, superscript alef and tatweel folded. The
-//    hamza marks U+0653-0655 are kept, so أ إ آ ؤ ئ ۀ never collapse to their base.
+//    hamza marks U+0653-0655 are kept here, so أ إ آ ؤ ئ ۀ keep their carrier in
+//    foldAccents itself; lenient typing drops them afterwards (LENIENT_LETTERS).
 //  - Hebrew: niqqud and cantillation folded.
-//  - Devanagari/Bengali etc.: nothing folded. Nukta (ज़ vs ज), virama and vowel signs
-//    make distinct letters or syllables.
+//  - Devanagari/Bengali etc.: nothing folded here. Virama and vowel signs make distinct
+//    syllables. (Nukta and chandrabindu are lenient-typing letter folds, LENIENT_LETTERS.)
 //  - Kana voicing marks (が vs か, ぱ vs は): never folded.
 //  - ZWNJ/ZWJ: dropped (Persian می‌روم = میروم).
 const FOLD_SCRIPTS = {
@@ -505,18 +518,45 @@ function foldAccents(s){
   return String(s).normalize("NFC").replace(/[^\u0000-\u007f]/gu, c => FOLD_KEEP.has(c) ? c : c.normalize("NFD").replace(FOLD_MARKS, "").normalize("NFC"));
 }
 // Arabic-script keyboard variants that look alike and are typed interchangeably:
-// Arabic kaf/yeh vs their Persian/Urdu forms. Always unified (both sides), like apostrophes.
-// Deliberately NOT unified or folded: ة (teh marbuta) vs ه, and ى (alef maksura) vs ي/ی.
-// These are distinct letters in Arabic spelling (على "on" vs علي "Ali"), not keyboard
-// variants, so ي maps to Persian ی but ى stays its own letter.
+// Arabic kaf/yeh vs their Persian/Urdu forms. Always unified (both sides, strict too),
+// like apostrophes. ة/ه and ى/ی are not keyboard variants; strict typing keeps them
+// apart (على "on" vs علي "Ali"). Lenient typing folds them (LENIENT_LETTERS).
 const ARABIC_VARIANTS = { "\u0643":"\u06a9", "\u064a":"\u06cc" };
-// opts: {caseSensitive, foldAccents}. Trims, collapses inner whitespace, unifies
-// typographic apostrophes, casefolds unless caseSensitive, accent-folds if asked.
+// Lenient typing only (opts.foldAccents; never strict): optional spelling variants a
+// literate writer commonly omits or swaps, folded on both sides after foldAccents.
+//  - Arabic script: hamza/madda on a carrier dropped (أ إ آ -> ا, ؤ -> و, ئ ۓ -> ی/ے,
+//    ۂ -> ہ, ۀ -> ه) by removing U+0653-0655 after NFD, which also drops a loose hamza
+//    above/below (خانهٔ); alef wasla and the rare hamza/wavy-hamza letters (ٱ ٲ ٳ ٵ ٶ ٷ ٸ)
+//    map to ا/و/ی; standalone hamza ء dropped; teh marbuta ة -> ه and Urdu ۃ -> ہ; alef
+//    maksura ى -> ی; do-chashmi heh ھ -> heh goal ہ (Urdu بھائی = بہائی). ARABIC_VARIANTS
+//    runs again last, so a carrier-stripped ئ (Arabic ي + hamza) lands on ی.
+//    Not folded: a leading ال (it changes the word), ه vs ہ (each pack uses one).
+//  - Devanagari: nukta dropped (ज़ -> ज, incl. precomposed क़..य़ U+0958-095F via NFD);
+//    chandrabindu ँ -> anusvara ं (माँ = मां).
+// Folding can make distinct words one key (ماء "water" = ما "what", si = sí); acceptTyped's
+// collision guard rejects an exact other pack word. Per-pack lists: docs/PACK_SCHEMA.md.
+// Words search does not use this layer (searchFold passes lenientLetters:false): it has
+// its own, different folds (ال optional, ھ kept, ء kept).
+const LENIENT_LETTERS = { "\u0671":"\u0627", "\u0672":"\u0627", "\u0673":"\u0627", "\u0675":"\u0627",
+  "\u0676":"\u0648", "\u0677":"\u0648", "\u0678":"\u06cc", "\u0621":"", "\u0629":"\u0647", "\u06c3":"\u06c1",
+  "\u0649":"\u06cc", "\u06be":"\u06c1", "\u06d5":"\u0647", "\u0901":"\u0902", "\u093c":"" };
+const LENIENT_RE = new RegExp("[" + Object.keys(LENIENT_LETTERS).join("") + "]", "g");
+function foldLenientLetters(s){
+  if(!/[\u0600-\u06ff\u0900-\u097f]/.test(s)) return s;
+  return s.normalize("NFD").replace(/[\u0653-\u0655]/g, "").replace(LENIENT_RE, c => LENIENT_LETTERS[c])
+    .replace(/[\u0643\u064a]/g, c => ARABIC_VARIANTS[c]).normalize("NFC");
+}
+// opts: {caseSensitive, foldAccents, lenientLetters}. Trims, collapses inner whitespace,
+// unifies typographic apostrophes, casefolds unless caseSensitive, accent-folds if asked;
+// with foldAccents also applies LENIENT_LETTERS unless lenientLetters === false.
 function normalizeTyped(s, opts){
   const o = opts || {};
   let out = String(s == null ? "" : s).normalize("NFC").replace(/[\u2018\u2019\u02bc`]/g, "'").replace(/[\u0643\u064a]/g, c => ARABIC_VARIANTS[c]).replace(/\s+/g, " ").trim();
   if(!o.caseSensitive) out = out.toLowerCase();
-  if(o.foldAccents) out = foldAccents(out);
+  if(o.foldAccents){
+    out = foldAccents(out);
+    if(o.lenientLetters !== false) out = foldLenientLetters(out).replace(/\s+/g, " ").trim();
+  }
   return out;
 }
 function typingEnabled(pack){ return !!(pack && pack.typing); }
@@ -532,15 +572,62 @@ function typingLenientFor(entry, pack){
   const at = idx[String(entry.lv)];
   return at === undefined ? true : at < strictAt;
 }
+// Collision guard keys. Strict key: normalizeTyped without folds. Pointing key: the strict
+// key minus marks that never tell two written words apart, so typing them cannot turn one
+// pack word into another: Arabic harakat/Quranic marks/tatweel, Hebrew niqqud, ZWJ/ZWNJ,
+// and Cyrillic stress (U+0301 after a Cyrillic letter). Latin accents, Arabic hamza marks
+// and every LENIENT_LETTERS letter are kept (they do tell words apart: si/sí, ما/ماء).
+const POINTING_MARKS = new RegExp("[" + FOLD_SCRIPTS.arabic + FOLD_SCRIPTS.hebrew + FOLD_SCRIPTS.joiners + "]", "g");
+function pointingKey(strictForm){
+  return strictForm.normalize("NFD").replace(POINTING_MARKS, "")
+    .replace(/(?<=[\u0400-\u04ff][\u0300-\u036f]*)\u0301/g, "").normalize("NFC");
+}
+// Per words array (and case mode): strict key -> entries, pointing key -> entries, over
+// every entry's w and alt. Built once.
+const GUARD_INDEX = new WeakMap();
+function guardIndex(words, caseSensitive){
+  let byCase = GUARD_INDEX.get(words);
+  if(!byCase){ byCase = {}; GUARD_INDEX.set(words, byCase); }
+  const k = caseSensitive ? "cs" : "ci";
+  if(byCase[k]) return byCase[k];
+  const strict = new Map(), pointing = new Map();
+  const add = (m, f, e) => { if(!f) return; if(!m.has(f)) m.set(f, []); m.get(f).push(e); };
+  words.forEach(e => [e.w, ...(e.alt||[])].forEach(x => {
+    const f = normalizeTyped(x, { caseSensitive });
+    add(strict, f, e); add(pointing, pointingKey(f), e);
+  }));
+  return (byCase[k] = { strict, pointing });
+}
 // Accepts entry.w or any entry.alt (plus any `extra` surfaces, e.g. the literal form a
 // cloze blank had in its sentence), compared after normalising both sides.
-function acceptTyped(input, entry, pack, extra){
+// words (optional, the pack's WORDS): collision guard for lenient folding. An exact
+// (strict-form) match to the target always passes. An answer that matches only after
+// folding (any lenient fold: accents, stress, pointing, joiners, LENIENT_LETTERS) is
+// rejected when it spells another pack entry: its strict key is another entry's, or its
+// pointing key is another entry's and no target's (so مَا, مـا or ما typed for ماء, and
+// si or s+ZWJ+i for sí, are wrong). A pointing key the target shares stays accepted:
+// замок for за́мок passes even when замо́к is also a pack word (typed замо́к does not).
+// امس for أمس and perche for perché are fine.
+function acceptTyped(input, entry, pack, extra, words){
   const t = (pack && pack.typing) || {};
-  const opts = { caseSensitive: !!t.caseSensitive, foldAccents: typingLenientFor(entry, pack) };
-  const got = normalizeTyped(input, opts);
-  if(!got) return false;
+  const cs = !!t.caseSensitive, lenient = typingLenientFor(entry, pack);
   const targets = [entry.w, ...(entry.alt||[]), ...(extra||[])];
-  return targets.some(x => normalizeTyped(x, opts) === got);
+  const strict = { caseSensitive: cs };
+  const got = normalizeTyped(input, strict);
+  if(!got) return false;
+  const targetStrict = targets.map(x => normalizeTyped(x, strict));
+  if(targetStrict.includes(got)) return true;
+  if(!lenient) return false;
+  const full = { caseSensitive: cs, foldAccents: true };
+  const gotL = normalizeTyped(input, full);
+  if(!gotL || !targets.some(x => normalizeTyped(x, full) === gotL)) return false;
+  if(!Array.isArray(words)) return true;
+  const other = e => e !== entry && !(e.id != null && e.id === entry.id);
+  const idx = guardIndex(words, cs);
+  if((idx.strict.get(got) || []).some(other)) return false;
+  const pk = pointingKey(got);
+  if(targetStrict.some(x => pointingKey(x) === pk)) return true;
+  return !(idx.pointing.get(pk) || []).some(other);
 }
 
 // ------------------------------------------------------------------ sentences
@@ -852,8 +939,9 @@ function pronShown(x){
 // rest. So "делать" lists делать before сделать.
 // Folded search fields are computed once per word (SEARCH_CACHE, rebuilt if the word's
 // text changes), so a keystroke only compares strings.
-// Arabic script (ar/fa/ur): search is more lenient than typed-answer checking
-// (normalizeTyped keeps ة/ى distinct there, on purpose). A search key also folds the
+// Arabic script (ar/fa/ur): search has its own folds, independent of lenient typing's
+// LENIENT_LETTERS (searchFold turns that layer off; strict typing keeps ة/ى distinct).
+// Search keeps ھ and ء, and makes a leading ال optional. A search key also folds the
 // letters learners routinely type without their marks or in a keyboard variant: hamza
 // and madda on a carrier (أ إ آ ؤ ئ ۀ ۂ -> ا و ی ه ہ, by dropping U+0653..U+0655 after
 // decomposition), alef wasla ٱ -> ا, teh marbuta ة -> ہ, alef maksura ى -> ی (ي is
@@ -871,15 +959,29 @@ function pronShown(x){
 // ٲ ٳ ٵ / ٶ ٷ / ٸ (hamza/wavy-hamza letters with no canonical decomposition) map directly.
 const AR_SEARCH_MAP = { "ٱ":"ا", "ٲ":"ا", "ٳ":"ا", "ٵ":"ا", "ٶ":"و", "ٷ":"و", "ٸ":"ی",
   "ة":"ہ", "ى":"ی", "ۀ":"ہ", "ۃ":"ہ", "ه":"ہ" };
-// Devanagari (hi): search is more lenient than typed-answer checking (normalizeTyped
-// leaves nukta and chandrabindu alone there — नुक्ता makes a distinct letter and ँ/ं are
-// a real phonemic contrast for typed answers, on purpose). A search key folds nukta
+// Devanagari (hi): search does the same nukta and chandrabindu folds as lenient typing
+// (LENIENT_LETTERS), here always; strict typing keeps both. A search key folds nukta
 // away (जरूर finds ज़रूर, लडका finds लड़का) — decomposing first (NFD) so a precomposed
 // nukta letter (क़ ख़ ग़ ज़ ड़ ढ़ फ़ य़, U+0958-095F) is caught the same as a bare base+nukta
 // pair — and unifies chandrabindu ँ into anusvara ं (हैँ finds हैं), a common informal
 // spelling swap. ZWJ/ZWNJ are already dropped for every script by foldAccents.
 function foldDevanagari(f){
   return f.normalize("NFD").replace(/़/g, "").replace(/ँ/g, "ं").normalize("NFC");
+}
+// A reduplicated or doubled-word query or entry ("dhīre dhīre", "धीरे धीरे", "kabhī
+// kabhī") folds to its single token, so search treats a reduplicated spelling, its
+// hyphenated form (already turned to a space above) and the bare word as one and the
+// same phrase in both directions: the bare form is a substring of the doubled one either
+// way once both are folded down to one token, and a doubled query still matches an entry
+// stored bare. Consecutive identical whitespace-delimited tokens collapse to one; this
+// runs after every script fold (so accents/nukta/Arabic variants are already unified and
+// two spellings of "the same" token compare equal) and is a no-op for scripts written
+// without spaces (zh/ja/ko han text has no tokens to collapse).
+function foldReduplication(f){
+  const parts = f.split(" ");
+  const out = [];
+  parts.forEach(p => { if(!out.length || out[out.length - 1] !== p) out.push(p); });
+  return out.join(" ");
 }
 function searchFold(s){
   // Nasal tildes over a romanised vowel (kahā̃) are how this pack's roman pron marks
@@ -888,11 +990,13 @@ function searchFold(s){
   // just discard it. A hyphen is folded to a space so a reduplicated/hyphenated lemma
   // (धीरे-धीरे) and its unhyphenated spelling (धीरे धीरे) search as the same phrase.
   const pre = String(s == null ? "" : s).normalize("NFD").replace(/̃/g, "n").normalize("NFC").replace(/-/g, " ");
-  let f = normalizeTyped(pre, { foldAccents: true });
+  let f = normalizeTyped(pre, { foldAccents: true, lenientLetters: false });
   if(/[ऀ-ॿ]/.test(f)) f = foldDevanagari(f);
-  if(!/[؀-ۿ]/.test(f)) return f;
-  return f.replace(/[ٱ-ٳٵ-ٸةىۀۃه]/g, c => AR_SEARCH_MAP[c]).normalize("NFD").replace(/[ٓ-ٕ]/g, "")
-    .replace(/[كي]/g, c => ARABIC_VARIANTS[c]).replace(/ے(?=\s|$)/g, "ی").normalize("NFC");
+  if(/[؀-ۿ]/.test(f)){
+    f = f.replace(/[ٱ-ٳٵ-ٸةىۀۃه]/g, c => AR_SEARCH_MAP[c]).normalize("NFD").replace(/[ٓ-ٕ]/g, "")
+      .replace(/[كي]/g, c => ARABIC_VARIANTS[c]).replace(/ے(?=\s|$)/g, "ی").normalize("NFC");
+  }
+  return foldReduplication(f);
 }
 // The Arabic definite article: a word-initial ال before at least two more letters is
 // optional in search (كتاب finds الكتاب, and الكتاب finds كتاب). Applied to folded text.
@@ -1324,6 +1428,21 @@ function lessonSayMode(item, speechOK){
 // learner in the primer has no learned words yet.
 function todayGates(learnedCount, hasNextSet, availSentCount, scriptCount){
   return { review: learnedCount >= 5 || (scriptCount || 0) > 0, learn: !!hasNextSet, listen: learnedCount >= 4, recall: learnedCount >= 4, sentences: availSentCount >= 8 };
+}
+// How many of the Listen step's 12 words will actually be served as a Listen item, so
+// the Today plan line agrees with the session: app.html's hearItem() falls back to a
+// Read item (canHearWord false — no TTS voice and no recorded clip for that word), so a
+// word that can't be heard is not a Listen item even though the same 12 words are
+// drilled either way. canHear(word) is the caller's canHearWord.
+// Deliberately not weakFirst(learned, 12): app.html calls weakFirst(lw,12) with no recs,
+// so its "weakest first" is really an unweighted jitter shuffle that draws from the
+// global Math.random — calling it again here, purely to render a plan line, would burn
+// extra draws on every Today render and shift every later shuffle/weakFirst call in the
+// same session (the review/recall word picks, seeded-RNG test goldens, ...). A plain
+// slice is just as representative a sample of the unweighted pool, with no such
+// side effect.
+function listenPlanCount(learned, canHear){
+  return (learned || []).slice(0, 12).filter(canHear).length;
 }
 // Test tab: free word tests need TEST_MIN_WORDS learned words; the sentence test needs
 // 8 available sentences. The "learn first" notice depends on learned words only
@@ -2796,14 +2915,46 @@ function numberedForms(pron){
   return runs.length ? combos.map(pronKey) : [];
 }
 // Typed reading vs a word's pron: "ok" (marked, or numbered per numberedForms, case and
-// apostrophes ignored), "tones" (right letters, no tone marks or digits: counts as wrong,
-// the reveal gives the marked form) or "wrong".
-function checkPronTyped(input, pron){
+// apostrophes ignored), "tones" (right letters, no tone marks or digits), "tonesDiff"
+// (right letters, tones given but not all right, e.g. ni2hao3 or nihao5) or "wrong"
+// (the letters differ). Tones are optional: the typed-reading item accepts every verdict
+// but "wrong" and notes the marked form after "tones" or "tonesDiff".
+// pack (optional): a pack without `tones` (e.g. ja: kana readings) takes the plain path
+// instead, plainPronKey equality, "ok" or "wrong" only; no pack keeps the tonal path.
+const pronLetters = s => pronKey(stripMarks(s)).replace(/\p{N}/gu, "");
+function checkPronTyped(input, pron, pack){
+  if(pack && !tonesOn(pack)){ const k = plainPronKey(input); return k && pron && k === plainPronKey(pron) ? "ok" : "wrong"; }
   const got = pronKey(input);
   if(!got || !pron) return "wrong";
   if(got === pronKey(pron) || numberedForms(pron).indexOf(got) >= 0) return "ok";
-  if(!/\p{N}/u.test(got) && markCount(got) === 0 && got === pronKey(stripMarks(pron))) return "tones";
-  return "wrong";
+  if(pronLetters(got) !== pronLetters(pron)) return "wrong";
+  return !/\p{N}/u.test(got) && markCount(got) === 0 ? "tones" : "tonesDiff";
+}
+// Kana fold for readings: NFKC (half-width kana to full width), then katakana to hiragana
+// (U+30A1-30F6 to U+3041-3096, the iteration marks ヽヾ to ゝゞ), so a katakana reading
+// may be typed in hiragana and the reverse. The long-vowel mark ー, small kana (ゃ is not
+// や) and voicing marks are kept: they spell a different reading.
+function kanaFold(s){
+  return String(s == null ? "" : s).normalize("NFKC").replace(/[\u30a1-\u30f6\u30fd\u30fe]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+}
+// Comparison key for a reading typed without tones: kanaFold, normalizeTyped (case,
+// whitespace, apostrophes), then everything but letters, marks and digits removed (spaces,
+// the affix mark 〜 of 〜ねん, the middle dot ・).
+function plainPronKey(s){ return normalizeTyped(kanaFold(s)).replace(/[^\p{L}\p{M}\p{N}]/gu, ""); }
+// A written form without its affix mark: 〜年 -> 年 (wave dash or full-width tilde at
+// either end), so a typed suffix/prefix word needs no 〜. The form itself when it has none.
+function affixBare(w){ return String(w == null ? "" : w).replace(/^[\u301c\uff5e]+|[\u301c\uff5e]+$/g, ""); }
+// pack.typing "pron": the typed item a plan's "type" slot (a word's production slot) is.
+// The type slots alternate in plan order, reading first: "pron" (type the reading, silent,
+// tones optional), then "written" (type the characters, the word's audio played). Plan
+// order is already fixed by the plan builders' rng, so no randomness is added and every
+// plan is unchanged; i undefined (a lone item) is "pron".
+// The app still gives a "written" slot the reading item when the word's written form is
+// not on display (pronFirst: a word below its character tier is shown by its reading).
+function typeSlotKind(plan, i){
+  let n = 0;
+  for(let j = 0; j < (i || 0); j++) if(plan && plan[j] && plan[j].kind === "type") n++;
+  return n % 2 ? "written" : "pron";
 }
 // ---- span reading
 // Joins two readings: with pack.tones an apostrophe goes before a syllable starting with
@@ -2970,11 +3121,11 @@ const API = { shuffle, escapeHtml, gloss, firstTwoWords, normKey,
   levelIds, levelIndexMap, levelLabel, setSizeOf, wordsByLevel, nSets,
   meaningOpts, wordOpts, gapOpts, sentenceOpts, bareForm, packArticles, articleCut, trailingCut, citationArticles, articleAgreement, visibleArticle, gapChoices, exampleSentences, unitExampleSentences, rubyCovers, highlightParts, searchWords, pronShown, audioSlot, TEST_MIN_WORDS,
   targetLang, fontFamilyOf, fontStackOf, lineHeightOf, fontsHref, scriptDisplay, rtlRuns,
-  foldAccents, normalizeTyped, typingEnabled, typingLenientFor, acceptTyped,
+  foldAccents, foldLenientLetters, LENIENT_LETTERS, pointingKey, normalizeTyped, typingEnabled, typingLenientFor, acceptTyped,
   surfaces, sharesSurface, samePron,
   findSurface, locateWord, packSurfaces, spannedByLonger, gapMatch, gapCandidateIndices, blankSentence,
   strata, placementItemCount, placementStopIndex, applyPlacement, dedupeMisses,
-  parseStored, dropUnknownSets, bootProg, lessonItemKey, lessonSayMode, applyImport, todayGates, testGates, pickVoice, speechUsable, isSamsungBrowser, wordAudio, packAudio,
+  parseStored, dropUnknownSets, bootProg, lessonItemKey, lessonSayMode, applyImport, todayGates, testGates, listenPlanCount, pickVoice, speechUsable, isSamsungBrowser, wordAudio, packAudio,
   PROG_VERSION, WORD_MASTERED, SENTENCE_MASTERED, storageKey, defaultProg, validateProgShape, normalizeProg,
   markRec, weakScore, weakFirst, provPick, learnedWords, nextNewSet, currentLevelIndex, availableSentences,
   PRODUCTION_KINDS, REVIEW_SIZE, REVIEW_PRODUCTION_SHARE, kindMix, buildReviewPlan, buildRecallPlan, sentenceKind,
@@ -2991,7 +3142,7 @@ const API = { shuffle, escapeHtml, gloss, firstTwoWords, normKey,
   scriptNotice, dismissScriptNotice, markScript, scriptMastered, scriptStageUnits, scriptSets, scriptSetTaught, nextScriptSets, scriptStages,
   recordedScriptUnits, scriptActive, scriptPool, showScriptChoice, scriptKindShape, scriptKindFits, scriptKindFor, pickScriptKind, scriptFamily, SCRIPT_MIN_OPTIONS, scriptGlyph, scriptGlyphKeys, scriptGlyphIn, scriptWordHas, graphemes, shapingClusters, scriptUnitNote, scriptUnitHeadName, searchFold, scriptSecondRight,
   scriptOpts, scriptRomanOpts, scriptExamples, scriptWordOpts, scriptJoinedForms, scriptItem, learnScriptPlan, scriptReviewScore, scriptTestPlan,
-  tonesOn, stripMarks, syllableTone, markSyllable, splitSyllable, splitReading, toneHTML, pronTypingOn, pronKey, numberedForms, checkPronTyped, joinReadings, composeSpanReading, spanReadingText,
+  tonesOn, stripMarks, syllableTone, markSyllable, splitSyllable, splitReading, toneHTML, pronTypingOn, pronKey, numberedForms, checkPronTyped, kanaFold, plainPronKey, affixBare, typeSlotKind, joinReadings, composeSpanReading, spanReadingText,
   LEGACY_DROPPED, legacyBackupKey, isLegacyRecord, migrateLegacy };
 if(typeof module!=="undefined" && module.exports) module.exports = API;
 if(root) root.VocabCore = API;
@@ -3277,6 +3428,13 @@ const wordAudio = VC.wordAudio;
 const sayWord = (w, btn) => speak(w.w, btn, wordAudio(w));
 const canHearWord = w => hasSpeech || !!wordAudio(w);
 const PACK_AUDIO = VC.packAudio(PACK);
+// Today's Listen line: the same 12 weakest words hearItem() would drill, counted by
+// VC.listenPlanCount with the session's own canHearWord, so a pack with no voice and no
+// clips shows no count instead of a "12 items" the session can't actually serve as Listen.
+function listenLine(lw){
+  const n = VC.listenPlanCount(lw, canHearWord);
+  return n ? `${n} items` : "no items until a voice or recording is available";
+}
 function speechNotice(){
   if(hasSpeech || PACK_AUDIO || noticeShown) return "";
   noticeShown = true;
@@ -3521,6 +3679,12 @@ function quitDrill(){ D = null; drillKeyHandler = null; render(); }
 // popover (glossHTML, the Read-tab one) inside the nearest data-tokbox and speaks the word
 // only; the whole sentence is heard from its speaker button (sentSayHTML). No progress
 // effect. Never used inside answer buttons.
+// A multi-token pack word (PACK_SCHEMA.md sentences[].spans/passages[].spans: "a word may
+// have several spans, one per occurrence" — the builder emits one span per surface token
+// of a multi-word entry, के लिए as two adjacent spans sharing one wordId) renders one .tk
+// span per token, all sharing data-tok. A tap highlights every one of them, not only the
+// tapped token, so the whole word reads as one unit; the popover and speech still come
+// from the tapped token's own head/surface.
 function tokTapHTML(wordId, inner, head){
   const h = head ? ` data-ts="${escapeHtml(head.surface)}" data-tr="${escapeHtml(head.reading)}"` : "";
   return `<span class="tk" data-tok="${escapeHtml(wordId)}"${h} role="button" tabindex="0">${inner}</span>`;
@@ -3544,6 +3708,7 @@ function tokTap(t){
   if(box){
     box.querySelectorAll(".tk.on").forEach(x => x.classList.remove("on"));
     t.classList.add("on");
+    box.querySelectorAll(".tk").forEach(x => { if(x !== t && x.dataset && x.dataset.tok === t.dataset.tok) x.classList.add("on"); });
     let g = box.querySelector(".tokgloss");
     if(!g){ g = document.createElement("div"); g.className = "gloss tokgloss"; if(DISP.rtl) g.setAttribute("dir", "ltr"); box.appendChild(g); } // an LTR box, as glossBox
     g.innerHTML = html; g.hidden = false;
@@ -3747,27 +3912,55 @@ function recallItem(entry){
 function typeItem(entry){
   return { kind:"type", key:"w:"+entry.id, label:"Type the word",
     html: `<div class="med" style="text-align:center">${ui(VC.gloss(entry))}</div>`,
-    check: val => VC.acceptTyped(val, entry, PACK), reveal: revealBlock(entry),
+    check: val => VC.acceptTyped(val, entry, PACK, null, WORDS), reveal: revealBlock(entry),
     onAnswer: ok=>markWord(entry.id, ok), onReveal: () => sayWord(entry) };
 }
-// typePron — pack.typing "pron": meaning shown (plus a replay button for the word's
-// audio); type its reading. Accepted: tone marks or numbers (VC.checkPronTyped: neutral as
-// 5, 0 or nothing; case, spaces and apostrophes ignored). The right letters without any
-// tone count as wrong, with a "tones missing" note giving the marked form. This is the
-// word's production slot (kindMix "type"), the same slot recall fills: the reading is
-// never drilled on its own. A word with no pron gets recall instead.
+// pack.typing "pron": the word's production slot (kindMix "type", the slot recall also
+// fills) is one of two typed items, alternating in plan order (VC.typeSlotKind), each
+// tagged on the card so the learner never confuses them:
+//  - pronTypeItem ("Type the <pack.tones>", else "Type the reading"): meaning shown, silent (no replay, no autoplay:
+//    audio would give the reading away). Tones optional: VC.checkPronTyped's "ok",
+//    "tones" (none typed) and "tonesDiff" (other tones) all count as right; the last two
+//    get a note with the tone-coloured marked form. Latin keyboard (lang="en") for a Latin
+//    reading. Without pack.tones (ja kana): "ok" or "wrong" only, katakana and hiragana
+//    interchangeable, target-language input so the kana IME comes up.
+//  - writtenTypeItem ("Type the characters"): meaning shown and the word's audio played
+//    once (replay button, as hear items); type the written form (VC.acceptTyped, alt forms
+//    and the form without its affix mark, 年 for 〜年, accepted). Target-language input attributes (TA) so the keyboard switches.
+// The characters item needs the written form on display (pronFirst: a word still shown
+// by its reading gets the reading item in both slots). A word with no pron always gets the
+// characters item; no written form either: recall.
+const PRON_NOUN = TONES ? PACK.tones : "reading"; // the reading system's name (pack.tones), else "reading"
+const LATIN_PRON = /\p{Script=Latin}/u; // a Latin-script reading gets a Latin input; any other (e.g. kana) the target-language one
+const kindTag = (tag, sub) => `<div class="ktag"${UIA}><b>${escapeHtml(tag)}</b>${sub ? ` · ${escapeHtml(sub)}` : ""}</div>`;
 function pronTypeItem(entry){
-  const hear = canHearWord(entry);
-  return { kind:"type", key:"w:"+entry.id, label:"Type the reading (tone marks or numbers)",
-    html: `<div class="med" style="text-align:center">${ui(VC.gloss(entry))}</div>${hear ? `<div class="listen-stage"><button class="replay" id="rp2" aria-label="Replay">${REPLAY_SVG}</button></div>` : ""}`,
-    placeholder: "tone marks or numbers…", inputTA: "",
-    mount: () => { if(hear){ const b = $("rp2"); b.onclick = () => sayWord(entry, b); } },
-    check: val => VC.checkPronTyped(val, entry.pron) === "ok",
-    feedback: val => VC.checkPronTyped(val, entry.pron) === "tones" ? `<div class="diff">tones missing: <span class="tpron">${readingHTML(entry.pron)}</span></div>` : "",
+  return { kind:"type", key:"w:"+entry.id, label:`Type the ${PRON_NOUN}`,
+    html: `${kindTag(PRON_NOUN, TONES ? "tones optional" : "")}<div class="med" style="text-align:center">${ui(VC.gloss(entry))}</div>`,
+    placeholder: TONES ? `${PRON_NOUN}, tones optional…` : `${PRON_NOUN}…`, inputTA: LATIN_PRON.test(entry.pron) ? ' lang="en"' : undefined,
+    check: val => VC.checkPronTyped(val, entry.pron, PACK) !== "wrong",
+    feedback: val => { const v = VC.checkPronTyped(val, entry.pron, PACK); return v === "tones" || v === "tonesDiff" ? `<div class="diff">tones: <span class="tpron">${readingHTML(entry.pron)}</span></div>` : ""; },
     reveal: revealBlock(entry), onAnswer: ok=>markWord(entry.id, ok), onReveal: () => sayWord(entry) };
 }
-const WORD_ITEM = { hear: hearItem, read: readItem, recall: recallItem, type: e => PRON_TYPING && e.pron ? pronTypeItem(e) : TYPING ? typeItem(e) : recallItem(e) };
-const itemFromPlan = p => WORD_ITEM[p.kind](p.word);
+function writtenTypeItem(entry){
+  const hear = canHearWord(entry);
+  return { kind:"type", key:"w:"+entry.id, label:"Type the characters",
+    html: `${kindTag("characters", hear ? "listen" : "")}<div class="med" style="text-align:center">${ui(VC.gloss(entry))}</div>${hear ? `<div class="listen-stage"><button class="replay" id="rp2" aria-label="Replay">${REPLAY_SVG}</button></div>` : ""}`,
+    placeholder: "characters…",
+    mount: () => { if(hear){ const b = $("rp2"); sayWord(entry, b); b.onclick = () => sayWord(entry, b); } },
+    check: val => VC.acceptTyped(val, entry, PACK, [VC.affixBare(entry.w)], WORDS), reveal: revealBlock(entry),
+    onAnswer: ok=>markWord(entry.id, ok), onReveal: () => sayWord(entry) };
+}
+// The characters item only for a word whose written form is on display (dispWord: under
+// pronFirst, a word below its character tier shows its reading only, so its characters
+// were never shown); such a word gets the reading item in both slots.
+function pronSlotItem(entry, slot){
+  const shown = !!entry.w && !dispWord(entry).isPron;
+  if(shown && (slot === "written" || !entry.pron)) return writtenTypeItem(entry);
+  return entry.pron ? pronTypeItem(entry) : recallItem(entry);
+}
+const WORD_ITEM = { hear: hearItem, read: readItem, recall: recallItem, type: (e, slot) => PRON_TYPING ? pronSlotItem(e, slot) : TYPING ? typeItem(e) : recallItem(e) };
+// (p, i, plan): as an Array.map callback; i/plan pick the type slot's item (PRON_TYPING).
+const itemFromPlan = (p, i, plan) => WORD_ITEM[p.kind](p.word, p.kind === "type" && PRON_TYPING ? VC.typeSlotKind(plan, i) : undefined);
 // One card per missed word/sentence (items carry `key`), however many question types
 // it was missed as; the most-missed first, with a count when missed more than once.
 function missSummary(miss){
@@ -3830,7 +4023,7 @@ function gapSentence(s, typed){
     onReveal: () => saySentence(s) };
   if(typed && TYPING){
     return Object.assign(base, { kind:"type", label:"Type the missing word", html,
-      check: val => VC.acceptTyped(val, entry, PACK, [match.text]) });
+      check: val => VC.acceptTyped(val, entry, PACK, [match.text], WORDS) });
   }
   const gc = VC.gapChoices(entry, match, WORDS, PACK);
   return Object.assign(base, { kind:"mc", label:"What's the missing word?", optsClass:"opts-hero opts-w", html,
@@ -4006,7 +4199,7 @@ const scriptNotesHTML = (st, set) => SNOTES.filter(n => n && n.st === st && n.se
   .map(n => `<div class="card-teach xnote"><h3>${ui(n.h)}</h3><p>${ui(n.body)}</p></div>`).join("");
 // Plan entries are {kind, word} or, from the unified plans, {kind, unit} (a character
 // unit, or a script unit with a script kind).
-const planItem = p => isScriptPlan(p) ? scriptDrillItem(p.kind, p.unit) : p.unit ? charDrillItem(p.kind, p.unit) : itemFromPlan(p);
+const planItem = (p, i, plan) => isScriptPlan(p) ? scriptDrillItem(p.kind, p.unit) : p.unit ? charDrillItem(p.kind, p.unit) : itemFromPlan(p, i, plan);
 
 // ===================== lesson item wrapper =====================
 // mode from VC.lessonSayMode: "audio" plays `say`; "inq" runs without audio (the
@@ -4126,7 +4319,7 @@ function todayRender(){
   const steps = [
     ["Review", g.review ? reviewLine : (snap && snap.stage && snap.stage.kind === "script" ? "skipped until a set is learned" : "skipped until 5+ words are learned")],
     ["Learn", snap ? snapLearnLine(snap) : (nn ? `${levelLabel(nn.lv)}, set ${nn.set+1}` : "everything covered")],
-    ["Listen", g.listen ? "12 items" : "skipped until something is learned"],
+    ["Listen", g.listen ? listenLine(lw) : "skipped until something is learned"],
     ["Recall", g.recall ? "8 items" : "skipped until something is learned"],
     ["Sentences", g.sentences ? "8 items, weakest first" : "skipped until 8+ sentences are available"]
   ];
@@ -5149,4 +5342,4 @@ function legacyFailHTML(why){
 </script>
 </body>
 </html>
-<!--ve-build:3724740744-1461986-->
+<!--ve-build:1291744565-1476461-->

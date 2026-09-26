@@ -193,6 +193,10 @@ See `tools/REPORT.md` for the full list with counts. Headline items:
 - The spaCy Italian model is CC BY-NC-SA 3.0, not MIT. The pack ships no
   model files; the model is used only at build time. This project is
   non-commercial.
+- **Typing** stays accent-lenient at A1/A2 (`perche` = `perché`), but a
+  fold-only match is now rejected when it spells another pack word: typed
+  `la`, `si`, `e`, `se`, `ne`, `te` or `li` no longer scores for `là`, `sì`,
+  `è`, `sé`, `né`, `tè` or `lì`, and vice versa.
 
 ## Reading passages (Read tab)
 

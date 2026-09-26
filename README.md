@@ -219,3 +219,7 @@ notes are in `tools/REPORT_passages.md`.
 The passages were checked by an automated QA pass, not by a native speaker.
 Tapping any word in a passage shows its gloss, including inflected forms, via
 per-sentence token spans linked to word ids.
+
+A passage's spaced re-read on Today (after 7 days) becomes a listening pass
+when audio is available: the text stays hidden behind numbered play rows,
+and about half the questions are audio-only.

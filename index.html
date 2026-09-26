@@ -60,6 +60,7 @@
   /* Drill items centre in the tall card; dashboards (Today) read top-down, so they don't. */
   .drill-body.top{justify-content:flex-start}
   .q{color:var(--mute);font-size:15px;margin:0 0 10px}
+  .q.cue{color:var(--ink);font-size:17px;margin:4px 0 14px}
   .big{font-size:52px;line-height:1.3;text-align:center;margin:6px 0 16px;font-weight:500;overflow-wrap:anywhere}
   .med{font-size:22px;line-height:1.5;margin:2px 0 14px}
   .wd{font-family:var(--wfont)}
@@ -112,8 +113,9 @@
   .hear-stage{display:flex;justify-content:center;margin:14px 0 22px}
   .speaker{width:92px;height:92px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:36px;line-height:1;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
   @keyframes speakerPulse{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
-  .speaker.speaking{animation:speakerPulse 0.9s ease-in-out infinite}
-  @media (prefers-reduced-motion: reduce){ .speaker.speaking{animation:none} }
+  .speaker.speaking,.replay.speaking{animation:speakerPulse 0.9s ease-in-out infinite}
+  @media (prefers-reduced-motion: reduce){ .speaker.speaking,.replay.speaking{animation:none} }
+  .rvsay{display:flex;justify-content:center;margin:10px 0 0}
   .reveal{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:none;font-size:15px}
   .reveal .rw{font-size:22px;margin-bottom:2px;font-family:var(--wfont)}
   .reveal .rp{color:var(--mute);margin-bottom:2px}
@@ -546,14 +548,32 @@ function foldLenientLetters(s){
   return s.normalize("NFD").replace(/[\u0653-\u0655]/g, "").replace(LENIENT_RE, c => LENIENT_LETTERS[c])
     .replace(/[\u0643\u064a]/g, c => ARABIC_VARIANTS[c]).normalize("NFC");
 }
-// opts: {caseSensitive, foldAccents, lenientLetters}. Trims, collapses inner whitespace,
-// unifies typographic apostrophes, casefolds unless caseSensitive, accent-folds if asked;
-// with foldAccents also applies LENIENT_LETTERS unless lenientLetters === false.
+// German-only ASCII substitutions (opts.germanAscii, applied in acceptTyped to each
+// TARGET only, gated to pack.key === "de"): a learner on a non-German keyboard types
+// ae/oe/ue/ss for \u00e4/\u00f6/\u00fc/\u00df. Run on the pre-foldAccents string, so \u00e4 -> "ae" (not the
+// bare "a" foldAccents would otherwise strip it to). acceptTyped compares the typed text,
+// which is never digraph-folded (a real "ae"/"oe" typed, as in Aerobic, must stay ASCII
+// text and never become \u00e4/\u00f6), against EACH target folded both with and without this
+// pass, so both the digraph spelling (Muede) and the plain accent-stripped spelling every
+// other Latin-script pack already accepts (Mude) match \u00e4\u00f6\u00fc\u00df words. No other pack's text
+// contains these letters, but the fold is gated by pack anyway, not by script, so a
+// future non-German pack with an \u00e4/\u00f6/\u00fc/\u00df loanword is unaffected unless it opts in.
+const GERMAN_ASCII = { "\u00e4":"ae", "\u00f6":"oe", "\u00fc":"ue", "\u00df":"ss",
+  "\u00c4":"Ae", "\u00d6":"Oe", "\u00dc":"Ue" };
+const GERMAN_ASCII_RE = /[\u00e4\u00f6\u00fc\u00df\u00c4\u00d6\u00dc]/g;
+function foldGermanAscii(s){
+  return String(s).replace(GERMAN_ASCII_RE, c => GERMAN_ASCII[c]);
+}
+// opts: {caseSensitive, foldAccents, lenientLetters, germanAscii}. Trims, collapses inner
+// whitespace, unifies typographic apostrophes, casefolds unless caseSensitive, accent-folds
+// if asked; with foldAccents also applies germanAscii (if set, before the accent strip so
+// \u00e4/\u00f6/\u00fc/\u00df are not lost to it first) and LENIENT_LETTERS unless lenientLetters === false.
 function normalizeTyped(s, opts){
   const o = opts || {};
   let out = String(s == null ? "" : s).normalize("NFC").replace(/[\u2018\u2019\u02bc`]/g, "'").replace(/[\u0643\u064a]/g, c => ARABIC_VARIANTS[c]).replace(/\s+/g, " ").trim();
   if(!o.caseSensitive) out = out.toLowerCase();
   if(o.foldAccents){
+    if(o.germanAscii) out = foldGermanAscii(out);
     out = foldAccents(out);
     if(o.lenientLetters !== false) out = foldLenientLetters(out).replace(/\s+/g, " ").trim();
   }
@@ -607,7 +627,14 @@ function guardIndex(words, caseSensitive){
 // pointing key is another entry's and no target's (so مَا, مـا or ما typed for ماء, and
 // si or s+ZWJ+i for sí, are wrong). A pointing key the target shares stays accepted:
 // замок for за́мок passes even when замо́к is also a pack word (typed замо́к does not).
-// امس for أمس and perche for perché are fine.
+// امس for أمس and perche for perché are fine. The German pack (pack.key === "de") also
+// folds each target (never the typed text) to ae/oe/ue/ss on top of the plain accent
+// strip, so a learner on a non-German keyboard can type "Muede" or "Strasse" for
+// müde/Straße; the plain accent-stripped spelling ("mude") a learner who just drops the
+// umlaut types still matches too, exactly as it already did for every other Latin-script
+// pack, and every collision that spelling created (schon/schön, zahlen/zählen) still
+// exists and is still caught by the guard below. The typed text is never fed the German
+// digraph fold itself: a genuine "ae" (Aerobic) must never turn into ä.
 function acceptTyped(input, entry, pack, extra, words){
   const t = (pack && pack.typing) || {};
   const cs = !!t.caseSensitive, lenient = typingLenientFor(entry, pack);
@@ -618,9 +645,11 @@ function acceptTyped(input, entry, pack, extra, words){
   const targetStrict = targets.map(x => normalizeTyped(x, strict));
   if(targetStrict.includes(got)) return true;
   if(!lenient) return false;
+  const isDe = !!(pack && pack.key === "de");
   const full = { caseSensitive: cs, foldAccents: true };
+  const fullDe = { caseSensitive: cs, foldAccents: true, germanAscii: true };
   const gotL = normalizeTyped(input, full);
-  if(!gotL || !targets.some(x => normalizeTyped(x, full) === gotL)) return false;
+  if(!gotL || !targets.some(x => normalizeTyped(x, full) === gotL || (isDe && normalizeTyped(x, fullDe) === gotL))) return false;
   if(!Array.isArray(words)) return true;
   const other = e => e !== entry && !(e.id != null && e.id === entry.id);
   const idx = guardIndex(words, cs);
@@ -1461,6 +1490,96 @@ function pickVoice(voices, lang){
   const vs = voices || [];
   return vs.find(v=>normLang(v.lang)===want) || vs.find(v=>normLang(v.lang).split("-")[0]===base) || null;
 }
+// The voice to put on an utterance now: the chosen voice (pickVoice at the last
+// voiceschanged) when the current list still holds it (matched by voiceURI, else name:
+// some browsers hand out fresh voice objects per getVoices call), as the list's own object;
+// else a fresh pick from the current list; null (utterance keeps only its lang) when the
+// list has no voice for the language or is empty.
+function liveVoice(chosen, voices, lang){
+  const vs = voices || [];
+  if(chosen){
+    const key = v => (v && (v.voiceURI || v.name)) || "";
+    const k = key(chosen);
+    const same = vs.find(v => v === chosen) || (k ? vs.find(v => key(v) === k) : null);
+    if(same) return same;
+  }
+  return pickVoice(vs, lang);
+}
+// ---- TTS sequencing (docs/AUDIO.md "Playback reliability"). A small driver around
+// speechSynthesis (ss) that works around three Chrome/Android failure modes:
+//  1. cancel() followed at once by speak() can drop the new utterance: cancel only when
+//     something is speaking/pending, and then speak after o.deferMs; a newer say()/stop()
+//     (generation counter) wins over a deferred one.
+//  2. the engine left paused after backgrounding: resume() first when ss.paused. And an
+//     utterance that never starts (no onstart/onend/onerror, ss.speaking never seen true,
+//     then !speaking && !pending after o.watchMs) is retried once. The watchdog is armed
+//     only when ss.speaking is a boolean (every real browser; the test stubs that lack it
+//     keep the exact old synchronous behaviour).
+//  3. an utterance garbage-collected mid-speech (onend never fires): the driver keeps the
+//     current utterance referenced until its onend/onerror.
+// make(): builds a fresh utterance with its own handlers (called again for the retry).
+// o: { setTimeout, clearTimeout, deferMs, watchMs, pollMs }.
+const TTS_TIMING = { deferMs: 80, watchMs: 1200, pollMs: 200 };
+function ttsDriver(ss, o){
+  const opt = Object.assign({}, TTS_TIMING, o || {});
+  const setT = opt.setTimeout, clrT = opt.clearTimeout;
+  // cancelled: a cancel() has been issued and no deferred speak has run since, so the next
+  // say() defers too (speak() calls stop() then say(): the cancel is stop's).
+  let gen = 0, cur = null, timers = [], cancelled = false;
+  const clear = () => { timers.forEach(t => { try{ clrT(t); }catch(e){} }); timers = []; };
+  const busy = () => !!(ss.speaking || ss.pending);
+  // Stops whatever TTS is playing or waiting (a deferred say, a retry); cancel() only
+  // when the engine reports something to cancel.
+  function stop(){
+    gen++; clear(); cur = null;
+    if(busy()){ cancelled = true; try{ ss.cancel(); }catch(e){} return true; }
+    return false;
+  }
+  function say(make){
+    const g = ++gen; clear();
+    const hadWork = busy() || cancelled;
+    if(busy()){ try{ ss.cancel(); }catch(e){} }
+    cancelled = hadWork;
+    const go = retry => {
+      if(g !== gen) return;
+      cancelled = false;
+      if(ss.paused){ try{ ss.resume(); }catch(e){} }
+      const u = make(); if(!u) return;
+      let alive = false;
+      const on = (k, flag) => { const f = u[k]; u[k] = e => { if(flag) alive = true; if(k !== "onstart" && cur === u) cur = null; if(f) f.call(u, e); }; };
+      on("onstart", true); on("onend", true); on("onerror", true);
+      cur = u;
+      try{ ss.speak(u); }catch(e){ cur = null; return; }
+      if(retry || typeof ss.speaking !== "boolean") return;
+      let waited = 0;
+      const poll = () => {
+        if(g !== gen || alive) return;
+        if(ss.speaking){ alive = true; return; }
+        waited += opt.pollMs;
+        if(waited < opt.watchMs){ timers.push(setT(poll, opt.pollMs)); return; }
+        if(!ss.speaking && !ss.pending){ cur = null; cancelled = true; try{ ss.cancel(); }catch(e){} timers.push(setT(() => go(true), opt.deferMs)); }
+      };
+      timers.push(setT(poll, opt.pollMs));
+    };
+    if(hadWork) timers.push(setT(() => go(false), opt.deferMs)); else go(false);
+  }
+  return { say, stop, current: () => cur };
+}
+// Recorded clip start watchdog (docs/AUDIO.md): a clip that has not fired "playing" within
+// ms of play() (a hung load, a stalled start) is reported once through onFail. Armed only
+// on a media element that has the onplaying property (a real HTMLAudioElement; the test
+// fakes without it keep the old behaviour). Returns disarm(): call it on playing, end,
+// error, a blocked autoplay, or when a newer speak replaces the clip.
+const CLIP_START_MS = 4000;
+function clipStartWatch(a, ms, onFail, timers){
+  if(!a || !("onplaying" in a)) return () => {};
+  let done = false, t = null;
+  const disarm = () => { if(done) return; done = true; if(t !== null){ try{ timers.clearTimeout(t); }catch(e){} } };
+  const prev = a.onplaying;
+  a.onplaying = e => { disarm(); if(prev) prev.call(a, e); };
+  t = timers.setTimeout(() => { if(done) return; done = true; onFail(); }, ms);
+  return disarm;
+}
 // Whether listening items can play: needs the API, and — once the browser has
 // reported its voice list — a voice for the pack's language (a zh word read by an
 // English voice is worse than showing it). An empty list means "not loaded yet /
@@ -1548,6 +1667,36 @@ function suggestPassage(passages, words, pack, prog){
   const open = new Set(readingLevels(passages, words, pack, prog).filter(l => l.unlocked).map(l => l.lv));
   const done = (isObj(prog.read) && isObj(prog.read.done)) ? prog.read.done : {};
   return (passages||[]).find(p => open.has(p.lv) && !done[p.id]) || null;
+}
+// Today's Read stage (README "Today"): one passage per session. First choice is
+// suggestPassage (reason "new"). When nothing new is left, a spaced re-read: among passages
+// at unlocked levels whose latest attempt missed a question (done[id].sc < n), the one
+// with the oldest completion date d, no sooner than READ_REREAD_DAYS after it (ties: pack
+// order); reason "reread". null when neither exists, and the stage is absent. `now` is a
+// Date (local calendar day) or "YYYY-MM-DD" (app.html todayISO). Skipping the stage writes
+// nothing, so the same passage comes back next session.
+const READ_REREAD_DAYS = 7;
+function isoDayNumber(d){
+  if(d instanceof Date) return isNaN(d) ? NaN : Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d == null ? "" : d));
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 : NaN;
+}
+function nextReadItem(passages, words, pack, prog, now){
+  const fresh = suggestPassage(passages, words, pack, prog);
+  if(fresh) return { p: fresh, reason: "new" };
+  const today = isoDayNumber(now);
+  if(!isFinite(today)) return null;
+  const open = new Set(readingLevels(passages, words, pack, prog).filter(l => l.unlocked).map(l => l.lv));
+  const done = (isObj(prog.read) && isObj(prog.read.done)) ? prog.read.done : {};
+  let best = null, bestDay = Infinity;
+  (passages||[]).forEach(p => {
+    const r = done[p.id];
+    if(!open.has(p.lv) || !isObj(r) || typeof r.sc !== "number" || typeof r.n !== "number" || !(r.sc < r.n)) return;
+    const day = isoDayNumber(r.d);
+    if(!isFinite(day) || today - day < READ_REREAD_DAYS || day >= bestDay) return;
+    best = p; bestDay = day;
+  });
+  return best ? { p: best, reason: "reread" } : null;
 }
 // Length in words: whitespace tokens for spaced scripts, linked word tokens otherwise.
 function passageLength(p, pack){
@@ -2939,11 +3088,56 @@ function kanaFold(s){
 }
 // Comparison key for a reading typed without tones: kanaFold, normalizeTyped (case,
 // whitespace, apostrophes), then everything but letters, marks and digits removed (spaces,
-// the affix mark 〜 of 〜ねん, the middle dot ・).
-function plainPronKey(s){ return normalizeTyped(kanaFold(s)).replace(/[^\p{L}\p{M}\p{N}]/gu, ""); }
+// the affix mark 〜 of 〜ねん, the middle dot ・), then NFC again: a standalone voicing
+// mark (U+309B ゛, not the combining U+3099) NFKC-decomposes inside kanaFold to a space
+// plus the combining mark, so stripping the space above leaves the combining mark right
+// after its base kana; NFC here recomposes them (は + ゛ + す -> ばす, matching バス).
+function plainPronKey(s){ return normalizeTyped(kanaFold(s)).replace(/[^\p{L}\p{M}\p{N}]/gu, "").normalize("NFC"); }
 // A written form without its affix mark: 〜年 -> 年 (wave dash or full-width tilde at
 // either end), so a typed suffix/prefix word needs no 〜. The form itself when it has none.
-function affixBare(w){ return String(w == null ? "" : w).replace(/^[\u301c\uff5e]+|[\u301c\uff5e]+$/g, ""); }
+// Affix marks in the written form a learner should not have to type: Japanese \u301c/\uff5e
+// (noun-modifier tilde) and the ASCII hyphen (Korean particle words like -\uc774\ub2e4, -\uc774/\uac00).
+// Only a leading or trailing run is an affix mark; stripped from either end, never both
+// meanings at once mattering since the anchors are independent. An inner hyphen (Hindi
+// \u0927\u0940\u0930\u0947-\u0927\u0940\u0930\u0947, \u0915\u094c\u0928-\u0938\u093e) or inner tilde (\u5e74\u301c\u5e74) is a real character, never touched.
+function affixBare(w){ return String(w == null ? "" : w).replace(/^[\u301c\uff5e-]+|[\u301c\uff5e-]+$/g, ""); }
+// A single "(x)" optional-syllable group (Korean -(\uc73c)\ub85c, -(\uc774)\ub098, -(\uc774)\ub791: (\uc73c)/(\uc774) is
+// dropped after a vowel-final stem, kept after a consonant-final one) expands to the form
+// with the parens dropped but the syllable kept (\uc73c\ub85c) and the form with the whole group
+// dropped (\ub85c). [] with no parenthetical group.
+function parenAlts(s){
+  const m = s.match(/^(.*)\(([^()]*)\)(.*)$/);
+  return m ? [m[1] + m[2] + m[3], m[1] + m[3]] : [];
+}
+// Extra accepted written forms for a word whose display form carries a leading/trailing
+// affix mark (see affixBare): the bare form with the affix stripped, plus \u2014 when that
+// bare form is itself a "/"-separated set of alternatives (Korean particle pairs like
+// -\uc774/\uac00 -> \uc774/\uac00 -> \uc774, \uac00) \u2014 each alternative on its own, and \u2014 when a part carries a
+// "(x)" optional-syllable group (Korean -(\uc73c)\ub85c -> (\uc73c)\ub85c -> \uc73c\ub85c, \ub85c) \u2014 both the with- and
+// without-the-syllable forms (combined with the slash rule, if a word ever has both).
+// Returns [] when the word has no affix mark (bare === original), so callers can splice
+// this straight into acceptTyped's `extra` list without conditionals. entry.w itself (with
+// its affix mark, e.g. -\uc774/\uac00, -(\uc73c)\ub85c) is already checked by acceptTyped, so it is not
+// repeated here.
+function affixAlts(w){
+  const s = String(w == null ? "" : w);
+  const bare = affixBare(s);
+  if(bare === s) return [];
+  const parts = bare.indexOf("/") >= 0 ? [bare, ...bare.split("/")] : [bare];
+  const out = [...parts];
+  parts.forEach(p => out.push(...parenAlts(p)));
+  return out;
+}
+// A typed "characters" answer, NFKC-folded (half-width kana ﾃﾚﾋﾞ -> full-width テレビ) with
+// ～ (full-width tilde) unified to 〜 (wave dash), the affix mark a pack's written forms
+// actually use: either may be typed for either. The tilde swap runs before NFKC, since
+// NFKC's own compatibility mapping turns ～ into a bare ASCII "~" (〜 has no such
+// mapping), which would make it unmatchable by either the ～ or 〜 spelling afterwards.
+// Used only on the written item of a no-tones typing:"pron" pack (ja): unlike kanaFold, it never folds
+// katakana to hiragana, since the written form's spelling (テレビ, not てれび) must still
+// match exactly. Never applied to a Latin pack (no half-width/tilde concern there) or a
+// tones pack (zh), whose written check is unaffected.
+function writtenTypedFold(s){ return String(s == null ? "" : s).replace(/～/g, "〜").normalize("NFKC"); }
 // pack.typing "pron": the typed item a plan's "type" slot (a word's production slot) is.
 // The type slots alternate in plan order, reading first: "pron" (type the reading, silent,
 // tones optional), then "written" (type the characters, the word's audio played). Plan
@@ -3121,15 +3315,15 @@ const API = { shuffle, escapeHtml, gloss, firstTwoWords, normKey,
   levelIds, levelIndexMap, levelLabel, setSizeOf, wordsByLevel, nSets,
   meaningOpts, wordOpts, gapOpts, sentenceOpts, bareForm, packArticles, articleCut, trailingCut, citationArticles, articleAgreement, visibleArticle, gapChoices, exampleSentences, unitExampleSentences, rubyCovers, highlightParts, searchWords, pronShown, audioSlot, TEST_MIN_WORDS,
   targetLang, fontFamilyOf, fontStackOf, lineHeightOf, fontsHref, scriptDisplay, rtlRuns,
-  foldAccents, foldLenientLetters, LENIENT_LETTERS, pointingKey, normalizeTyped, typingEnabled, typingLenientFor, acceptTyped,
+  foldAccents, foldLenientLetters, LENIENT_LETTERS, foldGermanAscii, pointingKey, normalizeTyped, typingEnabled, typingLenientFor, acceptTyped,
   surfaces, sharesSurface, samePron,
   findSurface, locateWord, packSurfaces, spannedByLonger, gapMatch, gapCandidateIndices, blankSentence,
   strata, placementItemCount, placementStopIndex, applyPlacement, dedupeMisses,
-  parseStored, dropUnknownSets, bootProg, lessonItemKey, lessonSayMode, applyImport, todayGates, testGates, listenPlanCount, pickVoice, speechUsable, isSamsungBrowser, wordAudio, packAudio,
+  parseStored, dropUnknownSets, bootProg, lessonItemKey, lessonSayMode, applyImport, todayGates, testGates, listenPlanCount, pickVoice, liveVoice, TTS_TIMING, ttsDriver, CLIP_START_MS, clipStartWatch, speechUsable, isSamsungBrowser, wordAudio, packAudio,
   PROG_VERSION, WORD_MASTERED, SENTENCE_MASTERED, storageKey, defaultProg, validateProgShape, normalizeProg,
   markRec, weakScore, weakFirst, provPick, learnedWords, nextNewSet, currentLevelIndex, availableSentences,
   PRODUCTION_KINDS, REVIEW_SIZE, REVIEW_PRODUCTION_SHARE, kindMix, buildReviewPlan, buildRecallPlan, sentenceKind,
-  READ_UNLOCK, READ_WEIGHT, readState, readingLevels, updateReadUnlocks, suggestPassage, passageLength, passageSegments,
+  READ_UNLOCK, READ_WEIGHT, READ_REREAD_DAYS, readState, readingLevels, updateReadUnlocks, suggestPassage, nextReadItem, passageLength, passageSegments,
   gradeQuestion, passageWeakWords, applyWeakWords, markPassageDone, readingStats,
   CHARS_PROG_VERSION, CHAR_SET_SIZE, CHAR_MASTERED, CHAR_BARE, REVIEW_SIZE_CHARS, CHAR_KINDS, charsConfig,
   defaultCharsProg, validateCharsShape, normalizeCharsProg, ensureChars, charRecs, markChar, answerCharChoice, setCharOrder,
@@ -3142,7 +3336,7 @@ const API = { shuffle, escapeHtml, gloss, firstTwoWords, normKey,
   scriptNotice, dismissScriptNotice, markScript, scriptMastered, scriptStageUnits, scriptSets, scriptSetTaught, nextScriptSets, scriptStages,
   recordedScriptUnits, scriptActive, scriptPool, showScriptChoice, scriptKindShape, scriptKindFits, scriptKindFor, pickScriptKind, scriptFamily, SCRIPT_MIN_OPTIONS, scriptGlyph, scriptGlyphKeys, scriptGlyphIn, scriptWordHas, graphemes, shapingClusters, scriptUnitNote, scriptUnitHeadName, searchFold, scriptSecondRight,
   scriptOpts, scriptRomanOpts, scriptExamples, scriptWordOpts, scriptJoinedForms, scriptItem, learnScriptPlan, scriptReviewScore, scriptTestPlan,
-  tonesOn, stripMarks, syllableTone, markSyllable, splitSyllable, splitReading, toneHTML, pronTypingOn, pronKey, numberedForms, checkPronTyped, kanaFold, plainPronKey, affixBare, typeSlotKind, joinReadings, composeSpanReading, spanReadingText,
+  tonesOn, stripMarks, syllableTone, markSyllable, splitSyllable, splitReading, toneHTML, pronTypingOn, pronKey, numberedForms, checkPronTyped, kanaFold, plainPronKey, affixBare, affixAlts, writtenTypedFold, typeSlotKind, joinReadings, composeSpanReading, spanReadingText,
   LEGACY_DROPPED, legacyBackupKey, isLegacyRecord, migrateLegacy };
 if(typeof module!=="undefined" && module.exports) module.exports = API;
 if(root) root.VocabCore = API;
@@ -3364,22 +3558,34 @@ let speakingBtn = null;
 // same text; with no voice it shows a short hint instead. speakGen drops the failure of a
 // clip that a later speak() already replaced (its pause rejects play() with AbortError),
 // and a blocked autoplay (NotAllowedError) is not a failure of the clip.
-let speakGen = 0;
+// TTS goes through VC.ttsDriver (docs/AUDIO.md "Playback reliability"): cancel only when
+// something is speaking/pending and then speak a moment later (Chrome drops an utterance
+// spoken right after cancel), resume a paused engine, one retry of an utterance that never
+// starts, and the current utterance kept referenced until it ends.
+const TIMERS = { setTimeout: (f, ms) => setTimeout(f, ms), clearTimeout: t => clearTimeout(t) };
+const tts = SS ? VC.ttsDriver(SS, TIMERS) : null;
+let speakGen = 0, clipDisarm = () => {};
 function speak(text, btn, audioUrl){
   const gen = ++speakGen;
+  clipDisarm(); clipDisarm = () => {};
   audioOut.stop();
-  if(SS){ try{ SS.cancel(); }catch(e){} }
+  if(tts) tts.stop();
   if(speakingBtn){ speakingBtn.classList.remove("speaking"); speakingBtn = null; }
   if(audioUrl){
     try{
       const a = audioOut.play(audioUrl);
       a.onended = a.onerror = null;
+      if("onplaying" in a) a.onplaying = null;
       if(btn){ speakingBtn = btn; btn.classList.add("speaking"); }
       // done() is generation-guarded too: a replaced clip's late end/abort must not strip
       // "speaking" from a button the newer speak() reuses.
-      const done = () => { if(btn && gen === speakGen) btn.classList.remove("speaking"); };
+      const done = () => { disarm(); if(btn && gen === speakGen) btn.classList.remove("speaking"); };
       let settled = false;
       const failed = () => { if(settled || gen !== speakGen) return; settled = true; done(); clipFailed(text, btn, audioUrl); };
+      // A clip that never fires "playing" (hung load, stalled start) falls back like a
+      // failed one, once, after its player is stopped so it cannot start late on top.
+      const disarm = VC.clipStartWatch(a, VC.CLIP_START_MS, () => { if(settled || gen !== speakGen) return; audioOut.stop(); failed(); }, TIMERS);
+      clipDisarm = disarm;
       a.onended = done; a.onerror = failed;
       const pr = a.play();
       if(pr && pr.catch) pr.catch(err => { if(err && (err.name === "NotAllowedError" || err.name === "AbortError")) done(); else failed(); });
@@ -3406,15 +3612,22 @@ function audioHint(msg){
   document.body.appendChild(t);
   setTimeout(() => { if(t.parentNode) t.remove(); }, 3500);
 }
+// The voice is re-checked per utterance (VC.liveVoice): the one picked at the last
+// voiceschanged when still listed, else a fresh pick, else none (lang only).
 function speakTTS(text, btn){
-  if(!hasSpeech) return;
+  if(!hasSpeech || !tts) return;
   try{
-    const u = new SpeechSynthesisUtterance(text); u.lang = TTS_LANG; if(ttsVoice) u.voice = ttsVoice; u.rate = TTS_RATE;
-    if(btn){
-      u.onstart = () => btn.classList.add("speaking");
-      u.onend = u.onerror = () => btn.classList.remove("speaking");
-    }
-    SS.speak(u);
+    tts.say(() => {
+      const u = new SpeechSynthesisUtterance(text); u.lang = TTS_LANG; u.rate = TTS_RATE;
+      let v = ttsVoice;
+      try{ v = VC.liveVoice(ttsVoice, SS.getVoices(), TTS_LANG); }catch(e){}
+      if(v) u.voice = v;
+      if(btn){
+        u.onstart = () => btn.classList.add("speaking");
+        u.onend = u.onerror = () => btn.classList.remove("speaking");
+      }
+      return u;
+    });
   }catch(e){}
 }
 const say = t => speak(t);
@@ -3458,6 +3671,9 @@ function speakerSVG(size){
 const SPEAKER_SVG = speakerSVG(38);
 const REPLAY_SVG = speakerSVG(18);
 const TEACH_PLAY_SVG = speakerSVG(14);
+// The Replay button of an item that autoplays beside shown text (read items), as
+// writtenTypeItem's: the text stays the stimulus, the button replays what played.
+const REPLAY_STAGE = `<div class="listen-stage"><button class="replay" id="rpa" aria-label="Replay">${REPLAY_SVG}</button></div>`;
 
 // ===================== display helpers =====================
 // pron is display-only: shown beside a word/sentence when the learner has it on.
@@ -3566,6 +3782,19 @@ function showReveal(html){
   if(html){ rv.style.opacity = "0"; requestAnimationFrame(()=>{ rv.style.opacity = "1"; }); }
   announce(html);
 }
+// Replay rule (docs/AUDIO.md "Playback reliability"): every drill item that plays audio
+// on its own shows a Replay button for it. Items that play at mount carry it in their html;
+// items that play on reveal (onReveal) and can be heard (revealHear) get this one appended
+// to the reveal by the runner, so it only exists once the item is answered (a gap item's
+// sentence audio never leaks the blank). onReveal(btn) plays with the button pulsing.
+const REVEAL_REPLAY = `<div class="rvsay"><button type="button" class="replay" id="rvp" aria-label="Replay">${REPLAY_SVG}</button></div>`;
+const revealHTML = (it, html) => it.onReveal && it.revealHear ? html + REVEAL_REPLAY : html;
+function playReveal(it){
+  if(!it.onReveal) return;
+  const b = it.revealHear ? $("rvp") : null;
+  if(b) b.onclick = () => it.onReveal(b);
+  it.onReveal(b || undefined);
+}
 function dnext(){
   if(!D) return;
   const P = $("panel");
@@ -3602,8 +3831,8 @@ function renderMcItem(it){
       if(!ok) b.classList.add("bad");
       D.seen++; if(ok) D.right++; else { D.miss.push(it); D.q.push(it); }
       if(it.onAnswer) it.onAnswer(ok);
-      showReveal(it.reveal || "");
-      if(it.onReveal) it.onReveal();
+      showReveal(revealHTML(it, it.reveal || ""));
+      playReveal(it);
       showNext(); setScore(D.seen, D.seen + D.q.length);
     };
     b.dataset.v = o;
@@ -3632,8 +3861,8 @@ function renderTypeItem(it){
     const ok = it.check(input.value);
     D.seen++; if(ok) D.right++; else { D.miss.push(it); D.q.push(it); }
     if(it.onAnswer) it.onAnswer(ok);
-    showReveal((ok ? "" : `<div class="diff">you typed: ${escapeHtml(input.value)}</div>`) + (it.feedback ? it.feedback(input.value) : "") + (it.reveal||""));
-    if(it.onReveal) it.onReveal();
+    showReveal(revealHTML(it, (ok ? "" : `<div class="diff">you typed: ${escapeHtml(input.value)}</div>`) + (it.feedback ? it.feedback(input.value) : "") + (it.reveal||"")));
+    playReveal(it);
     showNext(); setScore(D.seen, D.seen + D.q.length);
   }
   $("submit").onclick = submit;
@@ -3890,11 +4119,13 @@ function hearItem(entry){
     mount: () => { const btn = $("sp"); sayWord(entry, btn); btn.onclick = ()=>sayWord(entry, btn); },
     };
 }
-// read — word shown; pick the meaning. Audio auto-plays.
+// read — word shown; pick the meaning. Audio auto-plays, with a Replay button when the
+// word can be heard (built without one, it still tries: a voice may have arrived since).
 function readItem(entry){
+  const hear = canHearWord(entry);
   return { kind:"mc", key:"w:"+entry.id, label:"What does it mean?", optsClass:"opts-hero",
-    html: bigWordHTML(entry), opts: meaningChoices(entry), a: VC.gloss(entry), reveal: revealBlock(entry),
-    onAnswer: ok=>markWord(entry.id, ok), mount: () => sayWord(entry), };
+    html: bigWordHTML(entry) + (hear ? REPLAY_STAGE : ""), opts: meaningChoices(entry), a: VC.gloss(entry), reveal: revealBlock(entry),
+    onAnswer: ok=>markWord(entry.id, ok), mount: () => { const b = hear ? $("rpa") : null; sayWord(entry, b || undefined); if(b) b.onclick = () => sayWord(entry, b); }, };
 }
 // recall — meaning shown; pick the word (wordOpts: same pos/level first, never a
 // distractor that would also be a right answer).
@@ -3906,14 +4137,15 @@ function recallItem(entry){
   return { kind:"mc", key:"w:"+entry.id, label:"Which word is this?", optsClass:"opts-hero opts-w",
     html: `<div class="med" style="text-align:center">${ui(VC.gloss(entry))}</div>`,
     opts: [entry.id, ...ds.map(d=>d.id)], a: entry.id, optHtml: wordOptHtml(byId, o => byId[o].w), optsT: true, reveal: revealBlock(entry),
-    onAnswer: ok=>markWord(entry.id, ok), onReveal: () => sayWord(entry) };
+    onAnswer: ok=>markWord(entry.id, ok), onReveal: b => sayWord(entry, b), revealHear: canHearWord(entry) };
 }
-// type — meaning shown; type the word (normalised per pack.typing, alt forms accepted).
+// type — meaning shown; type the word (normalised per pack.typing, alt forms and any
+// affix-bare/slash-alternative forms from VC.affixAlts accepted, e.g. 이 or 가 for -이/가).
 function typeItem(entry){
   return { kind:"type", key:"w:"+entry.id, label:"Type the word",
     html: `<div class="med" style="text-align:center">${ui(VC.gloss(entry))}</div>`,
-    check: val => VC.acceptTyped(val, entry, PACK, null, WORDS), reveal: revealBlock(entry),
-    onAnswer: ok=>markWord(entry.id, ok), onReveal: () => sayWord(entry) };
+    check: val => VC.acceptTyped(val, entry, PACK, VC.affixAlts(entry.w), WORDS), reveal: revealBlock(entry),
+    onAnswer: ok=>markWord(entry.id, ok), onReveal: b => sayWord(entry, b), revealHear: canHearWord(entry) };
 }
 // pack.typing "pron": the word's production slot (kindMix "type", the slot recall also
 // fills) is one of two typed items, alternating in plan order (VC.typeSlotKind), each
@@ -3926,7 +4158,8 @@ function typeItem(entry){
 //    interchangeable, target-language input so the kana IME comes up.
 //  - writtenTypeItem ("Type the characters"): meaning shown and the word's audio played
 //    once (replay button, as hear items); type the written form (VC.acceptTyped, alt forms
-//    and the form without its affix mark, 年 for 〜年, accepted). Target-language input attributes (TA) so the keyboard switches.
+//    and any affix-bare/slash-alternative forms from VC.affixAlts, 年 for 〜年 or 이/가 for
+//    -이/가, accepted). Target-language input attributes (TA) so the keyboard switches.
 // The characters item needs the written form on display (pronFirst: a word still shown
 // by its reading gets the reading item in both slots). A word with no pron always gets the
 // characters item; no written form either: recall.
@@ -3939,16 +4172,21 @@ function pronTypeItem(entry){
     placeholder: TONES ? `${PRON_NOUN}, tones optional…` : `${PRON_NOUN}…`, inputTA: LATIN_PRON.test(entry.pron) ? ' lang="en"' : undefined,
     check: val => VC.checkPronTyped(val, entry.pron, PACK) !== "wrong",
     feedback: val => { const v = VC.checkPronTyped(val, entry.pron, PACK); return v === "tones" || v === "tonesDiff" ? `<div class="diff">tones: <span class="tpron">${readingHTML(entry.pron)}</span></div>` : ""; },
-    reveal: revealBlock(entry), onAnswer: ok=>markWord(entry.id, ok), onReveal: () => sayWord(entry) };
+    reveal: revealBlock(entry), onAnswer: ok=>markWord(entry.id, ok), onReveal: b => sayWord(entry, b), revealHear: canHearWord(entry) };
 }
 function writtenTypeItem(entry){
   const hear = canHearWord(entry);
+  // No-tones pron packs (ja) only, and never a Latin reading: NFKC-fold the typed value
+  // first, so half-width kana (ﾃﾚﾋﾞ) matches full-width (テレビ) and either affix-mark
+  // tilde matches whichever 〜/～ the written form uses (VC.writtenTypedFold). acceptTyped
+  // itself and Latin/tones packs are untouched.
+  const foldTyped = !TONES && !LATIN_PRON.test(entry.pron || "") ? VC.writtenTypedFold : (v => v);
   return { kind:"type", key:"w:"+entry.id, label:"Type the characters",
     html: `${kindTag("characters", hear ? "listen" : "")}<div class="med" style="text-align:center">${ui(VC.gloss(entry))}</div>${hear ? `<div class="listen-stage"><button class="replay" id="rp2" aria-label="Replay">${REPLAY_SVG}</button></div>` : ""}`,
     placeholder: "characters…",
     mount: () => { if(hear){ const b = $("rp2"); sayWord(entry, b); b.onclick = () => sayWord(entry, b); } },
-    check: val => VC.acceptTyped(val, entry, PACK, [VC.affixBare(entry.w)], WORDS), reveal: revealBlock(entry),
-    onAnswer: ok=>markWord(entry.id, ok), onReveal: () => sayWord(entry) };
+    check: val => VC.acceptTyped(foldTyped(val), entry, PACK, VC.affixAlts(entry.w), WORDS), reveal: revealBlock(entry),
+    onAnswer: ok=>markWord(entry.id, ok), onReveal: b => sayWord(entry, b), revealHear: canHearWord(entry) };
 }
 // The characters item only for a word whose written form is on display (dispWord: under
 // pronFirst, a word below its character tier shows its reading only, so its characters
@@ -3986,14 +4224,15 @@ function sentenceRevealBlock(s){
 }
 const sentenceChoices = s => [s.en, ...VC.sentenceOpts(s, SENTENCES).map(d=>d.en)];
 function readSentence(s){
+  const hear = canHearSentence(s);
   const pf = pfSentence(s);
   const rt = pf ? null : sentenceRuby(s);
   const p = rt || pf ? "" : pronOf(s);
   return { kind:"mc", key:"s:"+s.id, label:"What does it mean?", optsClass:"opts-hero",
-    html: pf ? `<div class="med wd${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${pfWrittenTap(pf)}</div>`
-      : `<div class="med wd${rt ? " hasruby" : ""}"${TA}>${rt ? rubyTextHTML(s, rt) : escapeHtml(s.t)}</div>${p ? `<div class="q">${readingHTML(p)}</div>` : ""}`,
+    html: (pf ? `<div class="med wd${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${pfWrittenTap(pf)}</div>`
+      : `<div class="med wd${rt ? " hasruby" : ""}"${TA}>${rt ? rubyTextHTML(s, rt) : escapeHtml(s.t)}</div>${p ? `<div class="q cue">${readingHTML(p)}</div>` : ""}`) + (hear ? REPLAY_STAGE : ""),
     opts: sentenceChoices(s), a: s.en, reveal: sentenceRevealBlock(s), onAnswer: ok=>markSentence(s.id, ok),
-    mount: () => saySentence(s), };
+    mount: () => { const b = hear ? $("rpa") : null; saySentence(s, b || undefined); if(b) b.onclick = () => saySentence(s, b); }, };
 }
 function hearSentence(s){
   if(!canHearSentence(s)) return Object.assign(readSentence(s), { needsNotice: true });
@@ -4017,10 +4256,10 @@ function gapSentence(s, typed){
   // could be shown, where no blank can be placed: no gap item (caller falls back).
   const pf = pfSentence(s, null, match);
   if(pf === false) return null;
-  const html = pf ? `<div class="med wd${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${pfWrittenTap(pf)}</div><div class="q">${ui(s.en)}</div>`
-    : `<div class="med wd"${TA}>${escapeHtml(b.before)}<span class="blank">____</span>${escapeHtml(b.after)}</div><div class="q">${ui(s.en)}</div>`;
+  const html = pf ? `<div class="med wd${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${pfWrittenTap(pf)}</div><div class="q cue">${ui(s.en)}</div>`
+    : `<div class="med wd"${TA}>${escapeHtml(b.before)}<span class="blank">____</span>${escapeHtml(b.after)}</div><div class="q cue">${ui(s.en)}</div>`;
   const base = { key:"s:"+s.id, reveal: sentenceRevealBlock(s), onAnswer: ok=>markSentence(s.id, ok),
-    onReveal: () => saySentence(s) };
+    onReveal: b => saySentence(s, b), revealHear: canHearSentence(s) };
   if(typed && TYPING){
     return Object.assign(base, { kind:"type", label:"Type the missing word", html,
       check: val => VC.acceptTyped(val, entry, PACK, [match.text], WORDS) });
@@ -4051,7 +4290,7 @@ function charRevealBlock(it){
 function charDrillItem(kind, unit){
   const it = VC.charItem(kind, unit, CHAR_CTX);
   const base = { kind:"mc", key: it.key, opts: it.options, a: it.answer, reveal: charRevealBlock(it),
-    onAnswer: ok => markChar(it.unitId, ok), onReveal: () => sayUnit(it) };
+    onAnswer: ok => markChar(it.unitId, ok), onReveal: b => sayUnit(it, b), revealHear: canHearUnit(it) };
   const form = `<div class="big wd"${TA}>${escapeHtml(it.t)}</div>`;
   const formOpts = { optsClass:"opts-hero opts-w", optHtml: o => tw(o), optsT: true };
   if(kind === "charRead") return Object.assign(base, { label:"What does it mean?", optsClass:"opts-hero", html: form });
@@ -4094,7 +4333,7 @@ function scriptRevealBlock(it){
 function scriptDrillItem(kind, unit, ctx){
   const it = VC.scriptItem(kind, unit, ctx || scriptCtx());
   const base = { kind:"mc", key: it.key, opts: it.options, a: it.answer, reveal: scriptRevealBlock(it),
-    onAnswer: ok => markScriptRec(it.unitId, ok), onReveal: it.audio === "after" ? () => sayScript(it) : null };
+    onAnswer: ok => markScriptRec(it.unitId, ok), onReveal: it.audio === "after" ? b => sayScript(it, b) : null, revealHear: it.audio === "after" };
   const glyphOpts = { optsClass:"opts-hero opts-w opts-g", optHtml: o => tw(o), optsT: true };
   const wordOpts = { optsClass:"opts-hero opts-w", optHtml: o => tw(o), optsT: true };
   const romanOpts = { optsClass:"opts-hero", optHtml: o => `<bdi>${escapeHtml(o)}</bdi>` };
@@ -4108,7 +4347,7 @@ function scriptDrillItem(kind, unit, ctx){
   if(k === "symType"){
     const accept = (it.accept || [it.answer]).map(VC.normKey);
     return { kind:"type", key: it.key, label:"Type how it sounds", html: big(it.show), inputTA: "", placeholder: "type the sound",
-      check: v => accept.includes(VC.normKey(v)), reveal: base.reveal, onAnswer: base.onAnswer, onReveal: base.onReveal };
+      check: v => accept.includes(VC.normKey(v)), reveal: base.reveal, onAnswer: base.onAnswer, onReveal: base.onReveal, revealHear: base.revealHear };
   }
   if(k === "compose") return Object.assign(base, glyphOpts, { label:"Put them together", html: big(it.show) });
   if(k === "formFind") return Object.assign(base, wordOpts, { label:"Which word has this letter?", html: big(it.show) + sub(it.hint) });
@@ -4210,7 +4449,7 @@ function lessonItem(it, key, mode){
     ? (it.say ? `<div class="listen-stage"><button class="replay" id="rpl" aria-label="Replay">${REPLAY_SVG}</button></div>` : "")
     : (mode === "text" ? `<div class="big wd"${TA}>${escapeHtml(it.say)}</div>` : "");
   return { kind:"mc", key, label: it.q, html,
-    mount: () => { if(mode === "audio" && it.say){ say(it.say); $("rpl").onclick = ()=>say(it.say); } },
+    mount: () => { if(mode === "audio" && it.say){ const b = $("rpl"); speak(it.say, b); b.onclick = ()=>speak(it.say, b); } },
     opts: it.opts, a: it.a, reveal: `<div>${escapeHtml(it.rv||"")}</div>` };
 }
 
@@ -4325,23 +4564,24 @@ function todayRender(){
   ];
   const showPlaceHint = !prog.placedOnce;
   const showSoundsHint = HAS_LESSONS && !prog.soundsOpened;
-  refreshReadUnlocks();
-  const readHint = HAS_PASSAGES ? VC.suggestPassage(PASSAGE_LIST, WORDS, PACK, prog) : null;
+  // Read stage (VC.nextReadItem): a row only when a passage is available; Start today
+  // runs exactly this one.
+  const readNext = todayReadItem();
+  if(readNext) steps.push(["Read", null, readPlanLine(readNext)]);
   const choice = !!(snap && snap.choice);
   const xChoice = HAS_SCRIPT && !!(snap && snap.choice === "script");
   const xNotice = showScriptNotice();
   P.innerHTML = `<div class="drill-body top">${samsungNoticeHTML}${legacyNotice ? `<div class="stmt" id="legacyNotice">${legacyNotice}<button class="ghost" id="legacyOk" style="margin-top:8px">OK</button></div>` : ""}${legacyFail ? `<div class="stmt" id="legacyFail">${legacyFailHTML(legacyFail)}<button class="ghost" id="legacySkip" style="margin-top:8px">Start without it</button></div>` : ""}${xNotice ? `<div class="stmt" id="scriptNotice">A script primer is available. Turn it on in Progress.<button class="ghost" id="scriptNoticeOk" style="margin-top:8px">OK</button></div>` : ""}${pathStrip()}${xChoice ? scriptChoiceHTML() : ""}
     ${showPlaceHint ?`<div class="stmt">New here? Placement finds where to start.<button class="next" id="hintPlace" style="margin-top:8px">Take the placement test</button></div>` : ""}${choice && !xChoice ? charChoiceHTML() : ""}
     ${showSoundsHint ? `<div class="stmt">A few short lessons explain how ${ui(PACK.name)} sounds and is written.<button class="next" id="hintSounds" style="margin-top:8px">Start the first lesson</button></div>` : ""}
-    ${readHint ? `<div class="stmt" id="readHintBox">Read 1 passage: ${pfRubyText(readHint.title, readHint.titleRuby) ? rubyTw(readHint.title, readHint.titleRuby) : tf(readHint.title)} (${escapeHtml(levelLabel(readHint.lv))}, ${VC.passageLength(readHint, PACK)} words).<button class="next" id="hintRead" style="margin-top:8px">Read 1 passage</button></div>` : ""}
+    ${""}
     <p class="q">Session ${n}, about 15 minutes.<br>${lw.length} words learned so far.</p>
-    <table class="stats steps">${steps.map((s,i)=>`<tr><td>${i+1}. ${s[0]}</td><td>${ui(s[1])}</td></tr>`).join("")}</table>
+    <table class="stats steps">${steps.map((s,i)=>`<tr><td>${i+1}. ${s[0]}</td><td>${s[2] != null ? s[2] : ui(s[1])}</td></tr>`).join("")}</table>
     </div>${choice ? "" : `<div class="actions"><button class="next" id="go">Start today</button></div>`}`;
   if(legacyNotice) $("legacyOk").onclick = () => { legacyNotice = null; todayRender(); };
   if(legacyFail) $("legacySkip").onclick = () => { legacyFail = null; storeReadOnly = false; store.save(); todayRender(); };
   if(showPlaceHint) $("hintPlace").onclick = enterPlacementFromToday;
   if(showSoundsHint) $("hintSounds").onclick = enterFirstSoundsLessonFromToday;
-  if(readHint) $("hintRead").onclick = () => { switchToTab("read", "Read"); RD = null; startPassage(readHint); };
   if(xNotice) $("scriptNoticeOk").onclick = () => { VC.dismissScriptNotice(prog); store.save(); todayRender(); };
   // The choice card replaces Start today until answered, so Learn never teaches a stage
   // the learner hasn't chosen.
@@ -4355,7 +4595,21 @@ function todayRender(){
     $("choiceSkip").onclick = () => { VC.answerCharChoice(prog, false); store.save(); todayRender(); };
     return;
   }
-  $("go").onclick = () => { todayStepState = HAS_STAGES ? (todayPrep ? { step:0, snap: todayPrep.snap, review: todayPrep.review } : { step:0, snap: takeSnapshot() }) : { step:0 }; todayPrep = null; todayStep(); };
+  $("go").onclick = () => { todayStepState = HAS_STAGES ? (todayPrep ? { step:0, snap: todayPrep.snap, review: todayPrep.review } : { step:0, snap: takeSnapshot() }) : { step:0 }; todayStepState.read = readNext; todayPrep = null; todayStep(); };
+}
+// The Read stage's passage ({p, reason} from VC.nextReadItem) or null: none without
+// passages.json. Records newly met unlock thresholds first, as the Read tab does.
+function todayReadItem(){
+  if(!HAS_PASSAGES) return null;
+  refreshReadUnlocks();
+  return VC.nextReadItem(PASSAGE_LIST, WORDS, PACK, prog, todayISO());
+}
+// The Read row of the Today plan: the passage title in target-language text (its reading
+// under pronFirst), level and length as UI text.
+function readPlanLine(r){
+  const p = r.p;
+  const t = pfRubyText(p.title, p.titleRuby) ? rubyTw(p.title, p.titleRuby) : tf(p.title);
+  return `${ui(r.reason === "reread" ? "1 passage to re-read: " : "1 passage: ")}${t}${ui(` (${levelLabel(p.lv)}, ${VC.passageLength(p, PACK)} words)`)}`;
 }
 function enterPlacementFromToday(){ switchToTab("test", "Test"); testSel = "placement"; startPlacement(); }
 function enterFirstSoundsLessonFromToday(){
@@ -4365,7 +4619,9 @@ function enterFirstSoundsLessonFromToday(){
   lessonTeach(LESSON_LIST[0], () => { prog.lessons[LESSON_LIST[0].id] = 1; store.save(); backToToday(); }, backToToday);
 }
 // review(15, >=40% production) -> learn(next set) -> listen(12 hear) -> recall(8
-// recall/type) -> sentences(8) -> finish. Each step skips itself when its pool is too small.
+// recall/type) -> sentences(8) -> read(1 passage) -> finish. Each step skips itself when
+// its pool is too small; Read runs the passage picked at Start today (todayStepState.read,
+// looked up when a step is entered without one) and is absent when there is none.
 // With pack.characters every step reads the Start-today snapshot (todayStepState.snap,
 // taken lazily if a step is entered without one): Learn teaches its stage's set (word
 // or unit), Review is snap.reviewSize, and Review/Recall rank units with words once
@@ -4416,6 +4672,11 @@ function todayStep(){
   }
   if(s === 4){
     if(g.sentences){ drill(weakFirstSentences(avail,8).map(sentenceItemFor), todayStep, missSummary); return; }
+    return todayStep();
+  }
+  if(s === 5){
+    const r = "read" in todayStepState ? todayStepState.read : todayReadItem();
+    if(r){ startPassage(r.p, true); return; }
     return todayStep();
   }
   todayFinish();
@@ -4670,8 +4931,9 @@ function renderWordBody(){
 // ===================== Read (passages) =====================
 // Only packs with passages.json (PASSAGES, appended to sentences.js) show this tab.
 // RD is the passage in progress: {p, tapped: [wordId], answers: [{ok, reopened, given}],
-// qi, shown, resultsDone}. Tapped ids and per-question reopen flags feed
-// VC.passageWeakWords on the results screen.
+// qi, shown, resultsDone, today}. Tapped ids and per-question reopen flags feed
+// VC.passageWeakWords on the results screen. today: the Today Read stage runs it (same
+// screens; "Skip today" instead of the passage list link, Continue on to the next step).
 const readLevelsNow = () => VC.readingLevels(PASSAGE_LIST, WORDS, PACK, prog);
 function refreshReadUnlocks(){ if(HAS_PASSAGES && VC.updateReadUnlocks(PASSAGE_LIST, WORDS, PACK, prog).length) store.save(); }
 const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
@@ -4696,9 +4958,9 @@ function readRender(){
     }).join("")}`;
   P.querySelectorAll("[data-pid]").forEach(b => b.onclick = () => startPassage(PASSAGE_LIST.find(p => p.id === b.dataset.pid)));
 }
-function startPassage(p){
+function startPassage(p, today){
   if(!p) return;
-  RD = { p, tapped: [], glosses: {}, answers: [], qi: null, shown: false, resultsDone: false };
+  RD = { p, tapped: [], glosses: {}, answers: [], qi: null, shown: false, resultsDone: false, today: !!today };
   readPassageScreen();
 }
 // One passage sentence: linked words as tappable spans (data-pw), words not visible in
@@ -4889,14 +5151,17 @@ function wirePassage(box, glossEl){
 function readPassageScreen(){
   setScore(0,0); screenTop();
   const p = RD.p, P = $("panel");
-  P.innerHTML = `<div class="row"><button id="rback">‹ passages</button></div>
+  P.innerHTML = `<div class="row">${RD.today ? `<button id="rskip">Skip today</button>` : `<button id="rback">‹ passages</button>`}</div>
     <h2 class="ptitle"${TA}>${rubyTextOr(p.title, p.titleRuby)}</h2>
     <p class="q">${escapeHtml(levelLabel(p.lv))} · ${VC.passageLength(p, PACK)} words. Tap a word to see its meaning.</p>
     ${glossBox()}
     <div class="passage" id="pbox">${passageHTML(-1)}</div>
     <div class="actions"><button class="next" id="rdone">Done reading</button></div>`;
   wirePassage($("pbox"), $("gloss"));
-  $("rback").onclick = () => { RD = null; readRender(); };
+  // Skip today: nothing is recorded (not done, no session effect), so the same passage
+  // is offered next session.
+  if(RD.today) $("rskip").onclick = () => { RD = null; todayStep(); };
+  else $("rback").onclick = () => { RD = null; readRender(); };
   $("rdone").onclick = () => { RD.qi = 0; RD.shown = false; readQuestionScreen(); };
 }
 function readQuestionScreen(){
@@ -4910,7 +5175,7 @@ function readQuestionScreen(){
   const tf = q.type === "tf";
   const order = tf ? [true, false] : shuffle([0,1,2,3]);
   P.innerHTML = `<div class="drill-body top"><p class="q">Question ${qi+1} / ${p.questions.length}</p>
-    <div class="med wd"${TA}>${rubyTextOr(q.q, q.ruby)}</div>${q.en ? `<div class="q">${ui(q.en)}</div>` : ""}
+    <div class="med wd"${TA}>${rubyTextOr(q.q, q.ruby)}</div>${q.en ? `<div class="q cue">${ui(q.en)}</div>` : ""}
     <div class="opts ${tf ? "" : "opts-w"}" id="o"></div>
     <div class="reveal" id="rv"></div>
     <button class="ghost" id="ptoggle" aria-expanded="${RD.shown}" style="margin-top:12px">${RD.shown ? "Hide passage" : "Show passage"}</button>
@@ -4937,7 +5202,7 @@ function readQuestionScreen(){
       [...box.children].forEach(x => { x.disabled = true; if(x.dataset.v === String(q.answer)) x.classList.add("ok"); });
       if(!rec.ok) b.classList.add("bad");
       const s = p.sentences[q.sentence];
-      showReveal(`<div class="q" style="margin:0 0 6px">${rec.ok ? "Right." : "Not quite."} The answer is in this sentence:</div><div class="stmt hi" style="margin:0"${TOKBOX}><div${TA}><mark>${passagePlainHTML(s)}</mark></div><div class="q" style="margin:4px 0 0">${ui(s.en)}</div></div>`);
+      showReveal(`<div class="q" style="margin:0 0 6px">${rec.ok ? "Right." : "Not quite."} The answer is in this sentence:</div><div class="stmt hi" style="margin:0"${TOKBOX}><div${TA}><mark>${passagePlainHTML(s)}</mark></div><div class="q cue" style="margin:4px 0 0">${ui(s.en)}</div></div>`);
       const hs = $("pbox").querySelector(`[data-si="${q.sentence}"]`); if(hs) hs.classList.add("hi");
       showNext(); setScore(qi+1, p.questions.length);
     };
@@ -4967,11 +5232,21 @@ function readResults(){
   P.innerHTML = `<div class="done"><h2>${sc} / ${p.questions.length}</h2>
     <p class="q"${TA} style="margin-bottom:8px">${rubyTextOr(p.title, p.titleRuby)}</p>
     ${p.questions.map((q, i) => { const a = RD.answers[i] || {}; const s = p.sentences[q.sentence];
-      return `<div class="stmt"${TOKBOX}><div class="q" style="margin:0 0 4px;color:${a.ok ? "var(--ok)" : "var(--bad)"}">${a.ok ? "✓" : "✗"} Question ${i+1}${a.reopened ? " · looked back" : ""}</div><div${TA}>${rubyTextOr(q.q, q.ruby)}</div><div style="margin-top:6px"${TA}><mark>${passagePlainHTML(s)}</mark></div><div class="q" style="margin:2px 0 0">${ui(s.en)}</div></div>`; }).join("")}
-    ${weak.length ? `<p class="q">Weak words from this passage</p><div id="weak">${weak.map((w, i) => `<label class="wk"${DISP.rtl ? ' dir="rtl"' : ""}><input type="checkbox" data-wi="${i}" checked> ${glossHTML(w.id, RD.glosses && RD.glosses[w.id])} <span class="q"${UIA} style="margin:0;font-size:13px">${escapeHtml(w.why.map(x => WHY_LABEL[x]).join(", "))}</span></label>`).join("")}</div>
-      <button class="next" id="addrev">Add to review</button>` : `<p class="q">No weak words from this passage.</p>`}
-    <div id="addmsg" class="q" hidden></div>
-    <button class="ghost" id="rlist" style="margin-top:10px">Back to passages</button></div>`;
+      return `<div class="stmt"${TOKBOX}><div class="q" style="margin:0 0 4px;color:${a.ok ? "var(--ok)" : "var(--bad)"}">${a.ok ? "✓" : "✗"} Question ${i+1}${a.reopened ? " · looked back" : ""}</div><div${TA}>${rubyTextOr(q.q, q.ruby)}</div><div style="margin-top:6px"${TA}><mark>${passagePlainHTML(s)}</mark></div><div class="q cue" style="margin:2px 0 0">${ui(s.en)}</div></div>`; }).join("")}
+    ${weak.length ? `<p class="q">Weak words from this passage${RD.today ? ". Ticked ones go to your next review." : ""}</p><div id="weak">${weak.map((w, i) => `<label class="wk"${DISP.rtl ? ' dir="rtl"' : ""}><input type="checkbox" data-wi="${i}" checked> ${glossHTML(w.id, RD.glosses && RD.glosses[w.id])} <span class="q"${UIA} style="margin:0;font-size:13px">${escapeHtml(w.why.map(x => WHY_LABEL[x]).join(", "))}</span></label>`).join("")}</div>
+      ${RD.today ? "" : `<button class="next" id="addrev">Add to review</button>`}` : `<p class="q">No weak words from this passage.</p>`}
+    ${RD.today ? `<button class="next" id="rcont" style="margin-top:10px">Continue</button></div>` : `<div id="addmsg" class="q" hidden></div>
+    <button class="ghost" id="rlist" style="margin-top:10px">Back to passages</button></div>`}`;
+  // Today Read stage: the ticked weak words (all by default) are applied on Continue, as
+  // drill misses are, then the session goes on.
+  if(RD.today){
+    $("rcont").onclick = () => {
+      const chosen = weak.filter((w, i) => { const x = P.querySelector(`[data-wi="${i}"]`); return !x || x.checked; });
+      if(chosen.length){ VC.applyWeakWords(prog, chosen, WORDS, PACK); store.save(); }
+      RD = null; todayStep();
+    };
+    return;
+  }
   if(weak.length) $("addrev").onclick = () => {
     const chosen = [...P.querySelectorAll("[data-wi]")].filter(x => x.checked).map(x => weak[+x.dataset.wi]);
     VC.applyWeakWords(prog, chosen, WORDS, PACK); store.save();
@@ -5342,4 +5617,4 @@ function legacyFailHTML(why){
 </script>
 </body>
 </html>
-<!--ve-build:1291744565-1476461-->
+<!--ve-build:543072261-1494669-->

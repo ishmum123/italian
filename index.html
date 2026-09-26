@@ -17,7 +17,8 @@
     /* Target-language text: the UI font first, then system fonts that cover non-Latin
        scripts (IBM Plex lacks many glyphs; missing ones fall through to system fonts). */
     --wbase: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, "PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
-    /* pack.fontFamily, when set, is prepended at boot: --wfont = <pack font>, var(--wbase). */
+    /* pack.fontFamily, when set, is prepended at boot: --wfont = <pack font>, var(--wbase)
+       (pack.rtl: its named families only, generic keywords such as serif dropped). */
     --wfont: var(--wbase);
     --safe-b: env(safe-area-inset-bottom, 0px);
     /* The fixed tab bar's real height: 56px buttons (fixed, see .tabs) + 1px top border,
@@ -69,6 +70,17 @@
      elements then align to their start side. English glosses never carry it. */
   [data-tl]{font-family:var(--wfont)}
   :root[data-tlh] [data-tl]{line-height:var(--tlh)}
+  /* pack.rtl (docs/PACK_SCHEMA.md "RTL rendering"): target text and UI/English text never
+     share a bidi context. UI lines nested in a target-language block carry dir=ltr +
+     data-ui (UIA): their own isolated LTR context, in the UI font. Target-language
+     fragments inside UI text (ui(), tf()) are <bdi data-tl lang dir=rtl class=tlf>: the
+     pack font, with the pack line-height capped so a tall script (Nastaliq 2.6) does
+     not grow the UI line it sits in. */
+  [data-ui]{font-family:var(--font);unicode-bidi:isolate}
+  [dir=rtl] [data-ui]{text-align:right} /* still aligned to the RTL block's start edge */
+  :root[data-tlrtl] input[data-tl]::placeholder{font-family:var(--font)} /* English placeholder, UI font */
+  :root[data-tlrtl] .gloss{text-align:right} /* the LTR popover line sits on the RTL block's edge */
+  :root[data-tlh] [data-tl].tlf{line-height:1}
   /* Korean only: words (Hangul syllable blocks) are space-separated like Latin, so the
      default break-anywhere wrapping can split inside a word (봤어/요). Scoped off the
      lang attribute TA already sets from pack.langTag, not a global rule: languages with
@@ -95,6 +107,10 @@
   .reveal{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:none;font-size:15px}
   .reveal .rw{font-size:22px;margin-bottom:2px;font-family:var(--wfont)}
   .reveal .rp{color:var(--mute);margin-bottom:2px}
+  /* pack.rtl: an answer block (the reveal, and the same block in the Missed list) aligns
+     to one edge, the right: target lines are dir=rtl (start = right) and the Latin pron,
+     gloss and labels keep their LTR direction but share the right edge. */
+  :root[data-tlrtl] .reveal,:root[data-tlrtl] .rvb{text-align:right}
   .next,.primary{margin-top:14px;width:100%;padding:14px;border:none;border-radius:12px;background:var(--ink);color:var(--bg);font-size:16px;min-height:48px;font-family:var(--font)}
   .ghost{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--ink);font-size:15px;min-height:44px;font-family:var(--font)}
   .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
@@ -170,6 +186,10 @@
   /* Spread shadow widens the tint past a thin joined letter (fa medial ا, ی) without
      padding: padding/border on an inline breaks Arabic-script shaping across it. */
   .xhl{background:var(--ok-bg);border-radius:3px;box-shadow:0 0 0 2px var(--ok-bg)}
+  /* ::highlight() takes no box-shadow/border-radius, so the span's spread (which keeps a
+     thin joined letter, medial ا or initial ل, visible) is replaced by tinting the glyph
+     itself: the letter turns --ok on the --ok-bg ground, visible at any width. */
+  ::highlight(xhl){background-color:var(--ok-bg);color:var(--ok)}
   .xrword{margin-top:8px}
   .xset{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px}
   .xsn{color:var(--mute);font-size:12px;min-width:14px;padding-top:12px;text-align:right}
@@ -832,30 +852,80 @@ function pronShown(x){
 // rest. So "делать" lists делать before сделать.
 // Folded search fields are computed once per word (SEARCH_CACHE, rebuilt if the word's
 // text changes), so a keystroke only compares strings.
+// Arabic script (ar/fa/ur): search is more lenient than typed-answer checking
+// (normalizeTyped keeps ة/ى distinct there, on purpose). A search key also folds the
+// letters learners routinely type without their marks or in a keyboard variant: hamza
+// and madda on a carrier (أ إ آ ؤ ئ ۀ ۂ -> ا و ی ه ہ, by dropping U+0653..U+0655 after
+// decomposition), alef wasla ٱ -> ا, teh marbuta ة -> ہ, alef maksura ى -> ی (ي is
+// already ی). Harakat, tatweel and ZWNJ go in foldAccents; ي/ك -> ی/ک in normalizeTyped.
+// Urdu spelling variants fold to the same canonical letter as Urdu heh goal (ہ): Arabic
+// heh ه, Urdu teh marbuta goal ۃ, and the Arabic-preset heh+hamza ۀ. Do-chashmi heh ھ
+// (a distinct phoneme, aspiration) is deliberately never folded into ہ. Urdu bari ye ے
+// (almost always word-final) also folds to ی at a word boundary, so a masculine/feminine
+// pair spelled with ے vs ی (بڑے/بڑی) search as one: a known, accepted tradeoff — an
+// exact-glyph reveal still shows the pack's own spelling, only search is lenient.
+// Anything without an Arabic-script letter is left exactly as normalizeTyped folds it.
+// Order matters: stripping a carrier's hamza can expose a letter normalizeTyped already
+// unified on the typed side (ئ = Arabic ي + hamza), so the keyboard-variant map
+// (ARABIC_VARIANTS: ي -> ی, ك -> ک) is applied again last: one canonical yeh and kaf.
+// ٲ ٳ ٵ / ٶ ٷ / ٸ (hamza/wavy-hamza letters with no canonical decomposition) map directly.
+const AR_SEARCH_MAP = { "ٱ":"ا", "ٲ":"ا", "ٳ":"ا", "ٵ":"ا", "ٶ":"و", "ٷ":"و", "ٸ":"ی",
+  "ة":"ہ", "ى":"ی", "ۀ":"ہ", "ۃ":"ہ", "ه":"ہ" };
+// Devanagari (hi): search is more lenient than typed-answer checking (normalizeTyped
+// leaves nukta and chandrabindu alone there — नुक्ता makes a distinct letter and ँ/ं are
+// a real phonemic contrast for typed answers, on purpose). A search key folds nukta
+// away (जरूर finds ज़रूर, लडका finds लड़का) — decomposing first (NFD) so a precomposed
+// nukta letter (क़ ख़ ग़ ज़ ड़ ढ़ फ़ य़, U+0958-095F) is caught the same as a bare base+nukta
+// pair — and unifies chandrabindu ँ into anusvara ं (हैँ finds हैं), a common informal
+// spelling swap. ZWJ/ZWNJ are already dropped for every script by foldAccents.
+function foldDevanagari(f){
+  return f.normalize("NFD").replace(/़/g, "").replace(/ँ/g, "ं").normalize("NFC");
+}
+function searchFold(s){
+  // Nasal tildes over a romanised vowel (kahā̃) are how this pack's roman pron marks
+  // nasalisation; loose ASCII typing spells that with a trailing n (kahan), so convert
+  // the combining tilde (U+0303) to a literal "n" before foldAccents would otherwise
+  // just discard it. A hyphen is folded to a space so a reduplicated/hyphenated lemma
+  // (धीरे-धीरे) and its unhyphenated spelling (धीरे धीरे) search as the same phrase.
+  const pre = String(s == null ? "" : s).normalize("NFD").replace(/̃/g, "n").normalize("NFC").replace(/-/g, " ");
+  let f = normalizeTyped(pre, { foldAccents: true });
+  if(/[ऀ-ॿ]/.test(f)) f = foldDevanagari(f);
+  if(!/[؀-ۿ]/.test(f)) return f;
+  return f.replace(/[ٱ-ٳٵ-ٸةىۀۃه]/g, c => AR_SEARCH_MAP[c]).normalize("NFD").replace(/[ٓ-ٕ]/g, "")
+    .replace(/[كي]/g, c => ARABIC_VARIANTS[c]).replace(/ے(?=\s|$)/g, "ی").normalize("NFC");
+}
+// The Arabic definite article: a word-initial ال before at least two more letters is
+// optional in search (كتاب finds الكتاب, and الكتاب finds كتاب). Applied to folded text.
+const stripArabicArticle = f => f.replace(/(^|\s)ال(?=\S{2,})/g, "$1");
+// A field's search forms: the folded text and, when it differs, the article-free text;
+// each with a whitespace-free copy (ns).
+function searchForms(x){
+  const f = x ? searchFold(x) : "";
+  return [...new Set([f, stripArabicArticle(f)])].map(v => ({ f: v, ns: v.replace(/\s/g, "") }));
+}
 const SEARCH_CACHE = new WeakMap();
 function searchFields(v){
   const src = [v.w, v.pron, v.en, ...(v.alt||[])].join("\u0001");
   let r = SEARCH_CACHE.get(v);
   if(r && r.src === src) return r;
-  const norm = x => x ? normalizeTyped(x, { foldAccents: true }) : "";
-  const pack = x => { const f = norm(x); return { f, ns: f.replace(/\s/g, "") }; };
-  const target = [v.w, v.pron, ...(v.alt||[])].filter(Boolean).map(pack);
+  const target = [v.w, v.pron, ...(v.alt||[])].filter(Boolean).flatMap(searchForms);
   const g = gloss(v);
-  const senses = g.split(/[,;]/).flatMap(x => [x, x.replace(/^\s*to\s+/i, "")]).map(pack);
-  r = { src, target, gloss: pack(g), senses };
+  const senses = g.split(/[,;]/).flatMap(x => [x, x.replace(/^\s*to\s+/i, "")]).flatMap(searchForms);
+  r = { src, target, gloss: searchForms(g), senses };
   SEARCH_CACHE.set(v, r);
   return r;
 }
 function searchWords(words, query, limit){
-  const q = normalizeTyped(query, { foldAccents: true }), qs = q.replace(/\s/g, "");
-  if(!q) return [];
-  const hit = x => x.f.includes(q) || (!!qs && x.ns.includes(qs));
-  const same = x => x.f === q || (!!qs && x.ns === qs);
+  const qv = searchForms(query).filter(x => x.f).map(x => ({ q: x.f, qs: x.ns }));
+  if(!qv.length) return [];
+  const hit = x => qv.some(({ q, qs }) => x.f.includes(q) || (!!qs && x.ns.includes(qs)));
+  const same = x => qv.some(({ q, qs }) => x.f === q || (!!qs && x.ns === qs));
+  const starts = x => qv.some(({ q }) => x.f.startsWith(q));
   const tiers = [[], [], [], []];
   (words||[]).forEach(v => {
     const r = searchFields(v);
-    if(!(r.target.some(hit) || hit(r.gloss))) return;
-    const t = r.target.some(same) ? 0 : r.senses.some(same) ? 1 : r.target.some(x => x.f.startsWith(q)) ? 2 : 3;
+    if(!(r.target.some(hit) || r.gloss.some(hit))) return;
+    const t = r.target.some(same) ? 0 : r.senses.some(same) ? 1 : r.target.some(starts) ? 2 : 3;
     tiers[t].push(v);
   });
   const out = [...tiers[0], ...tiers[1], ...tiers[2], ...tiers[3]];
@@ -894,9 +964,50 @@ function fontsHref(pack){
   const fam = ok.map(f => "family=" + f.trim().replace(/ +/g, "+")).join("&");
   return { href: `https://fonts.googleapis.com/css2?${fam}&display=swap`, rejected };
 }
-// Everything the UI needs to mark target-language text: {lang, rtl, fontFamily, lineHeight}.
+// The pack font stack the UI prepends to its own (--wfont = <this>, UI stack): the named
+// families of fontFamilyOf with generic keywords (serif, sans-serif, ...) dropped, so a
+// Latin run inside target text (pron, roman, a number) falls through to the UI font
+// instead of a generic serif. null when no named family is left. The list is split on
+// commas outside quotes, so a quoted family name holding a comma stays one family. The UI
+// uses it for pack.rtl packs only; LTR packs keep fontFamily as given.
+const GENERIC_FAMILY_RE = /^(serif|sans-serif|monospace|cursive|fantasy|system-ui|math|emoji|fangsong|ui-serif|ui-sans-serif|ui-monospace|ui-rounded)$/i;
+function fontStackOf(pack){
+  const f = fontFamilyOf(pack); if(!f) return null;
+  const parts = []; let cur = "", q = "";
+  for(const ch of f){
+    if(q){ cur += ch; if(ch === q) q = ""; }
+    else if(ch === '"' || ch === "'"){ cur += ch; q = ch; }
+    else if(ch === ","){ parts.push(cur); cur = ""; }
+    else cur += ch;
+  }
+  parts.push(cur);
+  const named = parts.map(x => x.trim()).filter(x => x && !GENERIC_FAMILY_RE.test(x));
+  return named.length ? named.join(", ") : null;
+}
+// Everything the UI needs to mark target-language text: {lang, rtl, fontFamily, fontStack, lineHeight}.
 function scriptDisplay(pack){
-  return { lang: targetLang(pack), rtl: !!(pack && pack.rtl === true), fontFamily: fontFamilyOf(pack), lineHeight: lineHeightOf(pack) };
+  return { lang: targetLang(pack), rtl: !!(pack && pack.rtl === true), fontFamily: fontFamilyOf(pack), fontStack: fontStackOf(pack), lineHeight: lineHeightOf(pack) };
+}
+// RTL packs (docs/PACK_SCHEMA.md "RTL rendering"): a UI/English string (gloss, note,
+// label) split into runs, each run of right-to-left script (Hebrew/Arabic blocks) flagged
+// rtl, so the UI can isolate it in its own <bdi> and the English around it keeps its
+// order. A run spans from an RTL letter to the last RTL letter reachable without crossing
+// a strong-LTR letter: everything between (spaces, ZWNJ, "...", "…", "/", commas, digits,
+// brackets) is neutral or weak and, as in the Unicode bidi algorithm, takes the
+// direction of the RTL text on both sides, so a phrase such as "از ... متنفرم" or
+// "کا/کی/کے" stays one run in its own order. Trailing neutrals (": I have)") stay
+// outside. Joined, the runs' text is the input. [] for "" / null.
+const RTL_CH = "\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF";
+const RTL_RUN_RE = new RegExp(`[${RTL_CH}](?:(?:[${RTL_CH}]|[^\\p{L}\\p{M}])*[${RTL_CH}])?`, "gu");
+function rtlRuns(s){
+  const str = s == null ? "" : String(s), out = [];
+  let i = 0, m; RTL_RUN_RE.lastIndex = 0;
+  while((m = RTL_RUN_RE.exec(str))){
+    if(m.index > i) out.push({ t: str.slice(i, m.index), rtl: false });
+    out.push({ t: m[0], rtl: true }); i = m.index + m[0].length;
+  }
+  if(i < str.length) out.push({ t: str.slice(i), rtl: false });
+  return out;
 }
 
 // ------------------------------------------------------------------ placement
@@ -1235,6 +1346,8 @@ function pickVoice(voices, lang){
 // reported its voice list — a voice for the pack's language (a zh word read by an
 // English voice is worse than showing it). An empty list means "not loaded yet /
 // unknown": optimistic, since some browsers never populate it but still speak.
+// Only getVoices() counts as evidence: an utterance with just a lang tag and no
+// installed voice still fires onstart/onend on Android Chrome, silently.
 function speechUsable(apiPresent, voices, lang){
   if(!apiPresent) return false;
   if(!voices || !voices.length) return true;
@@ -1250,6 +1363,16 @@ function isSamsungBrowser(ua){
 }
 
 // ------------------------------------------------------------------ audio
+// Recorded clips (docs/AUDIO.md). wordAudio: a word's clip URL (words[].audio), or
+// undefined. packAudio: whether pack.json declares shipped recordings (audio {voice,
+// version}); the app then hides its no-voice notices. Both are false/undefined for every
+// pack without the new fields, which is what keeps those packs byte-identical.
+function wordAudio(w){
+  return isObj(w) && typeof w.audio === "string" && w.audio ? w.audio : undefined;
+}
+function packAudio(pack){
+  return isObj(pack) && isObj(pack.audio) && typeof pack.audio.voice === "string" && !!pack.audio.voice;
+}
 // One shared playback slot for recorded audio. play(url) pauses whatever the slot played
 // last and reuses a single audio object (created once via make()), so repeated or
 // duplicated taps can never stack parallel players or requests.
@@ -2193,8 +2316,11 @@ function scriptKindFits(kind, unit, ctx){
 }
 // The kind actually asked: wordHear is wordRead when the pack has no voice (tts false, or
 // ctx.tts false); null when the unit cannot carry it (scriptKindFits, with ctx).
+// A wordHear stays wordHear without a voice when every example word of the unit has a
+// recorded clip (exRecorded; needs ctx words).
 function scriptKindFor(kind, unit, cfg, ctx){
-  const k = kind === "wordHear" && ((cfg && !cfg.tts) || (isObj(ctx) && ctx.tts === false)) ? "wordRead" : kind;
+  const byId = isObj(ctx) ? (ctx.byId || (Array.isArray(ctx.words) ? Object.fromEntries(ctx.words.map(w => [w.id, w])) : null)) : null;
+  const k = kind === "wordHear" && ((cfg && !cfg.tts) || (isObj(ctx) && ctx.tts === false)) && !exRecorded(unit, byId) ? "wordRead" : kind;
   return scriptKindFits(k, unit, ctx) ? k : null;
 }
 // One fitting kind from `kinds` at random; else the first fitting of wordRead, symSound,
@@ -2237,6 +2363,52 @@ function scriptGlyphIn(glyph, text){
   if(!g.length) return false;
   for(let i = 0; i + g.length <= t.length; i++) if(g.every((k, j) => t[i + j] === k)) return true;
   return false;
+}
+// Shaping clusters: the smallest runs of a word that may be split into separate elements
+// without changing how the word renders. Browsers shape each element's text separately
+// (joining context survives a boundary, a ligature does not), so a highlight or any other
+// element boundary inside a word must fall between clusters. A cluster is a grapheme
+// (base + marks: a haraka stays on its letter, a matra/nukta on its consonant), and then:
+//  - Arabic script: lam + alef (ل with ا أ إ آ ٱ ٲ ٳ ٵ, marks or a ZWJ between allowed: shapers ligate
+//    through ZWJ) is one
+//    mandatory ligature (لا). Tatweel between them blocks the ligature, so it splits.
+//  - Brahmic scripts: a grapheme ending in a virama (Devanagari ्, and the Bengali ..
+//    Sinhala viramas) joins the next one (क्ष, स्त्र, reph र्क). A ZWNJ after the virama
+//    asks for no conjunct and so splits (ZWJ still joins: the half form is shaped with it).
+// Nastaliq (ur) and fonts with discretionary ligatures can join more than this; the app
+// avoids element boundaries inside words entirely where the browser allows it
+// (app.html scriptHL), and this is the fallback granularity.
+const GRAPHEMES = typeof Intl !== "undefined" && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
+function graphemes(s){
+  const t = String(s == null ? "" : s);
+  if(GRAPHEMES) return [...GRAPHEMES.segment(t)].map(x => x.segment);
+  const out = [];
+  for(const ch of t){ if(out.length && /[\p{M}‌‍]/u.test(ch)) out[out.length - 1] += ch; else out.push(ch); }
+  return out;
+}
+const LAM_END = /ل[ً-ٰٟ‍]*$/, ALEF_START = /^[اآأإٱٲٳٵ]/;
+const VIRAMA_END = /[्্੍્୍்్್്්]‍?$/;
+function shapingClusters(s){
+  const out = [];
+  for(const g of graphemes(s)){
+    const prev = out[out.length - 1];
+    if(prev !== undefined && ((LAM_END.test(prev) && ALEF_START.test(g)) || VIRAMA_END.test(prev))) out[out.length - 1] = prev + g;
+    else out.push(g);
+  }
+  return out;
+}
+// A unit's note as shown on its teach card and answer screen: none when it only repeats
+// the roman ("b" | "b"), compared trimmed and case-insensitively (normKey).
+function scriptUnitNote(unit){
+  const n = unit && unit.note != null ? String(unit.note) : "";
+  return n && normKey(n) !== normKey(String((unit && unit.roman) || "")) ? n : "";
+}
+// A unit's name as shown on its teach card head and reveal ("name | roman"): none when
+// it only repeats the roman ("ka" | "ka", "kṣa" | "kṣa"), compared the same way as
+// scriptUnitNote (trimmed, case-insensitive normKey).
+function scriptUnitHeadName(unit){
+  const n = unit && unit.name != null ? String(unit.name) : "";
+  return n && normKey(n) !== normKey(String((unit && unit.roman) || "")) ? n : "";
 }
 // True when a word (its w or pron) contains any of the unit's glyphs (upper and lower).
 function scriptWordHas(unit, word){
@@ -2288,6 +2460,11 @@ function scriptOpts(unit, pool, all, kind, rng){
 // symSound options: the distractors' romans.
 function scriptRomanOpts(unit, pool, all, rng){ return scriptOpts(unit, pool, all, "symSound", rng).map(v => String(v.roman)); }
 // A unit's example words that exist in the pack: [{id, w, roman, unitId}].
+function exRecorded(unit, byId){
+  if(!byId || !isObj(unit)) return false;
+  const ex = scriptExamples(unit, byId);
+  return ex.length > 0 && ex.every(e => !!wordAudio(byId[e.id]));
+}
 function scriptExamples(unit, byId){
   return (Array.isArray(unit && unit.ex) ? unit.ex : []).filter(e => Array.isArray(e) && byId[e[0]] && byId[e[0]].w)
     .map(e => ({ id: e[0], w: String(byId[e[0]].w), roman: String(e[1] == null ? "" : e[1]), unitId: unit.id }));
@@ -2350,7 +2527,7 @@ function scriptItem(kind, unit, ctx){
   const byId = c.byId || Object.fromEntries((c.words || []).map(w => [w.id, w]));
   const voice = c.tts !== false;
   if(!SCRIPT_KINDS.includes(kind)) throw new Error(`unknown script item kind ${kind}`);
-  const k = kind === "wordHear" && !voice ? "wordRead" : kind;
+  const k = kind === "wordHear" && !voice && !exRecorded(unit, byId) ? "wordRead" : kind;
   if(!scriptKindShape(k, unit)) throw new Error(`script unit ${unit && unit.id} cannot carry a ${k} item`);
   const glyph = scriptGlyph(unit), roman = String(unit.roman || "");
   const unitSay = voice && unit.say ? String(unit.say) : null, unitUrl = unit.audio ? String(unit.audio) : null;
@@ -2358,11 +2535,12 @@ function scriptItem(kind, unit, ctx){
   const exs = scriptExamples(unit, byId);
   const pickEx = () => exs[Math.floor(r() * exs.length)];
   const wordOf = e => { const w = byId[e.id] || {}; return { id: e.id, w: e.w, roman: e.roman, en: gloss(w) }; };
-  const reveal = { t: String(unit.t), glyph, name: unit.name != null ? String(unit.name) : "", roman, note: unit.note != null ? String(unit.note) : "", word: null };
+  const reveal = { t: String(unit.t), glyph, name: scriptUnitHeadName(unit), roman, note: scriptUnitNote(unit), word: null };
   const it = { kind: k, key: "x:" + unit.id, unitId: unit.id, show: null, hint: null, form: null, audio: null, say: null, audioUrl: null,
     wordId: null, options: null, answer: null, accept: null, reveal };
   const unitSound = when => { if(unitAudio){ it.audio = when; it.say = unitSay; it.audioUrl = unitUrl; } };
-  const wordSound = (when, e) => { if(voice){ it.audio = when; it.say = e.w; } };
+  // An example word's clip (words[].audio) beats TTS and plays with no voice, as unitSound.
+  const wordSound = (when, e) => { const url = wordAudio(byId[e.id]); if(voice || url){ it.audio = when; it.say = voice ? e.w : null; it.audioUrl = url || null; } };
   let others = [];
   if(k === "symSound"){ it.show = glyph; it.answer = roman; others = scriptRomanOpts(unit, pool, all, r); unitSound("after"); }
   else if(k === "soundSym"){
@@ -2791,12 +2969,12 @@ function migrateLegacy(pack, legacyMap, oldRecord){
 const API = { shuffle, escapeHtml, gloss, firstTwoWords, normKey,
   levelIds, levelIndexMap, levelLabel, setSizeOf, wordsByLevel, nSets,
   meaningOpts, wordOpts, gapOpts, sentenceOpts, bareForm, packArticles, articleCut, trailingCut, citationArticles, articleAgreement, visibleArticle, gapChoices, exampleSentences, unitExampleSentences, rubyCovers, highlightParts, searchWords, pronShown, audioSlot, TEST_MIN_WORDS,
-  targetLang, fontFamilyOf, lineHeightOf, fontsHref, scriptDisplay,
+  targetLang, fontFamilyOf, fontStackOf, lineHeightOf, fontsHref, scriptDisplay, rtlRuns,
   foldAccents, normalizeTyped, typingEnabled, typingLenientFor, acceptTyped,
   surfaces, sharesSurface, samePron,
   findSurface, locateWord, packSurfaces, spannedByLonger, gapMatch, gapCandidateIndices, blankSentence,
   strata, placementItemCount, placementStopIndex, applyPlacement, dedupeMisses,
-  parseStored, dropUnknownSets, bootProg, lessonItemKey, lessonSayMode, applyImport, todayGates, testGates, pickVoice, speechUsable, isSamsungBrowser,
+  parseStored, dropUnknownSets, bootProg, lessonItemKey, lessonSayMode, applyImport, todayGates, testGates, pickVoice, speechUsable, isSamsungBrowser, wordAudio, packAudio,
   PROG_VERSION, WORD_MASTERED, SENTENCE_MASTERED, storageKey, defaultProg, validateProgShape, normalizeProg,
   markRec, weakScore, weakFirst, provPick, learnedWords, nextNewSet, currentLevelIndex, availableSentences,
   PRODUCTION_KINDS, REVIEW_SIZE, REVIEW_PRODUCTION_SHARE, kindMix, buildReviewPlan, buildRecallPlan, sentenceKind,
@@ -2811,7 +2989,7 @@ const API = { shuffle, escapeHtml, gloss, firstTwoWords, normKey,
   SCRIPT_PROG_VERSION, SCRIPT_MASTERED, SCRIPT_SETS_PER_SESSION, REVIEW_SIZE_SCRIPT, SCRIPT_KINDS, scriptConfig,
   defaultScriptProg, validateScriptShape, normalizeScriptProg, ensureScript, scriptRecs, scriptSkipped, setScriptSkipped, answerScriptChoice,
   scriptNotice, dismissScriptNotice, markScript, scriptMastered, scriptStageUnits, scriptSets, scriptSetTaught, nextScriptSets, scriptStages,
-  recordedScriptUnits, scriptActive, scriptPool, showScriptChoice, scriptKindShape, scriptKindFits, scriptKindFor, pickScriptKind, scriptFamily, SCRIPT_MIN_OPTIONS, scriptGlyph, scriptGlyphKeys, scriptGlyphIn, scriptWordHas, scriptSecondRight,
+  recordedScriptUnits, scriptActive, scriptPool, showScriptChoice, scriptKindShape, scriptKindFits, scriptKindFor, pickScriptKind, scriptFamily, SCRIPT_MIN_OPTIONS, scriptGlyph, scriptGlyphKeys, scriptGlyphIn, scriptWordHas, graphemes, shapingClusters, scriptUnitNote, scriptUnitHeadName, searchFold, scriptSecondRight,
   scriptOpts, scriptRomanOpts, scriptExamples, scriptWordOpts, scriptJoinedForms, scriptItem, learnScriptPlan, scriptReviewScore, scriptTestPlan,
   tonesOn, stripMarks, syllableTone, markSyllable, splitSyllable, splitReading, toneHTML, pronTypingOn, pronKey, numberedForms, checkPronTyped, joinReadings, composeSpanReading, spanReadingText,
   LEGACY_DROPPED, legacyBackupKey, isLegacyRecord, migrateLegacy };
@@ -2890,10 +3068,29 @@ document.title = PACK.name;
 const DISP = VC.scriptDisplay(PACK);
 const TA = ` data-tl lang="${escapeHtml(DISP.lang)}"${DISP.rtl ? ' dir="rtl"' : ""}`;
 const tw = s => `<bdi${TA}>${escapeHtml(s)}</bdi>`;
+// pack.rtl rendering rules (docs/PACK_SCHEMA.md "RTL rendering"); every one is a no-op for
+// LTR packs (same markup as before).
+// ui: THE renderer for a UI/English string that may embed target-language text (glosses,
+// sentence translations, notes, lesson text, meta lines): escaped, each RTL-script run
+// wrapped in <bdi TA class="tlf"> so it neither reorders the English around it nor falls
+// to a system font; class tlf caps its line-height inside the UI line.
+// tf: a pack label placed inside a UI line (stage label, a symbol's name): for RTL packs
+// ui() (a Latin name such as "choṭī he" stays UI text, never dir=rtl / pack font), else
+// tw() as before.
+// UIA: attributes for a UI/English element nested inside a target-language (dir=rtl)
+// block: its own LTR bidi context and the UI font.
+const ui = s => DISP.rtl ? VC.rtlRuns(s).map(r => r.rtl ? `<bdi${TA} class="tlf">${escapeHtml(r.t)}</bdi>` : escapeHtml(r.t)).join("") : escapeHtml(s);
+const tf = s => DISP.rtl ? ui(s) : tw(s);
+const UIA = DISP.rtl ? ' dir="ltr" data-ui' : "";
 (function(){
   const r = document.documentElement;
-  if(DISP.fontFamily) r.style.setProperty("--wfont", `${DISP.fontFamily}, var(--wbase)`);
+  // pack.rtl: fontStack, the pack's named families only (generic serif etc. dropped), so
+  // Latin text inside target-language elements falls through to the UI font, not a
+  // generic serif. LTR packs keep pack.fontFamily exactly as given.
+  const wf = DISP.rtl ? DISP.fontStack : DISP.fontFamily;
+  if(wf) r.style.setProperty("--wfont", `${wf}, var(--wbase)`);
   if(DISP.lineHeight){ r.style.setProperty("--tlh", String(DISP.lineHeight)); r.setAttribute("data-tlh", ""); }
+  if(DISP.rtl) r.setAttribute("data-tlrtl", "");
   // Google Fonts is the only external resource allowed; VC.fontsHref only ever builds a
   // fonts.googleapis.com URL from validated family names.
   const fh = VC.fontsHref(PACK);
@@ -3011,7 +3208,14 @@ if(speechAPI){
 // tap that somehow fires twice restarts one sound instead of stacking players.
 const audioOut = VC.audioSlot(() => new Audio());
 let speakingBtn = null;
+// Fallback order (docs/AUDIO.md): the pack's clip, else TTS when a voice is usable. A clip
+// that fails to load (offline and not cached by sw.js, or a 404) falls back to TTS of the
+// same text; with no voice it shows a short hint instead. speakGen drops the failure of a
+// clip that a later speak() already replaced (its pause rejects play() with AbortError),
+// and a blocked autoplay (NotAllowedError) is not a failure of the clip.
+let speakGen = 0;
 function speak(text, btn, audioUrl){
+  const gen = ++speakGen;
   audioOut.stop();
   if(SS){ try{ SS.cancel(); }catch(e){} }
   if(speakingBtn){ speakingBtn.classList.remove("speaking"); speakingBtn = null; }
@@ -3019,11 +3223,39 @@ function speak(text, btn, audioUrl){
     try{
       const a = audioOut.play(audioUrl);
       a.onended = a.onerror = null;
-      if(btn){ speakingBtn = btn; btn.classList.add("speaking"); a.onended = a.onerror = () => btn.classList.remove("speaking"); }
-      a.play().catch(()=>{ if(btn) btn.classList.remove("speaking"); });
+      if(btn){ speakingBtn = btn; btn.classList.add("speaking"); }
+      // done() is generation-guarded too: a replaced clip's late end/abort must not strip
+      // "speaking" from a button the newer speak() reuses.
+      const done = () => { if(btn && gen === speakGen) btn.classList.remove("speaking"); };
+      let settled = false;
+      const failed = () => { if(settled || gen !== speakGen) return; settled = true; done(); clipFailed(text, btn, audioUrl); };
+      a.onended = done; a.onerror = failed;
+      const pr = a.play();
+      if(pr && pr.catch) pr.catch(err => { if(err && (err.name === "NotAllowedError" || err.name === "AbortError")) done(); else failed(); });
       return;
     }catch(e){}
   }
+  speakTTS(text, btn);
+}
+// Offline, a clip from this site may just not be cached yet (sw.js caches clips on first play);
+// a cross-origin clip (Tatoeba) is never cached, so it only ever needs a connection.
+function clipFailed(text, btn, url){
+  if(hasSpeech && text) { speakTTS(text, btn); return; }
+  audioHint(navigator.onLine !== false ? "This recording couldn't be played."
+    : clipCrossOrigin(url) ? "Recording needs a connection." : "Offline: this recording isn't saved on this device yet.");
+}
+function clipCrossOrigin(url){
+  try{ return new URL(url, location.href).origin !== location.origin; }
+  catch(e){ return /^[a-z][a-z0-9+.-]*:/i.test(String(url)); }
+}
+// A short self-removing toast (the sw.js update toast's style), one at a time.
+function audioHint(msg){
+  const old = document.getElementById("audiohint"); if(old) old.remove();
+  const t = document.createElement("div"); t.id = "audiohint"; t.className = "swtoast"; t.setAttribute("role", "status"); t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { if(t.parentNode) t.remove(); }, 3500);
+}
+function speakTTS(text, btn){
   if(!hasSpeech) return;
   try{
     const u = new SpeechSynthesisUtterance(text); u.lang = TTS_LANG; if(ttsVoice) u.voice = ttsVoice; u.rate = TTS_RATE;
@@ -3037,8 +3269,16 @@ function speak(text, btn, audioUrl){
 const say = t => speak(t);
 const saySentence = (s, btn) => speak(s.t, btn, s.audio);
 const canHearSentence = s => hasSpeech || !!s.audio;
+// Recorded word clips (words[].audio, docs/AUDIO.md). Every site that speaks a pack word
+// goes through sayWord, and every "can this word be heard" gate through canHearWord, so a
+// word with a clip is playable with no voice. PACK_AUDIO (pack.json audio) means the pack
+// ships recordings: the no-voice notices are then not shown.
+const wordAudio = VC.wordAudio;
+const sayWord = (w, btn) => speak(w.w, btn, wordAudio(w));
+const canHearWord = w => hasSpeech || !!wordAudio(w);
+const PACK_AUDIO = VC.packAudio(PACK);
 function speechNotice(){
-  if(hasSpeech || noticeShown) return "";
+  if(hasSpeech || PACK_AUDIO || noticeShown) return "";
   noticeShown = true;
   return `<div class="warn">This browser has no text-to-speech voice for this language, so listening items show the word instead of playing audio.</div>`;
 }
@@ -3106,7 +3346,7 @@ function bigWordHTML(entry){
 // byKey maps each option value to its word; written (optional) gives the written label
 // for a value that is not itself the label (recall keys options by word id).
 function wordOptHtml(byKey, written){
-  return o => { const e = byKey[o]; const d = e ? dispWord(e) : null; const p = e ? pronBeside(e) : ""; return `${d && d.isPron ? twReading(d.text) : tw(written ? written(o) : o)}${p ? `<span class="op"><bdi>${readingHTML(p)}</bdi></span>` : ""}`; };
+  return o => { const e = byKey[o]; const d = e ? dispWord(e) : null; const p = e ? pronBeside(e) : ""; return `${d && d.isPron ? twReading(d.text) : tw(written ? written(o) : o)}${p ? `<span class="op"${UIA}><bdi>${readingHTML(p)}</bdi></span>` : ""}`; };
 }
 
 // ===================== generic drill runner =====================
@@ -3188,14 +3428,14 @@ function dnext(){
 }
 function renderMcItem(it){
   const P = $("panel");
-  P.innerHTML = `<div class="drill-body"><p class="q">${escapeHtml(it.label)}</p>${noticeFor(it)}${it.html||""}<div class="opts ${it.optsClass||""}" id="o"></div><div class="reveal" id="rv"></div></div><div class="actions"><button class="next" id="nx" style="display:none">Next</button></div>`;
+  P.innerHTML = `<div class="drill-body"><p class="q">${ui(it.label)}</p>${noticeFor(it)}${it.html||""}<div class="opts ${it.optsClass||""}" id="o"></div><div class="reveal" id="rv"></div></div><div class="actions"><button class="next" id="nx" style="display:none">Next</button></div>`;
   if(it.mount) it.mount();
   const opts = shuffle(it.opts.slice());
   const container = $("o");
   let answered = false;
   opts.forEach((o,i)=>{
     const b = document.createElement("button");
-    b.innerHTML = `<b class="num">${i+1}</b>${it.optHtml ? it.optHtml(o) : escapeHtml(o)}`;
+    b.innerHTML = `<b class="num"${UIA}>${i+1}</b>${it.optHtml ? it.optHtml(o) : ui(o)}`;
     if(it.optsT && DISP.rtl) b.dir = "rtl"; // options are target-language words
     b.onclick = () => {
       if(answered) return; answered = true;
@@ -3222,7 +3462,7 @@ function renderMcItem(it){
 }
 function renderTypeItem(it){
   const P = $("panel");
-  P.innerHTML = `<div class="drill-body"><p class="q">${escapeHtml(it.label)}</p>${noticeFor(it)}${it.html||""}
+  P.innerHTML = `<div class="drill-body"><p class="q">${ui(it.label)}</p>${noticeFor(it)}${it.html||""}
     <input type="text" id="tin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"${it.inputTA !== undefined ? it.inputTA : TA} placeholder="${escapeHtml(it.placeholder || (DISP.rtl ? "type the word" : "type the word…"))}">
     <div class="reveal" id="rv"></div></div><div class="actions"><button class="next" id="submit">Check</button><button class="next" id="nx" style="display:none">Next</button></div>`;
   if(it.mount) it.mount();
@@ -3257,7 +3497,22 @@ const onShowWritten = e => !!(e && e.target && e.target.closest && e.target.clos
 // tokEscEaten); otherwise it reaches the drill as usual (quit).
 let tokEscEaten = null;
 const tokOwns = e => onTok(e) && (e.key !== "Escape" || e === tokEscEaten);
-document.addEventListener("keydown", e => { if(drillKeyHandler && !onShowWritten(e) && !tokOwns(e)) drillKeyHandler(e); });
+// Escape closes whatever gloss is open (the Read-tab #gloss box, any word-tap popover) and
+// clears the tapped highlight, staying on the same view; only an Escape with nothing
+// open reaches the drill (quit). A focused tap's own Escape is handled (and marked) by
+// the #panel listener first.
+function dismissGlosses(){
+  const P = $("panel"); if(!P) return false;
+  const open = [$("gloss"), ...P.querySelectorAll(".gloss")].filter((g, i, a) => g && !g.hidden && a.indexOf(g) === i);
+  const on = [...P.querySelectorAll(".pw.on, .tk.on")];
+  open.forEach(g => { g.hidden = true; });
+  on.forEach(x => x.classList.remove("on"));
+  return open.length > 0 || on.length > 0;
+}
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && !tokOwns(e) && dismissGlosses()){ e.preventDefault(); return; }
+  if(drillKeyHandler && !onShowWritten(e) && !tokOwns(e)) drillKeyHandler(e);
+});
 function quitDrill(){ D = null; drillKeyHandler = null; render(); }
 
 // ---- word taps inside sentences (any pack whose sentences carry ruby, or pronFirst
@@ -3290,12 +3545,13 @@ function tokTap(t){
     box.querySelectorAll(".tk.on").forEach(x => x.classList.remove("on"));
     t.classList.add("on");
     let g = box.querySelector(".tokgloss");
-    if(!g){ g = document.createElement("div"); g.className = "gloss tokgloss"; if(DISP.rtl) g.setAttribute("dir", "rtl"); box.appendChild(g); }
+    if(!g){ g = document.createElement("div"); g.className = "gloss tokgloss"; if(DISP.rtl) g.setAttribute("dir", "ltr"); box.appendChild(g); } // an LTR box, as glossBox
     g.innerHTML = html; g.hidden = false;
     bringIntoView(g); // appended below the sentence: a tap on its last line can open it under the tab bar
   }
   announce(html);
-  say(head ? head.surface : w.w);
+  // A phrase head (这个 for 这) speaks its own surface by TTS; the word itself its clip.
+  if(head && head.surface !== w.w) say(head.surface); else sayWord(w);
 }
 // Hides the popover of the tap's data-tokbox and clears its highlight; true when there was
 // something to close (an open popover or a highlighted token).
@@ -3323,8 +3579,8 @@ $("panel").addEventListener("click", e => {
   // pack.script: data-xs a unit's own sound (data-xopen, a Script-tab chart cell, also
   // shows that unit's teach card), data-xw an example word as the primer shows it.
   if(t.dataset.xs !== undefined){ const u = SUNIT_BY_ID[t.dataset.xs]; if(!u) return; if(t.dataset.xopen !== undefined) scriptOpenCard(u, e); sayUnitSound(u, t); return; }
-  if(t.dataset.xw !== undefined){ const w = SCRIPT_BYID[t.dataset.xw]; if(w && scriptVoice()) speak(w.w); return; }
-  if(t.dataset.wid !== undefined){ const w = WORDS_BY_ID[t.dataset.wid]; if(w) say(w.w); return; }
+  if(t.dataset.xw !== undefined){ const w = SCRIPT_BYID[t.dataset.xw]; if(w && (wordAudio(w) || scriptVoice())) sayWord(w); return; }
+  if(t.dataset.wid !== undefined){ const w = WORDS_BY_ID[t.dataset.wid]; if(w) sayWord(w); return; }
   const s = SENTENCES[+t.dataset.sent]; if(s) saySentence(s);
 });
 // Keyboard for word taps (role=button): Enter/Space. Attached once, here, like the above.
@@ -3440,13 +3696,13 @@ const pfWrittenTap = pf => pf.written ? showWrittenBtn(pf.written) : "";
 // heard from its own speaker button (sentSayHTML) and is a data-tokbox for the popover.
 function sentenceRowHTML(s, entry, written){
   const pf = pfSentence(s, entry, null, written, true);
-  if(pf && pf.taps) return `<div class="sent tks" data-tokbox><div class="st${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${sentSayHTML(s)}${pfWrittenTap(pf)}</div><div class="se">${escapeHtml(s.en)}</div></div>`;
-  if(pf) return `<div class="sent" data-sent="${SENT_INDEX.get(s)}"><div class="st${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${pfWrittenTap(pf)}</div><div class="se">${escapeHtml(s.en)}</div></div>`;
+  if(pf && pf.taps) return `<div class="sent tks" data-tokbox><div class="st${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${sentSayHTML(s)}${pfWrittenTap(pf)}</div><div class="se">${ui(s.en)}</div></div>`;
+  if(pf) return `<div class="sent" data-sent="${SENT_INDEX.get(s)}"><div class="st${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${pfWrittenTap(pf)}</div><div class="se">${ui(s.en)}</div></div>`;
   const rt = sentenceRuby(s);
-  if(rt && rt.some(k => WORDS_BY_ID[k.wordId])) return `<div class="sent tks" data-tokbox><div class="st hasruby"${TA}>${rubyTextHTML(s, rt, entry, true)}${sentSayHTML(s)}</div><div class="se">${escapeHtml(s.en)}</div></div>`;
-  if(rt) return `<div class="sent" data-sent="${SENT_INDEX.get(s)}"><div class="st hasruby"${TA}>${rubyTextHTML(s, rt, entry)}</div><div class="se">${escapeHtml(s.en)}</div></div>`;
+  if(rt && rt.some(k => WORDS_BY_ID[k.wordId])) return `<div class="sent tks" data-tokbox><div class="st hasruby"${TA}>${rubyTextHTML(s, rt, entry, true)}${sentSayHTML(s)}</div><div class="se">${ui(s.en)}</div></div>`;
+  if(rt) return `<div class="sent" data-sent="${SENT_INDEX.get(s)}"><div class="st hasruby"${TA}>${rubyTextHTML(s, rt, entry)}</div><div class="se">${ui(s.en)}</div></div>`;
   const p = pronOf(s);
-  return `<div class="sent" data-sent="${SENT_INDEX.get(s)}"><div class="st"${TA}>${entry ? highlightHTML(s, entry) : escapeHtml(s.t)}</div>${p ? `<div class="sp">${readingHTML(p)}</div>` : ""}<div class="se">${escapeHtml(s.en)}</div></div>`;
+  return `<div class="sent" data-sent="${SENT_INDEX.get(s)}"><div class="st"${TA}>${entry ? highlightHTML(s, entry) : escapeHtml(s.t)}</div>${p ? `<div class="sp">${readingHTML(p)}</div>` : ""}<div class="se">${ui(s.en)}</div></div>`;
 }
 function exampleSentencesHTML(entry){
   const ex = wordExampleSentences(entry, 2);
@@ -3454,26 +3710,26 @@ function exampleSentencesHTML(entry){
   return `<p class="q" style="margin-top:12px">Example${ex.length>1?"s":""}:</p>${ex.map(s => sentenceRowHTML(s, entry)).join("")}`;
 }
 function revealBlock(entry){
-  const p = pronBeside(entry);
-  const icon = hasSpeech ? ` <span style="color:var(--mute);vertical-align:middle">${TEACH_PLAY_SVG}</span>` : "";
-  return `<div${hasSpeech ? ` data-wid="${escapeHtml(entry.id)}" style="cursor:pointer"` : ""}><div class="rw"${TA}>${wordFormHTML(entry)}${icon}</div>${p ? `<div class="rp">${readingHTML(p)}</div>` : ""}<div style="color:var(--mute)">${escapeHtml(VC.gloss(entry))}</div></div>${exampleSentencesHTML(entry)}`;
+  const p = pronBeside(entry), hear = canHearWord(entry);
+  const icon = hear ? ` <span style="color:var(--mute);vertical-align:middle">${TEACH_PLAY_SVG}</span>` : "";
+  return `<div${hear ? ` data-wid="${escapeHtml(entry.id)}" style="cursor:pointer"` : ""}><div class="rw"${TA}>${wordFormHTML(entry)}${icon}</div>${p ? `<div class="rp">${readingHTML(p)}</div>` : ""}<div style="color:var(--mute)">${ui(VC.gloss(entry))}</div></div>${exampleSentencesHTML(entry)}`;
 }
 const meaningChoices = entry => [VC.gloss(entry), ...VC.meaningOpts(entry, WORDS).map(d=>VC.gloss(d))];
-// hear — TTS plays the word; pick the meaning. Without speech it degrades to read.
+// hear — the word's clip or TTS plays it; pick the meaning. Unhearable, it degrades to read.
 function hearItem(entry){
-  if(!hasSpeech) return Object.assign(readItem(entry), { needsNotice: true });
+  if(!canHearWord(entry)) return Object.assign(readItem(entry), { needsNotice: true });
   return { kind:"mc", key:"w:"+entry.id, label:"What does it mean?", optsClass:"opts-hero",
     html: `<div class="hear-stage"><button class="speaker" id="sp" aria-label="Replay">${SPEAKER_SVG}</button></div>`,
     opts: meaningChoices(entry), a: VC.gloss(entry), reveal: `<div class="q">You heard:</div>${revealBlock(entry)}`,
     onAnswer: ok=>markWord(entry.id, ok),
-    mount: () => { const btn = $("sp"); speak(entry.w, btn); btn.onclick = ()=>speak(entry.w, btn); },
+    mount: () => { const btn = $("sp"); sayWord(entry, btn); btn.onclick = ()=>sayWord(entry, btn); },
     };
 }
 // read — word shown; pick the meaning. Audio auto-plays.
 function readItem(entry){
   return { kind:"mc", key:"w:"+entry.id, label:"What does it mean?", optsClass:"opts-hero",
     html: bigWordHTML(entry), opts: meaningChoices(entry), a: VC.gloss(entry), reveal: revealBlock(entry),
-    onAnswer: ok=>markWord(entry.id, ok), mount: () => say(entry.w), };
+    onAnswer: ok=>markWord(entry.id, ok), mount: () => sayWord(entry), };
 }
 // recall — meaning shown; pick the word (wordOpts: same pos/level first, never a
 // distractor that would also be a right answer).
@@ -3483,16 +3739,16 @@ function recallItem(entry){
   // into one key, whatever they display as.
   const byId = {}; [entry, ...ds].forEach(e=>{ byId[e.id] = e; });
   return { kind:"mc", key:"w:"+entry.id, label:"Which word is this?", optsClass:"opts-hero opts-w",
-    html: `<div class="med" style="text-align:center">${escapeHtml(VC.gloss(entry))}</div>`,
+    html: `<div class="med" style="text-align:center">${ui(VC.gloss(entry))}</div>`,
     opts: [entry.id, ...ds.map(d=>d.id)], a: entry.id, optHtml: wordOptHtml(byId, o => byId[o].w), optsT: true, reveal: revealBlock(entry),
-    onAnswer: ok=>markWord(entry.id, ok), onReveal: () => say(entry.w) };
+    onAnswer: ok=>markWord(entry.id, ok), onReveal: () => sayWord(entry) };
 }
 // type — meaning shown; type the word (normalised per pack.typing, alt forms accepted).
 function typeItem(entry){
   return { kind:"type", key:"w:"+entry.id, label:"Type the word",
-    html: `<div class="med" style="text-align:center">${escapeHtml(VC.gloss(entry))}</div>`,
+    html: `<div class="med" style="text-align:center">${ui(VC.gloss(entry))}</div>`,
     check: val => VC.acceptTyped(val, entry, PACK), reveal: revealBlock(entry),
-    onAnswer: ok=>markWord(entry.id, ok), onReveal: () => say(entry.w) };
+    onAnswer: ok=>markWord(entry.id, ok), onReveal: () => sayWord(entry) };
 }
 // typePron — pack.typing "pron": meaning shown (plus a replay button for the word's
 // audio); type its reading. Accepted: tone marks or numbers (VC.checkPronTyped: neutral as
@@ -3501,14 +3757,14 @@ function typeItem(entry){
 // word's production slot (kindMix "type"), the same slot recall fills: the reading is
 // never drilled on its own. A word with no pron gets recall instead.
 function pronTypeItem(entry){
-  const hear = hasSpeech;
+  const hear = canHearWord(entry);
   return { kind:"type", key:"w:"+entry.id, label:"Type the reading (tone marks or numbers)",
-    html: `<div class="med" style="text-align:center">${escapeHtml(VC.gloss(entry))}</div>${hear ? `<div class="listen-stage"><button class="replay" id="rp2" aria-label="Replay">${REPLAY_SVG}</button></div>` : ""}`,
+    html: `<div class="med" style="text-align:center">${ui(VC.gloss(entry))}</div>${hear ? `<div class="listen-stage"><button class="replay" id="rp2" aria-label="Replay">${REPLAY_SVG}</button></div>` : ""}`,
     placeholder: "tone marks or numbers…", inputTA: "",
-    mount: () => { if(hear){ const b = $("rp2"); b.onclick = () => speak(entry.w, b); } },
+    mount: () => { if(hear){ const b = $("rp2"); b.onclick = () => sayWord(entry, b); } },
     check: val => VC.checkPronTyped(val, entry.pron) === "ok",
     feedback: val => VC.checkPronTyped(val, entry.pron) === "tones" ? `<div class="diff">tones missing: <span class="tpron">${readingHTML(entry.pron)}</span></div>` : "",
-    reveal: revealBlock(entry), onAnswer: ok=>markWord(entry.id, ok), onReveal: () => say(entry.w) };
+    reveal: revealBlock(entry), onAnswer: ok=>markWord(entry.id, ok), onReveal: () => sayWord(entry) };
 }
 const WORD_ITEM = { hear: hearItem, read: readItem, recall: recallItem, type: e => PRON_TYPING && e.pron ? pronTypeItem(e) : TYPING ? typeItem(e) : recallItem(e) };
 const itemFromPlan = p => WORD_ITEM[p.kind](p.word);
@@ -3516,24 +3772,24 @@ const itemFromPlan = p => WORD_ITEM[p.kind](p.word);
 // it was missed as; the most-missed first, with a count when missed more than once.
 function missSummary(miss){
   const u = VC.dedupeMisses(miss);
-  return u.length ? `<p class="q">Missed:</p>${u.map(({item, count})=>`<div class="stmt">${count > 1 ? `<div class="q" style="margin:0 0 4px">missed ${count}×</div>` : ""}${item.reveal}</div>`).join("")}` : "<p class='q'>Clean.</p>";
+  return u.length ? `<p class="q">Missed:</p>${u.map(({item, count})=>`<div class="stmt rvb">${count > 1 ? `<div class="q" style="margin:0 0 4px">missed ${count}×</div>` : ""}${item.reveal}</div>`).join("")}` : "<p class='q'>Clean.</p>";
 }
 
 // ===================== sentence drill items =====================
 function sentenceRevealBlock(s){
   const pf = pfSentence(s, null, null, null, true);
-  if(pf && pf.taps) return `<div data-tokbox><div class="rw${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${sentSayHTML(s)}${pfWrittenTap(pf)}</div><div style="color:var(--mute)">${escapeHtml(s.en)}</div></div>`;
+  if(pf && pf.taps) return `<div data-tokbox><div class="rw${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${sentSayHTML(s)}${pfWrittenTap(pf)}</div><div style="color:var(--mute)">${ui(s.en)}</div></div>`;
   if(pf){
     const canHear = canHearSentence(s);
     const icon = canHear ? ` <span style="color:var(--mute);vertical-align:middle">${TEACH_PLAY_SVG}</span>` : "";
-    return `<div${canHear ? ` data-sent="${SENT_INDEX.get(s)}" style="cursor:pointer"` : ""}><div class="rw${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${icon}${pfWrittenTap(pf)}</div><div style="color:var(--mute)">${escapeHtml(s.en)}</div></div>`;
+    return `<div${canHear ? ` data-sent="${SENT_INDEX.get(s)}" style="cursor:pointer"` : ""}><div class="rw${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${icon}${pfWrittenTap(pf)}</div><div style="color:var(--mute)">${ui(s.en)}</div></div>`;
   }
   const rt = sentenceRuby(s);
-  if(rt && rt.some(k => WORDS_BY_ID[k.wordId])) return `<div data-tokbox><div class="rw hasruby"${TA}>${rubyTextHTML(s, rt, null, true)}${sentSayHTML(s)}</div><div style="color:var(--mute)">${escapeHtml(s.en)}</div></div>`;
+  if(rt && rt.some(k => WORDS_BY_ID[k.wordId])) return `<div data-tokbox><div class="rw hasruby"${TA}>${rubyTextHTML(s, rt, null, true)}${sentSayHTML(s)}</div><div style="color:var(--mute)">${ui(s.en)}</div></div>`;
   const p = rt ? "" : pronOf(s);
   const canHear = canHearSentence(s);
   const icon = canHear ? ` <span style="color:var(--mute);vertical-align:middle">${TEACH_PLAY_SVG}</span>` : "";
-  return `<div${canHear ? ` data-sent="${SENT_INDEX.get(s)}" style="cursor:pointer"` : ""}><div class="rw${rt ? " hasruby" : ""}"${TA}>${rt ? rubyTextHTML(s, rt) : escapeHtml(s.t)}${icon}</div>${p ? `<div class="rp">${readingHTML(p)}</div>` : ""}<div style="color:var(--mute)">${escapeHtml(s.en)}</div></div>`;
+  return `<div${canHear ? ` data-sent="${SENT_INDEX.get(s)}" style="cursor:pointer"` : ""}><div class="rw${rt ? " hasruby" : ""}"${TA}>${rt ? rubyTextHTML(s, rt) : escapeHtml(s.t)}${icon}</div>${p ? `<div class="rp">${readingHTML(p)}</div>` : ""}<div style="color:var(--mute)">${ui(s.en)}</div></div>`;
 }
 const sentenceChoices = s => [s.en, ...VC.sentenceOpts(s, SENTENCES).map(d=>d.en)];
 function readSentence(s){
@@ -3568,8 +3824,8 @@ function gapSentence(s, typed){
   // could be shown, where no blank can be placed: no gap item (caller falls back).
   const pf = pfSentence(s, null, match);
   if(pf === false) return null;
-  const html = pf ? `<div class="med wd${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${pfWrittenTap(pf)}</div><div class="q">${escapeHtml(s.en)}</div>`
-    : `<div class="med wd"${TA}>${escapeHtml(b.before)}<span class="blank">____</span>${escapeHtml(b.after)}</div><div class="q">${escapeHtml(s.en)}</div>`;
+  const html = pf ? `<div class="med wd${pf.ruby ? " hasruby" : ""}"${TA}>${pf.html}${pfWrittenTap(pf)}</div><div class="q">${ui(s.en)}</div>`
+    : `<div class="med wd"${TA}>${escapeHtml(b.before)}<span class="blank">____</span>${escapeHtml(b.after)}</div><div class="q">${ui(s.en)}</div>`;
   const base = { key:"s:"+s.id, reveal: sentenceRevealBlock(s), onAnswer: ok=>markSentence(s.id, ok),
     onReveal: () => saySentence(s) };
   if(typed && TYPING){
@@ -3592,11 +3848,12 @@ function sentenceItemFor(s){
 // item's `show` says: charRead/charSound the written form alone (no reading, no audio),
 // charPick the reading plus the linked word's audio, charRecall the meaning. The reveal
 // always gives form, reading and meaning. Scoring writes prog.chars.c only (markChar).
-const sayUnit = (it, btn) => { const w = WORDS_BY_ID[it.wordId]; speak(w ? w.w : it.t, btn); };
+const sayUnit = (it, btn) => { const w = WORDS_BY_ID[it.wordId]; if(w) sayWord(w, btn); else speak(it.t, btn); };
+const canHearUnit = it => { const w = WORDS_BY_ID[it.wordId]; return w ? canHearWord(w) : hasSpeech; };
 function charRevealBlock(it){
-  const tap = hasSpeech && WORDS_BY_ID[it.wordId];
+  const tap = WORDS_BY_ID[it.wordId] && canHearWord(WORDS_BY_ID[it.wordId]);
   const icon = tap ? ` <span style="color:var(--mute);vertical-align:middle">${TEACH_PLAY_SVG}</span>` : "";
-  return `<div${tap ? ` data-wid="${escapeHtml(it.wordId)}" style="cursor:pointer"` : ""}><div class="rw"${TA}>${escapeHtml(it.t)}${icon}</div>${it.reading ? `<div class="rp">${readingHTML(it.reading)}</div>` : ""}<div style="color:var(--mute)">${escapeHtml(it.gloss)}</div></div>`;
+  return `<div${tap ? ` data-wid="${escapeHtml(it.wordId)}" style="cursor:pointer"` : ""}><div class="rw"${TA}>${escapeHtml(it.t)}${icon}</div>${it.reading ? `<div class="rp">${readingHTML(it.reading)}</div>` : ""}<div style="color:var(--mute)">${ui(it.gloss)}</div></div>`;
 }
 function charDrillItem(kind, unit){
   const it = VC.charItem(kind, unit, CHAR_CTX);
@@ -3607,13 +3864,13 @@ function charDrillItem(kind, unit){
   if(kind === "charRead") return Object.assign(base, { label:"What does it mean?", optsClass:"opts-hero", html: form });
   if(kind === "charSound") return Object.assign(base, { label:"How is it said?", optsClass:"opts-hero", html: form, optHtml: o => `<bdi>${readingHTML(o)}</bdi>` });
   if(kind === "charPick"){
-    const hear = it.audio && hasSpeech;
+    const hear = it.audio && canHearUnit(it);
     return Object.assign(base, formOpts, { label:"How is it written?",
       html: `${hear ? `<div class="hear-stage"><button class="speaker" id="sp" aria-label="Replay">${SPEAKER_SVG}</button></div>` : ""}<div class="med" style="text-align:center">${readingHTML(it.reading)}</div>`,
       mount: () => { if(!hear) return; const btn = $("sp"); sayUnit(it, btn); btn.onclick = () => sayUnit(it, btn); },
       onReveal: null });
   }
-  return Object.assign(base, formOpts, { label:"How is it written?", html: `<div class="med" style="text-align:center">${escapeHtml(it.gloss)}</div>` });
+  return Object.assign(base, formOpts, { label:"How is it written?", html: `<div class="med" style="text-align:center">${ui(it.gloss)}</div>` });
 }
 // ===================== script primer items =====================
 // One renderer per VC.scriptItem kind (pack.script only, docs/SCRIPT_PRIMER.md §2). The
@@ -3630,15 +3887,16 @@ function markScriptRec(unitId, ok){ VC.markScript(prog, unitId, ok); store.save(
 const sayScript = (it, btn) => speak(it.say || "", btn, it.audioUrl || undefined);
 // A unit's own sound: its recorded clip, else its `say` when the pack has a voice.
 const unitHasSound = u => !!(u && (u.audio || (scriptVoice() && u.say)));
-const sayUnitSound = (u, btn) => { if(u.audio) speak("", btn, String(u.audio)); else if(scriptVoice() && u.say) speak(String(u.say), btn); };
+// A unit's clip falls back (clipFailed) to its say carrier by TTS when the script is voiced.
+const sayUnitSound = (u, btn) => { if(u.audio) speak(scriptVoice() && u.say ? String(u.say) : "", btn, String(u.audio)); else if(scriptVoice() && u.say) speak(String(u.say), btn); };
 const FORM_LABEL = { isol:"isolated", init:"initial", medi:"medial", fina:"final" };
 function scriptRevealBlock(it){
   const r = it.reveal;
   // A composed syllable is mixed text (parts, "+", "="): each target piece is isolated by tw().
   const head = r.syll ? `<div class="rw xrs">${r.syll.parts.map(p => tw(p)).join(" + ")} = ${tw(r.syll.t)}</div>` : `<div class="rw"${TA}>${escapeHtml(r.t)}</div>`;
   const w = r.word;
-  const wordTap = w && scriptVoice();
-  return `<div>${head}<div>${r.name ? `${tw(r.name)} · ` : ""}<b>${escapeHtml(r.roman)}</b></div>${r.note ? `<div style="color:var(--mute)">${escapeHtml(r.note)}</div>` : ""}${w ? `<div class="xrword"${wordTap ? ` data-xw="${escapeHtml(w.id)}" style="cursor:pointer"` : ""}><div class="rw"${TA}>${escapeHtml(w.w)}${wordTap ? ` <span style="color:var(--mute);vertical-align:middle">${TEACH_PLAY_SVG}</span>` : ""}</div><div class="rp">${escapeHtml(w.roman)}</div><div style="color:var(--mute)">${escapeHtml(w.en || "")}</div></div>` : ""}</div>`;
+  const wordTap = w && (scriptVoice() || !!wordAudio(SCRIPT_BYID[w.id]));
+  return `<div>${head}<div>${r.name ? `${tf(r.name)} · ` : ""}<b>${escapeHtml(r.roman)}</b></div>${r.note ? `<div style="color:var(--mute)">${ui(r.note)}</div>` : ""}${w ? `<div class="xrword"${wordTap ? ` data-xw="${escapeHtml(w.id)}" style="cursor:pointer"` : ""}><div class="rw"${TA}>${escapeHtml(w.w)}${wordTap ? ` <span style="color:var(--mute);vertical-align:middle">${TEACH_PLAY_SVG}</span>` : ""}</div><div class="rp">${escapeHtml(w.roman)}</div><div style="color:var(--mute)">${ui(w.en || "")}</div></div>` : ""}</div>`;
 }
 function scriptDrillItem(kind, unit, ctx){
   const it = VC.scriptItem(kind, unit, ctx || scriptCtx());
@@ -3667,15 +3925,57 @@ function scriptDrillItem(kind, unit, ctx){
   throw new Error(`no renderer for script item kind ${k}`);
 }
 const isScriptPlan = p => !!(p && p.unit && VC.SCRIPT_KINDS.includes(p.kind));
-// Glyph occurrences in an example word, tinted by a wrapping span (background only, so a
-// joined word keeps its shaping). A letter inside a composed block (a jamo in its
-// syllable, a batchim included) tints the block; comparison is core's scriptGlyphIn, the
-// validator's fold (compatibility decomposition, lower case, positional jamo as letters).
+// Glyph occurrences in an example word. A browser shapes each element's text on its own,
+// so a span boundary inside a word can break a ligature (لا splits into ل + ا, a Devanagari
+// conjunct into half forms). Two layers, chosen together:
+//  - markup (every browser, and what node tests see): the tint spans whole shaping
+//    clusters (core shapingClusters: a grapheme, lam+alef, a virama conjunct), so a
+//    boundary never falls inside a mandatory ligature or conjunct. Highlighting ا in لا
+//    tints لا; adjacent tinted clusters share one span.
+//  - paintScriptHL, where the CSS Custom Highlight API exists (Chrome 105+, Safari 17.2+,
+//    Firefox 140+): after insertion the spans are replaced by plain text plus ranges in a
+//    registered Highlight, so the word is one text node and shapes exactly as untinted
+//    (this also keeps Nastaliq's longer ligatures whole, which clusters cannot promise).
+// The Highlight API alone would leave older browsers with no tint and nothing testable in
+// markup; clusters alone cannot cover every font's discretionary ligatures.
+// Which clusters match: the glyph as a substring (code units), else per cluster by core's
+// scriptGlyphIn, the validator's fold (compatibility decomposition, lower case, positional
+// jamo as letters), so a jamo tints its syllable block and آ counts as ا.
 function scriptHL(word, glyph){
   const w = String(word), g = String(glyph || "");
   if(!g) return escapeHtml(w);
-  if(w.includes(g)) return w.split(g).map(escapeHtml).join(`<span class="xhl">${escapeHtml(g)}</span>`);
-  return [...w].map(ch => VC.scriptGlyphIn(g, ch) ? `<span class="xhl">${escapeHtml(ch)}</span>` : escapeHtml(ch)).join("");
+  const cl = VC.shapingClusters(w);
+  let marks;
+  if(w.includes(g)){
+    const hits = []; for(let i = w.indexOf(g); i >= 0; i = w.indexOf(g, i + g.length)) hits.push([i, i + g.length]);
+    let at = 0;
+    marks = cl.map(c => { const a = at, b = at += c.length; return hits.some(([s, e]) => s < b && e > a); });
+  } else marks = cl.map(c => VC.scriptGlyphIn(g, c));
+  let out = "", run = "";
+  cl.forEach((c, i) => {
+    if(marks[i]){ run += c; return; }
+    if(run){ out += `<span class="xhl">${escapeHtml(run)}</span>`; run = ""; }
+    out += escapeHtml(c);
+  });
+  return out + (run ? `<span class="xhl">${escapeHtml(run)}</span>` : "");
+}
+// StaticRange, not Range: a live Range whose text node is replaced collapses into the
+// parent and stays "connected", so it could never be pruned; a StaticRange keeps pointing
+// at the removed node.
+const HL_API = typeof CSS !== "undefined" && !!CSS.highlights && typeof Highlight === "function" && typeof StaticRange === "function";
+let XHL = null;
+function paintScriptHL(root){
+  if(!HL_API || !root || !root.querySelectorAll) return;
+  if(!XHL){ XHL = new Highlight(); CSS.highlights.set("xhl", XHL); }
+  [...XHL].forEach(r => { if(!r.startContainer.isConnected) XHL.delete(r); }); // cards re-rendered since
+  root.querySelectorAll(".xteach .wd").forEach(wd => {
+    if(!wd.querySelector(".xhl")) return;
+    const spans = []; let text = "";
+    wd.childNodes.forEach(n => { const t = n.textContent; if(n.nodeType === 1 && n.classList.contains("xhl")) spans.push([text.length, text.length + t.length]); text += t; });
+    wd.textContent = text;
+    const tn = wd.firstChild;
+    spans.forEach(([a, b]) => XHL.add(new StaticRange({ startContainer: tn, startOffset: a, endContainer: tn, endOffset: b })));
+  });
 }
 // One unit's teach card (Learn and the Script tab): glyph 64px on the start side, beside
 // it name, roman (bold) and note, a play button only when the unit has a sound. Row 2 by
@@ -3696,13 +3996,14 @@ function scriptTeachHTML(u){
   }
   const ital = u.italic ? `<div class="xrow2">italic <span class="xit"${TA}>${escapeHtml(u.italic)}</span></div>` : "";
   const exs = VC.scriptExamples(u, SCRIPT_BYID).map(e => {
-    const tap = scriptVoice();
-    return `<div class="rowset"${tap ? ` data-xw="${escapeHtml(e.id)}" style="cursor:pointer"` : ""}><span class="wd"${TA}>${scriptHL(e.w, g)}</span><span class="info"><span class="pr">${escapeHtml(e.roman)}</span><span class="en">${escapeHtml(VC.gloss(SCRIPT_BYID[e.id]))}</span></span>${tap ? `<span style="color:var(--mute);flex:0 0 auto">${TEACH_PLAY_SVG}</span>` : ""}</div>`;
+    const tap = scriptVoice() || !!wordAudio(SCRIPT_BYID[e.id]);
+    return `<div class="rowset"${tap ? ` data-xw="${escapeHtml(e.id)}" style="cursor:pointer"` : ""}><span class="wd"${TA}>${scriptHL(e.w, g)}</span><span class="info"><span class="pr">${escapeHtml(e.roman)}</span><span class="en">${ui(VC.gloss(SCRIPT_BYID[e.id]))}</span></span>${tap ? `<span style="color:var(--mute);flex:0 0 auto">${TEACH_PLAY_SVG}</span>` : ""}</div>`;
   }).join("");
-  return `<div class="xteach"><div class="xhead"${DISP.rtl ? ' dir="rtl"' : ""}><span class="cform xg"${TA}>${escapeHtml(u.t)}</span><span class="info" dir="ltr">${u.name ? `<span class="xnm">${tw(u.name)}</span>` : ""}<b class="xrm">${escapeHtml(u.roman)}</b>${u.note ? `<span class="en">${escapeHtml(u.note)}</span>` : ""}</span>${play}</div>${row2}${ital}${exs}</div>`;
+  const headName = VC.scriptUnitHeadName(u);
+  return `<div class="xteach"><div class="xhead"${DISP.rtl ? ' dir="rtl"' : ""}><span class="cform xg"${TA}>${escapeHtml(u.t)}</span><span class="info" dir="ltr">${headName ? `<span class="xnm">${tf(headName)}</span>` : ""}<b class="xrm">${escapeHtml(u.roman)}</b>${VC.scriptUnitNote(u) ? `<span class="en">${ui(VC.scriptUnitNote(u))}</span>` : ""}</span>${play}</div>${row2}${ital}${exs}</div>`;
 }
 const scriptNotesHTML = (st, set) => SNOTES.filter(n => n && n.st === st && n.set === set)
-  .map(n => `<div class="card-teach xnote"><h3>${escapeHtml(n.h)}</h3><p>${escapeHtml(n.body)}</p></div>`).join("");
+  .map(n => `<div class="card-teach xnote"><h3>${ui(n.h)}</h3><p>${ui(n.body)}</p></div>`).join("");
 // Plan entries are {kind, word} or, from the unified plans, {kind, unit} (a character
 // unit, or a script unit with a script kind).
 const planItem = p => isScriptPlan(p) ? scriptDrillItem(p.kind, p.unit) : p.unit ? charDrillItem(p.kind, p.unit) : itemFromPlan(p);
@@ -3758,7 +4059,7 @@ function pathStrip(){
   const stages = HAS_STAGES
     ? VC.stagePath(PACK, WORDS, CHAR_LIST, prog, SU).map(s => ({ label: s.label, frac: s.frac, tl: s.kind === "chars" || s.kind === "script" }))
     : LEVELS.map(lv=>({ label: levelLabel(lv), frac: nSets(lv) ? (prog.sets[lv]||0)/nSets(lv) : 1 }));
-  return `<div class="path">${stages.map(s=>`<div class="seg"><div class="bar"><i style="width:${Math.round(s.frac*100)}%"></i></div>${s.tl ? tw(s.label) : escapeHtml(s.label)}</div>`).join("")}</div>`;
+  return `<div class="path">${stages.map(s=>`<div class="seg"><div class="bar"><i style="width:${Math.round(s.frac*100)}%"></i></div>${s.tl ? tf(s.label) : escapeHtml(s.label)}</div>`).join("")}</div>`;
 }
 // The snapshot (VC.todaySnapshot) Today runs on: taken at Start today and kept for the
 // session, so finishing a stage mid-session changes neither what Learn teaches nor
@@ -3781,7 +4082,7 @@ const scriptCount = () => HAS_SCRIPT ? VC.recordedScriptUnits(SUNITS, prog, PACK
 // the first word level, or skip it (VC.answerScriptChoice). Replaces Start today until
 // answered; reversible from Progress.
 function scriptChoiceHTML(){
-  const L = SCFG.stages.map(st => tw(st.label)).join(" and ");
+  const L = SCFG.stages.map(st => tf(st.label)).join(" and ");
   return `<div class="stmt" id="scriptChoice">${L} first: learn to read the script, symbol by symbol, before ${escapeHtml(levelLabel(LEVELS[0]))}. If you can already read it, skip it. You can change this later in Progress.<button class="next" id="scriptLearn" style="margin-top:8px">Learn the script</button><button class="ghost" id="scriptSkip" style="margin-top:8px">I can read it, skip</button></div>`;
 }
 // The one-time line for a learner whose progress predates the primer (VC.scriptNotice):
@@ -3803,7 +4104,7 @@ function charChoiceHTML(){
   const path = VC.stagePath(PACK, WORDS, CHAR_LIST, prog, SU);
   const first = path.findIndex(s => s.kind === "chars");
   const next = path.slice(first + 1).find(s => s.kind === "words" && !s.done);
-  const L = tw(CHAR_CFG.label), N = escapeHtml(next ? next.label : "");
+  const L = tf(CHAR_CFG.label), N = ui(next ? next.label : "");
   return `<div class="stmt" id="charChoice">${L} next: learn to recognise the written form of the words you already know. Or go on to ${N} first and do ${L} after it. You can change this later in Progress.<button class="next" id="choiceStart" style="margin-top:8px">Start ${L}</button><button class="ghost" id="choiceSkip" style="margin-top:8px">Skip to ${N}</button></div>`;
 }
 function todayRender(){
@@ -3838,10 +4139,10 @@ function todayRender(){
   const xNotice = showScriptNotice();
   P.innerHTML = `<div class="drill-body top">${samsungNoticeHTML}${legacyNotice ? `<div class="stmt" id="legacyNotice">${legacyNotice}<button class="ghost" id="legacyOk" style="margin-top:8px">OK</button></div>` : ""}${legacyFail ? `<div class="stmt" id="legacyFail">${legacyFailHTML(legacyFail)}<button class="ghost" id="legacySkip" style="margin-top:8px">Start without it</button></div>` : ""}${xNotice ? `<div class="stmt" id="scriptNotice">A script primer is available. Turn it on in Progress.<button class="ghost" id="scriptNoticeOk" style="margin-top:8px">OK</button></div>` : ""}${pathStrip()}${xChoice ? scriptChoiceHTML() : ""}
     ${showPlaceHint ?`<div class="stmt">New here? Placement finds where to start.<button class="next" id="hintPlace" style="margin-top:8px">Take the placement test</button></div>` : ""}${choice && !xChoice ? charChoiceHTML() : ""}
-    ${showSoundsHint ? `<div class="stmt">A few short lessons explain how ${escapeHtml(PACK.name)} sounds and is written.<button class="next" id="hintSounds" style="margin-top:8px">Start the first lesson</button></div>` : ""}
-    ${readHint ? `<div class="stmt" id="readHintBox">Read 1 passage: ${rubyTw(readHint.title, readHint.titleRuby)} (${escapeHtml(levelLabel(readHint.lv))}, ${VC.passageLength(readHint, PACK)} words).<button class="next" id="hintRead" style="margin-top:8px">Read 1 passage</button></div>` : ""}
+    ${showSoundsHint ? `<div class="stmt">A few short lessons explain how ${ui(PACK.name)} sounds and is written.<button class="next" id="hintSounds" style="margin-top:8px">Start the first lesson</button></div>` : ""}
+    ${readHint ? `<div class="stmt" id="readHintBox">Read 1 passage: ${pfRubyText(readHint.title, readHint.titleRuby) ? rubyTw(readHint.title, readHint.titleRuby) : tf(readHint.title)} (${escapeHtml(levelLabel(readHint.lv))}, ${VC.passageLength(readHint, PACK)} words).<button class="next" id="hintRead" style="margin-top:8px">Read 1 passage</button></div>` : ""}
     <p class="q">Session ${n}, about 15 minutes.<br>${lw.length} words learned so far.</p>
-    <table class="stats steps">${steps.map((s,i)=>`<tr><td>${i+1}. ${s[0]}</td><td>${escapeHtml(s[1])}</td></tr>`).join("")}</table>
+    <table class="stats steps">${steps.map((s,i)=>`<tr><td>${i+1}. ${s[0]}</td><td>${ui(s[1])}</td></tr>`).join("")}</table>
     </div>${choice ? "" : `<div class="actions"><button class="next" id="go">Start today</button></div>`}`;
   if(legacyNotice) $("legacyOk").onclick = () => { legacyNotice = null; todayRender(); };
   if(legacyFail) $("legacySkip").onclick = () => { legacyFail = null; storeReadOnly = false; store.save(); todayRender(); };
@@ -3938,19 +4239,20 @@ function wordRowHTML(w, cls){
   // shrink to width:0 next to the gloss (that caused unbreakable transliterations
   // like "budan" to overlap the gloss text when the gloss was long).
   const p = pronBeside(w);
-  return `<span class="wd${dispWord(w).isPron ? " pf" : ""}"${TA}>${wordFormHTML(w)}</span><span class="info">${p ? `<span class="pr">${readingHTML(p)}</span>` : ""}<span class="en">${escapeHtml(VC.gloss(w))}</span></span>`;
+  return `<span class="wd${dispWord(w).isPron ? " pf" : ""}"${TA}>${wordFormHTML(w)}</span><span class="info">${p ? `<span class="pr">${readingHTML(p)}</span>` : ""}<span class="en">${ui(VC.gloss(w))}</span></span>`;
 }
 function vocabTeach(list, lv, onDrill){
   setScore(0,0); screenTop();
   const P = $("panel");
-  const hint = hasSpeech ? " Tap a word to hear it." : "";
+  const hint = hasSpeech || list.some(canHearWord) ? " Tap a word to hear it." : "";
   P.innerHTML = `<p class="q">${escapeHtml(levelLabel(lv))}, new set.${hint}</p>
     <div id="tl"></div><div class="actions"><button class="next" id="dr">Drill this set</button></div>`;
   const tl = $("tl");
   list.forEach(w => {
     const row = document.createElement("div"); row.className = "rowset";
-    row.innerHTML = `${wordRowHTML(w, "rowset")}${hasSpeech ? `<span style="color:var(--mute);flex:0 0 auto">${TEACH_PLAY_SVG}</span>` : ""}`;
-    if(hasSpeech){ row.onclick = () => say(w.w); row.style.cursor = "pointer"; }
+    const hear = canHearWord(w);
+    row.innerHTML = `${wordRowHTML(w, "rowset")}${hear ? `<span style="color:var(--mute);flex:0 0 auto">${TEACH_PLAY_SVG}</span>` : ""}`;
+    if(hear){ row.onclick = () => sayWord(w); row.style.cursor = "pointer"; }
     tl.appendChild(row);
     const exHtml = exampleSentencesHTML(w);
     if(exHtml){
@@ -3968,14 +4270,14 @@ function vocabTeach(list, lv, onDrill){
 function charTeach(cs, stage, onDrill){
   setScore(0,0); screenTop();
   const P = $("panel");
-  const hint = hasSpeech ? " Tap one to hear it." : "";
+  const hint = hasSpeech || cs.units.some(u => { const w = VC.unitWord(u, WORDS_BY_ID); return w && canHearWord(w); }) ? " Tap one to hear it." : "";
   const cards = cs.units.map(u => {
     const w = VC.unitWord(u, WORDS_BY_ID), reading = VC.unitReading(u, WORDS_BY_ID);
-    const tap = hasSpeech && w;
+    const tap = w && canHearWord(w);
     const ex = VC.unitExampleSentences(u, w, SENTENCES, PACK, 1); // prefers one showing the unit written with ruby
-    return `<div class="charteach"><div class="chead"${tap ? ` data-wid="${escapeHtml(w.id)}" style="cursor:pointer"` : ""}><span class="cform"${TA}>${escapeHtml(u.t)}</span><span class="info">${reading ? `<span class="pr">${readingHTML(reading)}</span>` : ""}<span class="en">${escapeHtml(VC.unitGloss(u, WORDS_BY_ID))}</span></span>${tap ? `<span style="color:var(--mute);flex:0 0 auto">${TEACH_PLAY_SVG}</span>` : ""}</div>${ex.map(s => sentenceRowHTML(s, w, u.words)).join("")}</div>`;
+    return `<div class="charteach"><div class="chead"${tap ? ` data-wid="${escapeHtml(w.id)}" style="cursor:pointer"` : ""}><span class="cform"${TA}>${escapeHtml(u.t)}</span><span class="info">${reading ? `<span class="pr">${readingHTML(reading)}</span>` : ""}<span class="en">${ui(VC.unitGloss(u, WORDS_BY_ID))}</span></span>${tap ? `<span style="color:var(--mute);flex:0 0 auto">${TEACH_PLAY_SVG}</span>` : ""}</div>${ex.map(s => sentenceRowHTML(s, w, u.words)).join("")}</div>`;
   }).join("");
-  P.innerHTML = `<p class="q">${tw(stage.label)}, set ${cs.index+1} of ${cs.total}: the written form of words you already know.${hint}</p>
+  P.innerHTML = `<p class="q">${tf(stage.label)}, set ${cs.index+1} of ${cs.total}: the written form of words you already know.${hint}</p>
     <div id="ctl">${cards}</div><div class="actions"><button class="next" id="dr">Drill these</button></div>`;
   $("dr").onclick = onDrill;
 }
@@ -3985,8 +4287,9 @@ function scriptTeach(ss, stage, onDrill){
   setScore(0,0); screenTop();
   const P = $("panel");
   const set = ss.units.length ? ss.units[0].set : null;
-  P.innerHTML = `<p class="q">${tw(stage.label)}, set ${ss.index+1} of ${ss.total}: ${ss.units.length} new symbol${ss.units.length === 1 ? "" : "s"}.${scriptVoice() ? " Tap the speaker to hear one." : ""}</p>
+  P.innerHTML = `<p class="q">${tf(stage.label)}, set ${ss.index+1} of ${ss.total}: ${ss.units.length} new symbol${ss.units.length === 1 ? "" : "s"}.${scriptVoice() || ss.units.some(u => u.audio) ? " Tap the speaker to hear one." : ""}</p>
     <div id="xtl">${scriptNotesHTML(stage.key, set)}${ss.units.map(scriptTeachHTML).join("")}</div><div class="actions"><button class="next" id="dr">Drill these</button></div>`;
+  paintScriptHL($("xtl"));
   $("dr").onclick = onDrill;
 }
 // Script Learn: the snapshot's set i (teach, then learnScriptPlan), then, while the
@@ -4007,14 +4310,14 @@ function lessonTeach(lesson, onDone, onBack){
   setScore(0,0); screenTop();
   if(!prog.soundsOpened){ prog.soundsOpened = true; store.save(); }
   const P = $("panel");
-  P.innerHTML = `${onBack ? '<div class="row"><button id="back">‹ lessons</button></div>' : ""}<p class="q">${escapeHtml(lesson.blurb)}</p>
+  P.innerHTML = `${onBack ? '<div class="row"><button id="back">‹ lessons</button></div>' : ""}<p class="q">${ui(lesson.blurb)}</p>
     <div id="cards"></div><div class="actions"><button class="next" id="dr">Drill</button></div>`;
   if(onBack) $("back").onclick = onBack;
   const cw = $("cards");
   (lesson.cards||[]).forEach(c => {
     const el = document.createElement("div"); el.className = "card-teach";
-    el.innerHTML = `<h3>${escapeHtml(c.h)}</h3><p>${c.body}</p>
-      ${c.rows ? `<div>${c.rows.map(r=>`<div class="rowset">${r.map((cell,i)=>`<span class="${["pr","wd","en"][i]||"en"}"${i===1 ? TA : ""}>${i === 0 ? readingHTML(cell) : escapeHtml(cell)}</span>`).join("")}</div>`).join("")}</div>` : ""}
+    el.innerHTML = `<h3>${ui(c.h)}</h3><p>${c.body}</p>
+      ${c.rows ? `<div>${c.rows.map(r=>`<div class="rowset">${r.map((cell,i)=>`<span class="${["pr","wd","en"][i]||"en"}"${i===1 ? TA : ""}>${i === 0 ? readingHTML(cell) : i === 1 ? escapeHtml(cell) : ui(cell)}</span>`).join("")}</div>`).join("")}</div>` : ""}
       ${c.say ? `<div class="taplist">${c.say.map((s,i)=>`<button data-s="${i}">▶ ${tw(s)}</button>`).join("")}</div>` : ""}`;
     if(c.say) el.querySelectorAll("[data-s]").forEach((b,i)=>b.onclick=()=>say(c.say[i]));
     cw.appendChild(el);
@@ -4045,8 +4348,8 @@ function soundsRender(){
     return;
   }
   const done = LESSON_LIST.filter(l=>prog.lessons[l.id]).length;
-  P.innerHTML = `<p class="q">Optional: how ${escapeHtml(PACK.name)} sounds and is written. ${LESSON_LIST.length} lessons, ${done} done.</p>
-    ${HAS_SCRIPT ? scriptTabHTML() : ""}<div class="plist">${LESSON_LIST.map((l,i)=>`<button data-i="${i}"><span>${escapeHtml(l.title)}</span>${prog.lessons[l.id]?'<span class="tick">✓</span>':''}</button>`).join("")}</div>${SOUNDS_REF ? soundsRefHTML() : ""}`;
+  P.innerHTML = `<p class="q">Optional: how ${ui(PACK.name)} sounds and is written. ${LESSON_LIST.length} lessons, ${done} done.</p>
+    ${HAS_SCRIPT ? scriptTabHTML() : ""}<div class="plist">${LESSON_LIST.map((l,i)=>`<button data-i="${i}"><span>${ui(l.title)}</span>${prog.lessons[l.id]?'<span class="tick">✓</span>':''}</button>`).join("")}</div>${SOUNDS_REF ? soundsRefHTML() : ""}`;
   P.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{ soundsSel = +b.dataset.i; soundsRender(); });
   if(SOUNDS_REF) P.querySelectorAll("[data-rs]").forEach(b=>b.onclick=()=>speak(b.dataset.rs, b));
   if(HAS_SCRIPT) scriptTabWire();
@@ -4058,7 +4361,7 @@ function soundsRender(){
 // (panel data-xs/data-xopen listener). "Practise weakest 20" runs VC.scriptTestPlan.
 function scriptChartHTML(){
   const recs = VC.scriptRecs(prog);
-  return SCFG.stages.map(st => `<div class="refh">${tw(st.label)}</div>` + VC.scriptSets(st.key, SUNITS).map((set, i) =>
+  return SCFG.stages.map(st => `<div class="refh">${tf(st.label)}</div>` + VC.scriptSets(st.key, SUNITS).map((set, i) =>
     `<div class="xset"><span class="xsn">${i + 1}</span><div class="refcells xcells">${set.map(u => {
       const r = recs[u.id]; const m = !!r && VC.scriptMastered(r, PACK);
       const state = m ? "mastered" : r ? "taught" : "";
@@ -4080,6 +4383,7 @@ function scriptTabWire(){
 function scriptOpenCard(u, e){
   const c = $("xcard"); if(!c) return;
   c.innerHTML = scriptTeachHTML(u);
+  paintScriptHL(c);
   bringIntoView(c.firstElementChild, !!e && e.detail === 0);
 }
 function scriptTabRender(){
@@ -4106,7 +4410,7 @@ function soundsRefGroups(){
 function soundsRefHTML(){
   const groups = soundsRefGroups();
   if(!groups.length) return "";
-  return `<details class="refcard"><summary>Reference: every sound in the lessons</summary>${hasSpeech ? `<p class="q">Tap a sound to hear it.</p>` : ""}${groups.map(g => `<div class="refh">${escapeHtml(g.title)}</div><div class="refcells">${g.cells.map(c => `<button type="button" data-rs="${escapeHtml(c.say)}" aria-label="${escapeHtml(c.label)}">${readingHTML(c.label)}</button>`).join("")}</div>`).join("")}</details>`;
+  return `<details class="refcard"><summary>Reference: every sound in the lessons</summary>${hasSpeech ? `<p class="q">Tap a sound to hear it.</p>` : ""}${groups.map(g => `<div class="refh">${ui(g.title)}</div><div class="refcells">${g.cells.map(c => `<button type="button" data-rs="${escapeHtml(c.say)}" aria-label="${escapeHtml(c.label)}">${readingHTML(c.label)}</button>`).join("")}</div>`).join("")}</details>`;
 }
 
 // ===================== Words =====================
@@ -4130,7 +4434,7 @@ function wordListInto(wl, list){
   list.forEach(w => {
     const row = document.createElement("div"); row.className = "wl";
     row.innerHTML = wordRowHTML(w, "wl");
-    if(hasSpeech){ row.style.cursor = "pointer"; row.onclick = () => say(w.w); }
+    if(canHearWord(w)){ row.style.cursor = "pointer"; row.onclick = () => sayWord(w); }
     wl.appendChild(row);
   });
 }
@@ -4195,7 +4499,7 @@ function readRender(){
       const ps = PASSAGE_LIST.filter(p => p.lv === l.lv);
       return `<div class="rlv"><div class="rlh">${L}<span class="q" style="margin:0">${ps.filter(passageDone).length} / ${ps.length} done</span></div>
         <div class="plist">${ps.map(p => { const d = passageDone(p);
-          return `<button data-pid="${escapeHtml(p.id)}"${DISP.rtl ? ' dir="rtl"' : ""}><span>${rubyTw(p.title, p.titleRuby, true)}<span class="q" style="display:block;margin:0;font-size:13px">${VC.passageLength(p, PACK)} words</span></span>${d ? `<span class="tick">✓ ${d.sc} / ${d.n}</span>` : ""}</button>`; }).join("")}</div></div>`;
+          return `<button data-pid="${escapeHtml(p.id)}"${DISP.rtl ? ' dir="rtl"' : ""}><span>${rubyTw(p.title, p.titleRuby, true)}<span class="q"${UIA} style="display:block;margin:0;font-size:13px">${VC.passageLength(p, PACK)} words</span></span>${d ? `<span class="tick"${UIA}>✓ ${d.sc} / ${d.n}</span>` : ""}</button>`; }).join("")}</div></div>`;
     }).join("")}`;
   P.querySelectorAll("[data-pid]").forEach(b => b.onclick = () => startPassage(PASSAGE_LIST.find(p => p.id === b.dataset.pid)));
 }
@@ -4341,10 +4645,14 @@ function rubyTw(t, ruby, inButton){
   return pfRubyText(t, ruby) ? `<bdi${TA}>${rubyTextOr(t, ruby, inButton)}</bdi>` : tw(t);
 }
 function passageHTML(hiIndex){ return RD.p.sentences.map((s, i) => passageSentenceHTML(s, i, i === hiIndex)).join(""); }
-// RTL packs: the popover runs right-to-left (tapped word at the right edge, then pron and
-// gloss in reading order); pron and the English gloss stay isolated LTR runs inside it.
+// RTL packs: the popover (#gloss and the sentence tokgloss) is an LTR line, right-aligned:
+// the tapped word is its own isolated dir=rtl span (TA), pron and gloss follow as
+// isolated LTR runs, so a gloss that wraps never interleaves with the word, and RTL
+// fragments inside the gloss are isolated by ui(). The results' weak-word rows are RTL
+// flex rows (checkbox on the right like the rows around them); each piece is its own
+// flex item, pron/gloss/why labels dir=ltr.
 const LTR = DISP.rtl ? ' dir="ltr"' : "";
-const glossBox = () => `<div class="gloss" id="gloss"${DISP.rtl ? ' dir="rtl"' : ""} hidden></div>`;
+const glossBox = () => `<div class="gloss" id="gloss"${LTR} hidden></div>`;
 // spanGloss: the tapped span's display-only gloss (spans[i][3], carried as data-pg on
 // the tap span), shown instead of the word's gloss; without one the word's own gloss.
 // head (optional {surface, reading}, pronFirst phrase spans, spanHead): the headword is the
@@ -4353,7 +4661,7 @@ const glossBox = () => `<div class="gloss" id="gloss"${DISP.rtl ? ' dir="rtl"' :
 function glossHTML(id, spanGloss, head){
   const w = WORDS_BY_ID[id]; if(!w) return "";
   const g = spanGloss ? String(spanGloss).replace(/\s+/g, " ").trim() : "";
-  const ge = ` <span class="ge"${LTR}>${escapeHtml(g || VC.gloss(w))}</span>`;
+  const ge = ` <span class="ge"${LTR}>${ui(g || VC.gloss(w))}</span>`;
   if(head){
     const r = head.reading || "";
     if(dispWord(w).isPron && r) return `<span class="gw"${TA}>${readingHTML(r)}${showWrittenBtn(head.surface)}</span>${ge}`;
@@ -4409,7 +4717,7 @@ function readQuestionScreen(){
   const tf = q.type === "tf";
   const order = tf ? [true, false] : shuffle([0,1,2,3]);
   P.innerHTML = `<div class="drill-body top"><p class="q">Question ${qi+1} / ${p.questions.length}</p>
-    <div class="med wd"${TA}>${rubyTextOr(q.q, q.ruby)}</div>${q.en ? `<div class="q">${escapeHtml(q.en)}</div>` : ""}
+    <div class="med wd"${TA}>${rubyTextOr(q.q, q.ruby)}</div>${q.en ? `<div class="q">${ui(q.en)}</div>` : ""}
     <div class="opts ${tf ? "" : "opts-w"}" id="o"></div>
     <div class="reveal" id="rv"></div>
     <button class="ghost" id="ptoggle" aria-expanded="${RD.shown}" style="margin-top:12px">${RD.shown ? "Hide passage" : "Show passage"}</button>
@@ -4427,7 +4735,7 @@ function readQuestionScreen(){
   const box = $("o");
   order.forEach((v, i) => {
     const b = document.createElement("button");
-    b.innerHTML = `<b class="num">${i+1}</b>${tf ? (v ? "True" : "False") : rubyTw(q.options[v], (q.optionsRuby || [])[v], true)}`;
+    b.innerHTML = `<b class="num"${UIA}>${i+1}</b>${tf ? (v ? "True" : "False") : rubyTw(q.options[v], (q.optionsRuby || [])[v], true)}`;
     if(!tf && DISP.rtl) b.dir = "rtl";
     b.dataset.v = String(v);
     b.onclick = () => {
@@ -4436,7 +4744,7 @@ function readQuestionScreen(){
       [...box.children].forEach(x => { x.disabled = true; if(x.dataset.v === String(q.answer)) x.classList.add("ok"); });
       if(!rec.ok) b.classList.add("bad");
       const s = p.sentences[q.sentence];
-      showReveal(`<div class="q" style="margin:0 0 6px">${rec.ok ? "Right." : "Not quite."} The answer is in this sentence:</div><div class="stmt hi" style="margin:0"${TOKBOX}><div${TA}><mark>${passagePlainHTML(s)}</mark></div><div class="q" style="margin:4px 0 0">${escapeHtml(s.en)}</div></div>`);
+      showReveal(`<div class="q" style="margin:0 0 6px">${rec.ok ? "Right." : "Not quite."} The answer is in this sentence:</div><div class="stmt hi" style="margin:0"${TOKBOX}><div${TA}><mark>${passagePlainHTML(s)}</mark></div><div class="q" style="margin:4px 0 0">${ui(s.en)}</div></div>`);
       const hs = $("pbox").querySelector(`[data-si="${q.sentence}"]`); if(hs) hs.classList.add("hi");
       showNext(); setScore(qi+1, p.questions.length);
     };
@@ -4466,8 +4774,8 @@ function readResults(){
   P.innerHTML = `<div class="done"><h2>${sc} / ${p.questions.length}</h2>
     <p class="q"${TA} style="margin-bottom:8px">${rubyTextOr(p.title, p.titleRuby)}</p>
     ${p.questions.map((q, i) => { const a = RD.answers[i] || {}; const s = p.sentences[q.sentence];
-      return `<div class="stmt"${TOKBOX}><div class="q" style="margin:0 0 4px;color:${a.ok ? "var(--ok)" : "var(--bad)"}">${a.ok ? "✓" : "✗"} Question ${i+1}${a.reopened ? " · looked back" : ""}</div><div${TA}>${rubyTextOr(q.q, q.ruby)}</div><div style="margin-top:6px"${TA}><mark>${passagePlainHTML(s)}</mark></div><div class="q" style="margin:2px 0 0">${escapeHtml(s.en)}</div></div>`; }).join("")}
-    ${weak.length ? `<p class="q">Weak words from this passage</p><div id="weak">${weak.map((w, i) => `<label class="wk"${DISP.rtl ? ' dir="rtl"' : ""}><input type="checkbox" data-wi="${i}" checked> ${glossHTML(w.id, RD.glosses && RD.glosses[w.id])} <span class="q" style="margin:0;font-size:13px">${escapeHtml(w.why.map(x => WHY_LABEL[x]).join(", "))}</span></label>`).join("")}</div>
+      return `<div class="stmt"${TOKBOX}><div class="q" style="margin:0 0 4px;color:${a.ok ? "var(--ok)" : "var(--bad)"}">${a.ok ? "✓" : "✗"} Question ${i+1}${a.reopened ? " · looked back" : ""}</div><div${TA}>${rubyTextOr(q.q, q.ruby)}</div><div style="margin-top:6px"${TA}><mark>${passagePlainHTML(s)}</mark></div><div class="q" style="margin:2px 0 0">${ui(s.en)}</div></div>`; }).join("")}
+    ${weak.length ? `<p class="q">Weak words from this passage</p><div id="weak">${weak.map((w, i) => `<label class="wk"${DISP.rtl ? ' dir="rtl"' : ""}><input type="checkbox" data-wi="${i}" checked> ${glossHTML(w.id, RD.glosses && RD.glosses[w.id])} <span class="q"${UIA} style="margin:0;font-size:13px">${escapeHtml(w.why.map(x => WHY_LABEL[x]).join(", "))}</span></label>`).join("")}</div>
       <button class="next" id="addrev">Add to review</button>` : `<p class="q">No weak words from this passage.</p>`}
     <div id="addmsg" class="q" hidden></div>
     <button class="ghost" id="rlist" style="margin-top:10px">Back to passages</button></div>`;
@@ -4542,13 +4850,13 @@ function placeVocabNext(){
   if(V.i >= V.items.length){ placeResult(); return; }
   const it = V.items[V.i++]; const w = it.w; setScore(V.i - 1, V.items.length);
   const opts = shuffle(meaningChoices(w));
-  const asHear = hasSpeech && Math.random() < 0.5;
+  const asHear = canHearWord(w) && Math.random() < 0.5;
   P.innerHTML = `<p class="q">Words ${V.i} / ${V.items.length}</p>
     ${asHear ? `<div class="hear-stage"><button class="speaker" id="rp" aria-label="Replay">${SPEAKER_SVG}</button></div>` : bigWordHTML(w)}
     <div class="opts" id="o"></div>`;
-  if(asHear){ const btn = $("rp"); speak(w.w, btn); btn.onclick = ()=>speak(w.w, btn); }
+  if(asHear){ const btn = $("rp"); sayWord(w, btn); btn.onclick = ()=>sayWord(w, btn); }
   opts.forEach(o => {
-    const b = document.createElement("button"); b.textContent = o;
+    const b = document.createElement("button"); b.innerHTML = ui(o);
     b.onclick = () => { PL.res[it.b].n++; if(o===VC.gloss(w)) PL.res[it.b].r++; placeVocabNext(); };
     $("o").appendChild(b);
   });
@@ -4590,7 +4898,7 @@ function progressRender(){
   const weak = weakFirst(lwAll.filter(w=>VC.weakScore(prog.w[w.id])>0), 10);
   const cp = HAS_CHARACTERS ? charProgress() : null;
   const xp = HAS_SCRIPT ? scriptProgress() : null;
-  P.innerHTML = `${hasSpeech ? "" : `<div class="warn">No text-to-speech voice is available in this browser, so listening and audio-replay features show the word instead of playing sound.</div>`}
+  P.innerHTML = `${hasSpeech || PACK_AUDIO ? "" : `<div class="warn">No text-to-speech voice is available in this browser, so listening and audio-replay features show the word instead of playing sound.</div>`}
     <table class="stats">${xp ? xp.rows : ""}${rows}${cp ? cp.rows : ""}
       ${HAS_PASSAGES ? VC.readingStats(PASSAGE_LIST, PACK, prog).map(r => `<tr><td>${escapeHtml(levelLabel(r.lv))} reading</td><td>${r.done} / ${r.total} passages${r.avg != null ? ` · avg ${r.avg}%` : ""}</td></tr>`).join("") : ""}
       ${HAS_LESSONS ? `<tr><td>Sounds</td><td>${LESSON_LIST.filter(l=>prog.lessons[l.id]).length} / ${LESSON_LIST.length} lessons done</td></tr>` : ""}
@@ -4684,7 +4992,7 @@ function charProgress(){
     const taught = VC.charSets(st.levels, CHAR_LIST, PACK).filter(set => VC.charSetTaught(set, prog)).reduce((n, set) => n + set.length, 0);
     const masteredN = list.filter(u => recs[u.id] && VC.charTier(streak(u), PACK) !== "pron").length;
     const bareN = list.filter(u => recs[u.id] && VC.charTier(streak(u), PACK) === "bare").length;
-    return `<tr><td>${tw(st.label)}</td><td>${taught} / ${list.length} taught · ${st.recorded} recorded · ${masteredN} mastered · ${bareN} bare</td></tr>`;
+    return `<tr><td>${tf(st.label)}</td><td>${taught} / ${list.length} taught · ${st.recorded} recorded · ${masteredN} mastered · ${bareN} bare</td></tr>`;
   }).join("");
   const defer = !!(prog.chars && prog.chars.defer === true);
   const deferred = VC.charStages(PACK, Object.assign({}, prog, { chars: Object.assign({}, prog.chars, { defer: true }) }));
@@ -4714,14 +5022,14 @@ function scriptProgress(){
   let rows = SCFG.stages.map(st => {
     const list = VC.scriptStageUnits(st.key, SUNITS);
     const taught = VC.scriptSets(st.key, SUNITS).filter(set => VC.scriptSetTaught(set, prog)).reduce((n, set) => n + set.length, 0);
-    return `<tr><td>${tw(st.label)}</td><td>${taught} / ${list.length} taught · ${list.filter(isM).length} mastered</td></tr>`;
+    return `<tr><td>${tf(st.label)}</td><td>${taught} / ${list.length} taught · ${list.filter(isM).length} mastered</td></tr>`;
   }).join("");
   if(SUNITS.every(isM)) rows += `<tr id="xMastered"><td colspan="2">Script mastered</td></tr>`;
   const off = VC.scriptSkipped(prog);
   const stageOn = st => !(prog.script && prog.script.skip && prog.script.skip[st.key] === true);
   const multi = SCFG.stages.length > 1;
   const controls = `<div id="scriptCtl" style="margin-top:14px"><div class="row"><button class="chip ${off ? "" : "on"}" id="xOn" aria-pressed="${!off}">Script primer on</button><button class="chip ${off ? "on" : ""}" id="xOff" aria-pressed="${off}">Script primer off</button></div>
-    ${multi && !off ? `<div class="row">${SCFG.stages.map((st, i) => `<button class="chip ${stageOn(st) ? "on" : ""}" id="xSt${i}" aria-pressed="${stageOn(st)}">${tw(st.label)}</button>`).join("")}</div>` : ""}
+    ${multi && !off ? `<div class="row">${SCFG.stages.map((st, i) => `<button class="chip ${stageOn(st) ? "on" : ""}" id="xSt${i}" aria-pressed="${stageOn(st)}">${tf(st.label)}</button>`).join("")}</div>` : ""}
     <p class="q" style="margin-top:6px">Changes what Today's Learn step teaches next. Nothing you've learned is lost.</p></div>`;
   const wire = () => {
     $("xOn").onclick = () => { VC.setScriptSkipped(prog, false); store.save(); progressRender(); };
@@ -4737,7 +5045,7 @@ function legacySummaryHTML(m, kept){
   const p = m.prog, n = o => Object.keys(o || {}).length;
   const setsN = Object.values(p.sets || {}).reduce((a, b) => a + (b || 0), 0);
   const parts = [`${n(p.w)} word records`, `${n(p.s)} sentence records`];
-  if(p.chars) parts.push(`${n(p.chars.c)} ${tw(CHAR_CFG ? CHAR_CFG.label : "")} records`);
+  if(p.chars) parts.push(`${n(p.chars.c)} ${tf(CHAR_CFG ? CHAR_CFG.label : "")} records`);
   parts.push(`${setsN} sets done`, `${p.sessions || 0} sessions`);
   const LIST_MAX = 20;
   const um = m.unmapped || [];
@@ -4841,4 +5149,4 @@ function legacyFailHTML(why){
 </script>
 </body>
 </html>
-<!--ve-build:3177358841-1441256-->
+<!--ve-build:3724740744-1461986-->
